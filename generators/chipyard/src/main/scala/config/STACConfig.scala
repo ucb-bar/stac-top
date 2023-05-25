@@ -52,7 +52,8 @@ class STACConfig extends Config(
   // Set up I/O
   //==================================
   new testchipip.WithSerialTLWidth(1) ++
-  new chipyard.harness.WithSimAXIMemOverSerialTL ++                                     // Attach fast SimDRAM to TestHarness
+  // No AXI backing memory in sim since that causes AMBA prot fields to stay in
+  // the main design, which the serdes do not support.
   new chipyard.config.WithSerialTLBackingMemory ++                                      // Backing memory is over serial TL protocol
   new freechips.rocketchip.subsystem.WithExtMemSize((1 << 30) * 2L) ++                  // 2GB max external memory
 
