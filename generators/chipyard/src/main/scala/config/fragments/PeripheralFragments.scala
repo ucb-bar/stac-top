@@ -32,9 +32,14 @@ class WithGPIO extends Config((site, here, up) => {
 })
 // DOC include end: gpio config fragment
 
-class WithUART(baudrate: BigInt = 115200) extends Config((site, here, up) => {
+class WithUARTOverride(address: BigInt = 0x10020000, baudrate: BigInt = 115200) extends Config ((site, here, up) => {
   case PeripheryUARTKey => Seq(
-    UARTParams(address = 0x54000000L, nTxEntries = 256, nRxEntries = 256, initBaudRate = baudrate))
+    UARTParams(address = address, nTxEntries = 256, nRxEntries = 256, initBaudRate = baudrate))
+})
+
+class WithUART(address: BigInt = 0x10020000, baudrate: BigInt = 115200) extends Config ((site, here, up) => {
+  case PeripheryUARTKey => up(PeripheryUARTKey) ++ Seq(
+    UARTParams(address = address, nTxEntries = 256, nRxEntries = 256, initBaudRate = baudrate))
 })
 
 class WithNoUART extends Config((site, here, up) => {
@@ -45,10 +50,10 @@ class WithUARTFIFOEntries(txEntries: Int, rxEntries: Int) extends Config((site, 
   case PeripheryUARTKey => up(PeripheryUARTKey).map(_.copy(nTxEntries = txEntries, nRxEntries = rxEntries))
 })
 
-class WithSPIFlash(size: BigInt = 0x10000000) extends Config((site, here, up) => {
+class WithSPIFlash(address: BigInt = 0x10030000, fAddress: BigInt = 0x20000000, size: BigInt = 0x10000000) extends Config((site, here, up) => {
   // Note: the default size matches freedom with the addresses below
-  case PeripherySPIFlashKey => Seq(
-    SPIFlashParams(rAddress = 0x10040000, fAddress = 0x20000000, fSize = size))
+  case PeripherySPIFlashKey => up(PeripherySPIFlashKey) ++ Seq(
+    SPIFlashParams(rAddress = address, fAddress = fAddress, fSize = size))
 })
 
 class WithDMIDTM extends Config((site, here, up) => {
