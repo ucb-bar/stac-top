@@ -2,44 +2,6 @@ package chipyard
 
 import org.chipsalliance.cde.config.Config
 import freechips.rocketchip.diplomacy._
-import freechips.rocketchip.rocket.{DCacheParams, ICacheParams, MulDivParams, RocketCoreParams}
-import freechips.rocketchip.subsystem.{CacheBlockBytes, InSubsystem, RocketCrossingParams, RocketTileAttachParams, SystemBusKey, TileMasterPortParams, TilesLocated}
-import freechips.rocketchip.tile.{RocketTileParams, XLen}
-
-private class With1TinyCoreNoSPad extends Config((site, here, up) => {
-  case XLen => 32
-  case TilesLocated(InSubsystem) => {
-    val tiny = RocketTileParams(
-      core = RocketCoreParams(
-        useVM = false,
-        fpu = None,
-        mulDiv = Some(MulDivParams(mulUnroll = 8))),
-      btb = None,
-      dcache = Some(DCacheParams(
-        rowBits = site(SystemBusKey).beatBits,
-        nSets = 64, // 4KB
-        nWays = 1,
-        nTLBSets = 1,
-        nTLBWays = 4,
-        nMSHRs = 0,
-        blockBytes = site(CacheBlockBytes),
-        scratch = None)),
-      icache = Some(ICacheParams(
-        rowBits = site(SystemBusKey).beatBits,
-        nSets = 64,
-        nWays = 1,
-        nTLBSets = 1,
-        nTLBWays = 4,
-        blockBytes = site(CacheBlockBytes)))
-    )
-    List(RocketTileAttachParams(
-      tiny,
-      RocketCrossingParams(
-        crossingType = SynchronousCrossing(),
-        master = TileMasterPortParams())
-    ))
-  }
-})
 
 class STACConfig extends Config(
   //==================================
@@ -49,18 +11,34 @@ class STACConfig extends Config(
                                                            // NOTE: This only simulates properly in VCS
 
   //==================================
+  // Set up tiles
+  //==================================
+  new freechips.rocketchip.subsystem.WithL1DCacheSets(sets = 64) ++ // 64 sets, 4K cache
+  new chipyard.config.WithNoRocketDCacheScratchPad ++ // disable scratchpad
+  new freechips.rocketchip.subsystem.With1TinyCore ++ // single tiny rocket-core
+
+  new testchipip.WithBackingScratchpad(base = 0x08000000, mask = ((4<<10)-1)) ++ // 4 KB
+
+  //==================================
   // Set up I/O
   //==================================
   new testchipip.WithSerialTLWidth(1) ++
   // No AXI backing memory in sim since that causes AMBA prot fields to stay in
   // the main design, which the serdes do not support.
   new chipyard.config.WithSerialTLBackingMemory ++                                      // Backing memory is over serial TL protocol
-  new freechips.rocketchip.subsystem.WithExtMemSize((1 << 30) * 2L) ++                  // 2GB max external memory
+  new freechips.rocketchip.subsystem.WithExtMemSize((1 << 30) * 1L) ++                  // 1GB max external memory
 
-  //==================================
-  // Set up tiles
-  //==================================
-  new With1TinyCoreNoSPad ++                                      // single tiny rocket-core
+  /* 1x UART */
+  new chipyard.config.WithUARTOverride(address = 0x10020000, baudrate = 115200) ++
+
+  /* XIP SPI with 194's PSRAM changes */
+  new chipyard.harness.WithSimSPIFlashModel(rdOnly = false) ++ // add the SPI flash model in the harness (writeable)
+  new chipyard.config.WithSPIFlash(address = 0x10021000, fAddress = 0x20000000, size = 0x10000000) ++ // add the SPI psram controller (1 MiB)
+
+  /* boot_sel=0: hang/wait for TSI. boot_sel=1: self-boot (priority bootloader, try SPI first then BEBE) */
+  new testchipip.WithCustomBootPinAltAddr(address = 0x000100c0) ++
+
+  /* JTAG is in the default config */
 
   //==================================
   // Set up clock./reset
@@ -78,8 +56,9 @@ class STACConfig extends Config(
   new testchipip.WithAsynchronousSerialSlaveCrossing ++                      // Add Async crossing between serial and MBUS. Its master-side is tied to the FBUS
 
 
-  new freechips.rocketchip.subsystem.WithNBanks(1) ++           // one bank
-  new chipyard.config.WithBroadcastManager ++                   // use broadcast manager
-  new freechips.rocketchip.subsystem.WithCoherentBusTopology ++ // use coherent bus topology
+  new freechips.rocketchip.subsystem.WithNBanks(1) ++              // one bank
+  new chipyard.config.WithBroadcastManager ++                      // Replace L2 with a broadcast hub for coherence
+  new freechips.rocketchip.subsystem.WithBufferlessBroadcastHub ++ // Remove buffers from broadcast manager
+  new freechips.rocketchip.subsystem.WithCoherentBusTopology ++    // use coherent bus topology
 
   new chipyard.config.AbstractConfig)
