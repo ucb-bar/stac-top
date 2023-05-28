@@ -67,8 +67,4 @@ class SramHarness(params: SramHarnessParams) (implicit p: Parameters) extends Mo
   tdc.io.reset_b := ~reset.asBool
   io.saeOut := tdc.io.dout
 
-
-
-
-
 }
