@@ -1,4 +1,4 @@
-package srambist.sramharness
+/*package srambist.sramharness
 
 import chisel3._
 import chisel3.util._
@@ -22,4 +22,4 @@ class SramHarness(params: SramHarnessParams) extends Module {
     val mask = Input(64.W)
   })
 
-}
+}*/

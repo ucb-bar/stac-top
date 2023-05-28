@@ -1,3 +1,4 @@
+/*
 package sramtestunit.programmablebist
 
 import sramtestunit.{ProgrammableBistParams}
@@ -74,3 +75,4 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   })
 
 }
+*/

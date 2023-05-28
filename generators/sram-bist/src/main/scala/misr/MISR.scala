@@ -3,19 +3,6 @@ package srambist.misr
 import chisel3._
 import chisel3.util._
 
-class MISR(width: Int) extends Module {
-  val io = IO(new Bundle {
-    val in = Input(UInt(width.W))
-    val out = Output(UInt(width.W))
-  })
-  io.out := io.in
-}
-
-package srambist.misr
-
-import chisel3._
-import chisel3.util.Valid
-
 class MISRIO(val n: Int) extends Bundle {
   val in: Vec[Bool] = Input(Vec(n, Bool()))
   val en: Bool = Input(Bool())
@@ -56,34 +43,15 @@ abstract class Compressor(val width: Int, val seed: Option[BigInt], step: Int = 
   final def nextState(s: Seq[Bool], in: Seq[Bool]): Seq[Bool] = (0 until step).foldLeft(s) { case (s, _) => delta(s, in) }
 
   when(io.en) {
-    state := nextState(state)
+    state := nextState(state, io.in)
   }
 
   when(io.seed.fire) {
-    state := (if (updateSeed) { nextState(io.seed.bits) }
+    state := (if (updateSeed) { nextState(io.seed.bits, io.in) }
               else { io.seed.bits })
   }
 
   io.out := state
-
-}
-
-/** Helper utilities related to the construction of Pseudo Random Number Generators (PRNGs) */
-object Compressor {
-
-  /** Wrap a [[PRNG]] to only return a pseudo-random [[UInt]]
-    * @param gen a pseudo random number generator
-    * @param increment when asserted the [[PRNG]] will increment
-    * @return the output (internal state) of the [[PRNG]]
-    */
-  def apply(gen: => MISR, in: Vec[Bool], en: Bool = true.B): UInt = {
-    val misr = Module(gen)
-    misr.io.in := in
-    misr.io.en := en
-    misr.io.seed.valid := false.B
-    misr.io.seed.bits := DontCare
-    misr.io.out.asUInt
-  }
 
 }
 
@@ -147,7 +115,7 @@ trait MISR extends Compressor {
 }
 
 object MISR {
-  private[random] def badWidth(width: Int): Nothing = throw new IllegalArgumentException(
+  private[misr] def badWidth(width: Int): Nothing = throw new IllegalArgumentException(
     s"No max period LFSR taps stored for requested width '$width'"
   )
 
@@ -989,7 +957,7 @@ class FibonacciMISR(
   width:         Int,
   taps:          Set[Int],
   seed:          Option[BigInt] = Some(1),
-  reduction: LFSRReduce = XOR,
+  val reduction: MISRReduce = XOR,
   step:          Int = 1,
   updateSeed:    Boolean = false)
     extends Compressor(width, seed, step, updateSeed)
@@ -997,8 +965,8 @@ class FibonacciMISR(
 
   def delta(s: Seq[Bool], in: Seq[Bool]): Seq[Bool] = {
     (0 until s.size).map(i => {
-      if i == 0 then {
-        (in(0) :+ taps.map { case i => s(i - 1) }).reduce(reduction)
+      if (i == 0) {
+        (Seq(in(0)) ++ taps.map { case i => s(i - 1) }).reduce(reduction)
       } else {
         reduction(s(i-1), in(i))
       }
