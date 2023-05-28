@@ -989,13 +989,21 @@ class FibonacciMISR(
   width:         Int,
   taps:          Set[Int],
   seed:          Option[BigInt] = Some(1),
-  val reduction: LFSRReduce = XOR,
+  reduction: LFSRReduce = XOR,
   step:          Int = 1,
   updateSeed:    Boolean = false)
     extends Compressor(width, seed, step, updateSeed)
     with MISR {
 
-  def delta(s: Seq[Bool]): Seq[Bool] = taps.map { case i => s(i - 1) }.reduce(reduction) +: s.dropRight(1)
+  def delta(s: Seq[Bool], in: Seq[Bool]): Seq[Bool] = {
+    (0 until s.size).map(i => {
+      if i == 0 then {
+        (in(0) :+ taps.map { case i => s(i - 1) }).reduce(reduction)
+      } else {
+        reduction(s(i-1), in(i))
+      }
+    })
+  }
 
 }
 
@@ -1008,53 +1016,7 @@ class FibonacciMISR(
   * $paramSeed
   * $paramReduction
   */
-class MaxPeriodFibonacciLFSR(width: Int, seed: Option[BigInt] = Some(1), reduction: LFSRReduce = XOR)
-    extends FibonacciLFSR(width, LFSR.tapsMaxPeriod.getOrElse(width, LFSR.badWidth(width)).head, seed, reduction)
-
-/** Utility for generating a pseudorandom [[UInt]] from a [[FibonacciLFSR]].
-  *
-  * For example, to generate a pseudorandom 8-bit [[UInt]] that changes every cycle, you can use:
-  * {{{
-  * val pseudoRandomNumber = FibonacciLFSR.maxPeriod(8)
-  * }}}
-  *
-  * @define paramWidth @param width of pseudorandom output
-  * @define paramTaps @param taps a set of tap points to use when constructing the LFSR
-  * @define paramIncrement @param increment when asserted, a new random value will be generated
-  * @define paramSeed @param seed an initial value for internal LFSR state
-  * @define paramReduction @param reduction the reduction operation (either [[XOR]] or
-  * [[XNOR]])
-  */
-object FibonacciLFSR {
-
-  /** Return a pseudorandom [[UInt]] generated from a [[FibonacciLFSR]].
-    * $paramWidth
-    * $paramTaps
-    * $paramIncrement
-    * $paramSeed
-    * $paramReduction
-    */
-  def apply(
-    width:     Int,
-    taps:      Set[Int],
-    increment: Bool = true.B,
-    seed:      Option[BigInt] = Some(1),
-    reduction: LFSRReduce = XOR
-  ): UInt = PRNG(new FibonacciLFSR(width, taps, seed, reduction), increment)
-
-  /** Return a pseudorandom [[UInt]] generated using a maximal period [[FibonacciLFSR]]
-    * $paramWidth
-    * $paramIncrement
-    * $paramSeed
-    * $paramReduction
-    */
-  def maxPeriod(
-    width:     Int,
-    increment: Bool = true.B,
-    seed:      Option[BigInt] = Some(1),
-    reduction: LFSRReduce = XOR
-  ): UInt = PRNG(new MaxPeriodFibonacciLFSR(width, seed, reduction), increment)
-
-}
+class MaxPeriodFibonacciMISR(width: Int, seed: Option[BigInt] = Some(1), reduction: MISRReduce = XOR)
+    extends FibonacciMISR(width, MISR.tapsMaxPeriod.getOrElse(width, MISR.badWidth(width)).head, seed, reduction)
 
 
