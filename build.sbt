@@ -137,7 +137,7 @@ lazy val chipyard = (project in file("generators/chipyard"))
     sha3, // On separate line to allow for cleaner tutorial-setup patches
     dsptools, `rocket-dsp-utils`,
     gemmini, icenet, tracegen, cva6, nvdla, sodor, ibex, fft_generator,
-    constellation, mempress, generatortest)
+    constellation, mempress, sram_bist)
   .settings(libraryDependencies ++= rocketLibDeps.value)
   .settings(
     libraryDependencies ++= Seq(
@@ -262,11 +262,6 @@ lazy val sifive_cache = (project in file("generators/sifive-cache"))
   .dependsOn(rocketchip)
   .settings(libraryDependencies ++= rocketLibDeps.value)
 
-lazy val generatortest = (project in file("generators/generatortest"))
-  .settings(libraryDependencies ++= rocketLibDeps.value)
-  .settings(chiselTestSettings)
-  .settings(commonSettings)
-
 // Library components of FireSim
 lazy val midas      = ProjectRef(firesimDir, "midas")
 lazy val firesimLib = ProjectRef(firesimDir, "firesimLib")
@@ -286,4 +281,9 @@ lazy val fpga_shells = (project in file("./fpga/fpga-shells"))
 
 lazy val fpga_platforms = (project in file("./fpga"))
   .dependsOn(chipyard, fpga_shells)
+  .settings(commonSettings)
+
+lazy val sram_bist = (project in file("generators/sram-bist"))
+  .settings(libraryDependencies ++= rocketLibDeps.value)
+  .settings(chiselTestSettings)
   .settings(commonSettings)
