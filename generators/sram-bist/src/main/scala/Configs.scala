@@ -1,7 +1,6 @@
 package sramtestunit
 
 case class ProgrammableBistParams(
-  addr: AddressSet,
   elementTableLength : Int = 8,
   operationsPerElement : Int = 8,
   patternTableLength : Int = 8,
