@@ -15,11 +15,11 @@ case class SramHarnessParams(
 
   )
 
-class SramHarness(params: SramHarnessParams) (implicit p: Parameters) extends Module {
+object SaeSrc extends ChiselEnum {
+  val int, clk, ext = Value
+}
 
-  object SaeSrc extends ChiselEnum {
-    val int, clk, ext = Value
-  }
+class SramHarness(params: SramHarnessParams) (implicit p: Parameters) extends Module {
 
   val io = IO(new Bundle {
     val sramEn = Input(Bool())
