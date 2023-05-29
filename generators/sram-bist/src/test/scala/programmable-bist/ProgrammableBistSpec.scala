@@ -15,7 +15,8 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new ProgrammableBist(new ProgrammableBistParams(patternTableLength = 4, elementTableLength = 4))) { d => 
       val maxRows = 15;
       val maxCols = 7;
-      val march = chiselTypeOf(d.io.elementSequence).Lit(_.operationElement -> opElement, _.waitElement -> waitElement, _.elementType -> d.ElementType.rwOp)
+      // val march = chiselTypeOf(d.io.elementSequence).Lit(_.operationElement -> opElement, _.waitElement -> waitElement, _.elementType -> d.ElementType.rwOp)
+      val march = new d.Element()
       val zeroData = 0.U(32.W)
 
       d.io.start.poke(true.B)
