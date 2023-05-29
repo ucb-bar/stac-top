@@ -10,6 +10,9 @@ if [[ `basename $CONDA_PREFIX` != .conda-env ]]; then
     exit
 fi
 
+git submodule update --init vlsi/hammer # do not recurse on e2e test hammer-mentor-plugins dep
+pip install -e vlsi/hammer
+
 # Initialize HAMMER CAD-plugins
 if [[ $1 != *openroad* ]] && [[ $2 != *openroad* ]]; then
     git submodule update --init --recursive vlsi/hammer-mentor-plugins

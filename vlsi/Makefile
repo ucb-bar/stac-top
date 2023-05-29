@@ -2,6 +2,10 @@
 # vlsi makefile
 #########################################################################################
 
+# Default settings
+SUB_PROJECT = chipyard
+CONFIG = STACConfig
+
 #########################################################################################
 # general path variables
 #########################################################################################
@@ -12,14 +16,14 @@ sim_dir=$(abspath .)
 #########################################################################################
 # include shared variables
 #########################################################################################
-include $(vlsi_dir)/tutorial.mk
+#include $(vlsi_dir)/tutorial.mk
 include $(base_dir)/variables.mk
 
 #########################################################################################
 # vlsi types and rules
 #########################################################################################
 sim_name           ?= vcs # needed for GenerateSimFiles, but is unused
-tech_name          ?= asap7
+tech_name          ?= sky130
 tech_dir           ?= $(if $(filter $(tech_name),sky130 asap7 nangate45),\
                         $(shell python3 -c "import os, hammer.technology.$(tech_name);\
 						print(os.path.dirname(hammer.technology.$(tech_name).__file__))"),\
@@ -35,12 +39,11 @@ else
 endif
 
 ENV_YML            ?= $(vlsi_dir)/env.yml
-TECH_CONF          ?= example-$(tech_name).yml
-TOOLS_CONF         ?= example-tools.yml
-INPUT_CONFS        ?= $(TOOLS_CONF) $(TECH_CONF)
-HAMMER_EXEC        ?= $(if $(filter $(tech_name),sky130),\
-                        ./example-vlsi-sky130,\
-                        ./example-vlsi)
+TECH_CONF          ?= tech-$(tech_name).yml
+TOOLS_CONF         ?= tools.yml
+CHIP_CONF          ?= design-stac.yml
+INPUT_CONFS        ?= $(TOOLS_CONF) $(TECH_CONF) $(CHIP_CONF)
+HAMMER_EXEC        ?= ./hammer-driver
 VLSI_TOP           ?= $(TOP)
 VLSI_MODEL_DUT_NAME ?= chiptop
 # If overriding, this should be relative to $(vlsi_dir)
