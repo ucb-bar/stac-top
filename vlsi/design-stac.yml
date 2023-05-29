@@ -64,7 +64,7 @@ vlsi.inputs.hierarchical:
           height: 1000
           margins: {left: 0, right: 0, top: 0, bottom: 0}
         # TODO: improve sram placements
-        - {path: RocketTile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, x: 1652.66, y: 533.135, orientation: mx}
-        - {path: RocketTile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, x: 388.225, y: 761.575, orientation: r180}
-        - {path: RocketTile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, x: 1313.64, y: 43.535, orientation: mx}
-        - {path: RocketTile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, x: 700.105, y: 361.735, orientation: r180}
+        - {path: RocketTile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, x: 0.0, y: 0.0, orientation: my90}
+        - {path: RocketTile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, x: 1176.68, y: 0.0, orientation: r270}
+        - {path: RocketTile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, x: 2334.855, y: 0.0, orientation: r270}
+        - {path: RocketTile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, x: 1324.8, y: 0.0, orientation: my90}
