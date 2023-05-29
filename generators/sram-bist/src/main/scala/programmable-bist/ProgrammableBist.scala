@@ -102,7 +102,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   lfsr.io.seed.valid := io.start
   lfsr.io.increment := true.B
   val rand = lfsr.io.out
-  // val randAddr = rand(params.dataWidth-1, 0)
+  val randAddr = rand.slice(0, params.dataWidth)
   // val randMask = rand(2*params.dataWidth-1, params.dataWidth)
 
   io.data := 0.U
