@@ -11,6 +11,7 @@ import srambist.programmablebist.{
   ProgrammableBistParams,
   Direction
 }
+import srambist.misr.MaxPeriodFibonacciMISR
 
 case class BistTopParams(
     srams: Seq[SramParams]
@@ -47,6 +48,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val bistInnerDim = Input(Direction())
     val bistPatternTable = Input(UInt(10.W)) // TODO: Decide size
     val bistElementSequence = Input(UInt(10.W)) // TODO: Decide size
+    val bistElementCount = Input(UInt(32.W))
     val bistCycleLimit = Input(UInt(32.W))
     val ex = Input(Bool())
 
@@ -69,7 +71,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
 
   val fsmSramEn = Wire(Bool())
   val fsmBistEn = Wire(Bool())
-  val bistSignature = Wire(Bool())
 
   val bist = Module(
     new ProgrammableBist(
@@ -77,6 +78,29 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
       )
     )
   )
+  val misr = Module(
+    new MaxPeriodFibonacciMISR(
+      32
+    ))
+
+  val bistSramEnPrev = RegNext(bist.io.sramEn)
+  val bistSramWenPrev = RegNext(bist.io.sramWen)
+  val bistDataPrev = RegNext(bist.io.data)
+  val bistCheckEnPrev = RegNext(bist.io.checkEn)
+  val bistCyclePrev = RegNext(bist.io.cycle)
+  val bistFail = RegInit(false.B)
+  val bistFailCycle = Reg(UInt(32.W))
+  val bistExpected = Reg(UInt(32.W))
+  val bistRecieved = Reg(UInt(32.W))
+  
+  io.bistFail := bistFail
+  io.bistFailCycle := bistFailCycle
+  io.bistExpected := bistExpected
+  io.bistReceived := bistReceived
+
+  misr.io.en.bits := bistSramEnPrev & ~bistSramWenPrev
+  misr.io.seed.valid := bist.io.resetHash
+  misr.io.seed.bits := io.bistSigSeed.asBools
 
   io.done := false.B
   fsmSramEn := false.B
@@ -84,6 +108,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   switch(state) {
     is(State.idle) {
       when(io.ex) {
+        bistFail := false.B
         state := State.executeOp
         when(io.sramSel == SramSrc.mmio) {
           fsmSramEn := true.B
@@ -99,6 +124,15 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
         }
         is(SramSrc.bist) {
           fsmBistEn := true.B
+          when(bistCheckEnPrev) {
+            when (bistDataPrev =/= io.dout) {
+              bistFail := true.B
+              bistFailCycle := bistCyclePrev
+              bistExpected := bistDataPrev
+              bistReceived := io.dout
+              state := State.idle
+            }
+          }
           when(bist.io.done) {
             state := State.idle
           }
@@ -160,7 +194,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
           sram.io.we := io.we
         }
         is(SramSrc.bist) {
-          harness.io.sramEn := i == io.sramId & Mux(
+          harness.io.sramEn := i == io.sramId & bist.io.en & Mux(
             io.sramExtEn,
             io.sramEn,
             bist.io.sramEn
@@ -180,6 +214,15 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   }
 
+  io.dout := MuxCase(
+    0.U,
+    srams.zipWithIndex.map { case (sram, i) =>
+      i == io.sramId -> sram.io.dout
+    }
+  )
+
+  misr.io.in := io.dout
+
   io.tdc := MuxCase(
     0.U,
     srams.zipWithIndex.map { case (sram, i) =>
@@ -190,6 +233,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   io.bistFailCycle := bist.io.failCycle
   io.bistExpected := bist.io.bistExpected
   io.bistReceived := bist.io.bistReceived
-  io.bistSignature := bistSignature
+  io.bistSignature := misr.io.out
+
 
 }
