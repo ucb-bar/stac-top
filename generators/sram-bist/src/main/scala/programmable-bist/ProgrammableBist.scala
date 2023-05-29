@@ -44,9 +44,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val randMask = Bool()
 
     // Data pattern address if data is not randomized.
-    val dataPattern = UInt(log2Ceil(params.patternTableLength).W)
+    val dataPatternIdx = UInt(log2Ceil(params.patternTableLength).W)
     // Mask pattern address if mask is not randomized.
-    val maskPattern = UInt(log2Ceil(params.patternTableLength).W)
+    val maskPatternIdx = UInt(log2Ceil(params.patternTableLength).W)
 
     // Bitwise flip data?
     val flipped = FlipType()
@@ -73,9 +73,6 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val elementType = ElementType()
   }
 
-  class Pattern extends Bundle {
-    val pattern = UInt(params.dataWidth.W) // todo: what is the best size of the pattern?
-  }
 
   val io = IO(new Bundle {
     val en = Input(Bool())
@@ -85,7 +82,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val innerDim = Input(Dimension())  
     val numElements = Input(UInt(log2Ceil(params.elementTableLength).W))  
     val seed = Input(UInt(params.seedWidth.W))  
-    val patternTable = Input(Vec(params.patternTableLength, new Pattern())) 
+    val patternTable = Input(Vec(params.patternTableLength, UInt(params.dataWidth.W))) 
     val elementSequence = Input(Vec(params.elementTableLength, new Element())) 
     val cycleLimit = Input(UInt(32.W))
     val sramEn = Output(Bool())
@@ -100,11 +97,18 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val resetHash = Output(Bool())
   })
 
-  val lfsr = new MaxPeriodFibonacciLFSR(params.seedWidth);
-  lfsr.io.seed := io.seed
+  val lfsr = Module(new MaxPeriodFibonacciLFSR(params.seedWidth))
+  lfsr.io.seed.bits := io.seed.asBools
+  lfsr.io.seed.valid := io.start
+  lfsr.io.increment := true.B
   val rand = lfsr.io.out
 
-  
+  io.data := 0.U
+  io.mask := 0.U
+  io.checkEn := false.B
+  io.cycle := 0.U
+  io.done := false.B
+  io.resetHash := false.B
 
   val row = RegInit(0.asUInt(params.maxRowAddrWidth.W))
   val col = RegInit(0.asUInt(params.maxColAddrWidth.W))
