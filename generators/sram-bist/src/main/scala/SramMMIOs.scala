@@ -1,4 +1,4 @@
-package sramtestunit
+package srambist
 
 /* class SramMMIOs extends LazyModule {
 

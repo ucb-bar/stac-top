@@ -1,12 +1,14 @@
 package srambist.programmablebist
 
-import srambist.{ProgrammableBistParams}
 import chisel3._
 import chisel3.ChiselEnum
 import chisel3.util.log2Ceil
 import chisel3.util.random.MaxPeriodFibonacciLFSR
 
+import srambist.ProgrammableBistParams
+
 class ProgrammableBist(params: ProgrammableBistParams) extends Module {
+
   object OperationType extends ChiselEnum {
     val read = Value(0.U(2.W))
     val write = Value(1.U(2.W))
@@ -93,9 +95,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val data = Output(UInt(params.dataWidth.W))
     val mask = Output(UInt(params.dataWidth.W))
     val checkEn = Output(Bool())
-    val fail = Output(Bool())
     val cycle = Output(UInt(32.W))
-
+    val done = Output(Bool())
+    val resetHash = Output(Bool())
   })
 
   val lfsr = new MaxPeriodFibonacciLFSR(params.seedWidth);

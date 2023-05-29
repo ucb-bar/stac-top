@@ -3,7 +3,6 @@ package srambist
 // import freechips.rocketchip.config.{Config, Field}
 
 case class ProgrammableBistParams(
-  baseAddr : BigInt,
   elementTableLength : Int = 8,
   operationsPerElement : Int = 8,
   patternTableLength : Int = 8,
