@@ -121,3 +121,6 @@
 [submodule "tools/cde"]
 	path = tools/cde
 	url = https://github.com/chipsalliance/cde.git
+[submodule "vlsi/hammer"]
+	path = vlsi/hammer
+	url = https://github.com/ucb-bar/hammer.git
