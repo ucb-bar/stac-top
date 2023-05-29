@@ -44,9 +44,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val randMask = Bool()
 
     // Data pattern address if data is not randomized.
-    val dataPattern = UInt(log2Ceil(params.patternTableLength).W)
+    val dataPatternIdx = UInt(log2Ceil(params.patternTableLength).W)
     // Mask pattern address if mask is not randomized.
-    val maskPattern = UInt(log2Ceil(params.patternTableLength).W)
+    val maskPatternIdx = UInt(log2Ceil(params.patternTableLength).W)
 
     // Bitwise flip data?
     val flipped = FlipType()
@@ -54,7 +54,8 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
 
   class OperationElement extends Bundle {
     val operations = Vec(params.operationsPerElement, new Operation())
-    val count = UInt(log2Ceil(params.operationsPerElement).W)
+    // Number of operations minus 1
+    val maxIdx = UInt(log2Ceil(params.operationsPerElement).W)
     val dir = Direction()
     val mask = UInt(log2Ceil(params.patternTableLength).W)
     // Number of random addresses to try.
@@ -72,22 +73,16 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val elementType = ElementType()
   }
 
-  class Pattern extends Bundle {
-    val pattern = UInt(
-      params.dataWidth.W
-    ) // todo: what is the best size of the pattern?
-  }
-
   val io = IO(new Bundle {
     val en = Input(Bool())
     val start = Input(Bool())
-    val maxRowAddr = Input(UInt(params.maxRowAddrWidth.W))
-    val maxColAddr = Input(UInt(params.maxColAddrWidth.W))
-    val innerDim = Input(Dimension())
-    val count = Input(UInt(log2Ceil(params.elementTableLength).W))
-    val seed = Input(UInt(params.seedWidth.W))
-    val patternTable = Input(Vec(params.patternTableLength, new Pattern()))
-    val elementSequence = Input(Vec(params.elementTableLength, new Element()))
+    val maxRowAddr = Input(UInt(params.maxRowAddrWidth.W))  
+    val maxColAddr = Input(UInt(params.maxColAddrWidth.W))  
+    val innerDim = Input(Dimension())  
+    val numElements = Input(UInt(log2Ceil(params.elementTableLength).W))  
+    val seed = Input(UInt(params.seedWidth.W))  
+    val patternTable = Input(Vec(params.patternTableLength, UInt(params.dataWidth.W))) 
+    val elementSequence = Input(Vec(params.elementTableLength, new Element())) 
     val cycleLimit = Input(UInt(32.W))
     val sramEn = Output(Bool())
     val sramWen = Output(Bool())
@@ -101,25 +96,57 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val resetHash = Output(Bool())
   })
 
-  val lfsr = new MaxPeriodFibonacciLFSR(77);
-  lfsr.io.seed := io.seed
-  val rand_val = lfsr.io.out
+  val lfsr = Module(new MaxPeriodFibonacciLFSR(params.seedWidth))
+  lfsr.io.seed.bits := io.seed.asBools
+  lfsr.io.seed.valid := io.start
+  lfsr.io.increment := true.B
+  val rand = lfsr.io.out
 
+  io.data := 0.U
+  io.mask := 0.U
+  io.checkEn := false.B
+  io.cycle := 0.U
+  io.done := false.B
+  io.resetHash := false.B
+
+  val row = RegInit(0.asUInt(params.maxRowAddrWidth.W))
+  val col = RegInit(0.asUInt(params.maxColAddrWidth.W))
   val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
   val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
+  val inProgress = RegInit(false.B)
+
+  io.row := row
+  io.col := col
+
   val currElement = Wire(new Element)
   val currOperation = Wire(new Operation)
   val currOperationElement = Wire(new OperationElement)
-  val inProgress = RegInit(false.B)
+  val opsDone = Wire(Bool())
+  val up = Wire(Bool())
+  val rowsDone = Wire(Bool())
+  val colsDone = Wire(Bool())
+  val addrDone = Wire(Bool())
 
   currElement := io.elementSequence(elementIndex)
   currOperationElement := currElement.operationElement
   currOperation := currOperationElement.operations(opIndex)
+  opsDone := opIndex === currOperationElement.maxIdx
+  up := currOperationElement.dir === Direction.up
+
+  val rowEnd = Mux(up, io.maxRowAddr, 0.U)
+  val colEnd = Mux(up, io.maxColAddr, 0.U)
+  val rowStart = Mux(up, 0.U, io.maxRowAddr)
+  val colStart = Mux(up, 0.U, io.maxColAddr)
+  val rowNext = Mux(up, row + 1.U, row - 1.U)
+  val colNext = Mux(up, col + 1.U, col - 1.U)
+  rowsDone := row === rowEnd
+  colsDone := col === colEnd
+  addrDone := rowsDone && colsDone
 
   io.sramEn := false.B
   io.sramWen := false.B
 
-  when(io.start && io.en) {
+  when (io.start && io.en) {
     elementIndex := 0.U
     opIndex := 0.U
     inProgress := true.B
@@ -130,11 +157,24 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
       io.sramEn := true.B
       io.sramWen := false.B
       opIndex := opIndex + 1.U
-      when(opIndex === currOperationElement.count) {
-        // on the next cycle, begin a new operation
-        elementIndex := elementIndex + 1.U
-        opIndex := 0.U
-      }
+    }
+  }
+
+  when (opsDone) {
+    opIndex := 0.U
+    row := rowNext
+    col := colNext
+    when (addrDone) {
+      elementIndex := elementIndex + 1.U
+      // TODO these should be rowStartNext and rowEndNext
+
+    }
+    when (!addrDone && rowsDone && io.innerDim === Dimension.row) {
+      row := rowStart
+    }
+
+    when (!addrDone && colsDone && io.innerDim === Dimension.col) {
+      col := colStart
     }
   }
 
