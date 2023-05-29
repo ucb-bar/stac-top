@@ -36,7 +36,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   }
 
   class Operation extends Bundle {
-    val operation = OperationType()
+    val operationType = OperationType()
     val patternAddress = UInt(log2Ceil(params.patternTableLength).W)
     val flipped = FlipType()
   }
@@ -95,6 +95,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   currElement := io.elementSequence(elementIndex)
   currOperationElement := currElement.operationElement
   currOperation := currOperationElement(opIndex)
+
+  io.sramEn := false.B
+  io.sramWen := false.B
     
   when (io.start && io.en) {
     elementIndex := 0.U
@@ -104,8 +107,13 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   
   when (inProgress) {
     when (currElement.elementType == ElementType.operationElement) {
+      io.sramEn := true.B
+      io.sramWen := currOperation.
+      opIndex := opIndex + 1.U
       when (opIndex === currOperationElement.count) {
+        // on the next cycle, begin a new operation
         elementIndex := elementIndex + 1.U
+        opIndex := 0.U
       }
     }
   }
