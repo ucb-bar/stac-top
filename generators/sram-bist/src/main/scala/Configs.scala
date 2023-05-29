@@ -33,7 +33,7 @@ class WithSramBist(base: BigInt) extends Config((site, here, up) => {
 })
 
 //trait CanHavePeripheryProgrammableBist {
-  // connect Programmable BIST to subsystem here
+// connect Programmable BIST to subsystem here
 //}
 
 // class WithProgrammableBist() extends Config((site, here, up) => {

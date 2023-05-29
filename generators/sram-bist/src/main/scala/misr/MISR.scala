@@ -10,37 +10,50 @@ class MISRIO(val n: Int) extends Bundle {
   val out: Vec[Bool] = Output(Vec(n, Bool()))
 }
 
-abstract class Compressor(val width: Int, val seed: Option[BigInt], step: Int = 1, updateSeed: Boolean = false)
-    extends Module {
+abstract class Compressor(
+    val width: Int,
+    val seed: Option[BigInt],
+    step: Int = 1,
+    updateSeed: Boolean = false
+) extends Module {
   require(width > 0, s"Width must be greater than zero! (Found '$width')")
   require(step > 0, s"Step size must be greater than one! (Found '$step')")
 
   val io: MISRIO = IO(new MISRIO(width))
 
-  /** Allow implementations to override the reset value, e.g., if some bits should be don't-cares. */
+  /** Allow implementations to override the reset value, e.g., if some bits
+    * should be don't-cares.
+    */
   protected def resetValue: Vec[Bool] = seed match {
     case Some(s) => VecInit(s.U(width.W).asBools)
     case None    => WireDefault(Vec(width, Bool()), DontCare)
   }
 
-  /** Internal state of the PRNG. If the user sets a seed, this is initialized to the seed. If the user does not set a
-    * seed this is left uninitialized. In the latter case, a PRNG subclass *must do something to handle lockup*, e.g.,
-    * the PRNG state should be manually reset to a safe value. [[LFSR]] handles this by, based on the chosen reduction
-    * operator, either sets or resets the least significant bit of the state.
+  /** Internal state of the PRNG. If the user sets a seed, this is initialized
+    * to the seed. If the user does not set a seed this is left uninitialized.
+    * In the latter case, a PRNG subclass *must do something to handle lockup*,
+    * e.g., the PRNG state should be manually reset to a safe value. [[LFSR]]
+    * handles this by, based on the chosen reduction operator, either sets or
+    * resets the least significant bit of the state.
     */
   private[misr] val state: Vec[Bool] = RegInit(resetValue)
 
   /** State update function
-    * @param s input state
-    * @return the next state
+    * @param s
+    *   input state
+    * @return
+    *   the next state
     */
   def delta(s: Seq[Bool], in: Seq[Bool]): Seq[Bool]
 
   /** The method that will be used to update the state of this PRNG
-    * @param s input state
-    * @return the next state after `step` applications of [[PRNG.delta]]
+    * @param s
+    *   input state
+    * @return
+    *   the next state after `step` applications of [[PRNG.delta]]
     */
-  final def nextState(s: Seq[Bool], in: Seq[Bool]): Seq[Bool] = (0 until step).foldLeft(s) { case (s, _) => delta(s, in) }
+  final def nextState(s: Seq[Bool], in: Seq[Bool]): Seq[Bool] =
+    (0 until step).foldLeft(s) { case (s, _) => delta(s, in) }
 
   when(io.en) {
     state := nextState(state, io.in)
@@ -56,8 +69,10 @@ abstract class Compressor(val width: Int, val seed: Option[BigInt], step: Int = 
 }
 
 /** A reduction operation for a MISR.
-  * @see [[XOR]]
-  * @see [[XNOR]]
+  * @see
+  *   [[XOR]]
+  * @see
+  *   [[XNOR]]
   */
 sealed trait MISRReduce extends ((Bool, Bool) => Bool)
 
@@ -73,31 +88,46 @@ object XNOR extends MISRReduce {
 
 /** Trait that defines a MISR.
   *
-  * @define paramWidth @param width the width of the LFSR
-  * @define paramTaps @param taps a set of tap points to use when constructing the LFSR
-  * @define paramSeed @param seed an initial value for internal LFSR state. If [[scala.None None]], then the LFSR
-  * state LSB will be set to a known safe value on reset (to prevent lock up).
-  * @define paramReduction @param reduction the reduction operation (either [[chisel3.util.random.XOR XOR]] or
-  * [[chisel3.util.random.XNOR XNOR]])
-  * @define paramStep @param step the number of state updates per cycle
-  * @define paramUpdateSeed @param updateSeed if true, when loading the seed the state will be updated as if the seed
-  * were the current state, if false, the state will be set to the seed
-  * @define seedExplanation If the user specifies a seed, then a compile-time check is added that they are not
-  * initializing the LFSR to a state which will cause it to lock up. If the user does not set a seed, then the least
-  * significant bit of the state will be set or reset based on the choice of reduction operator.
+  * @define paramWidth
+  *   \@param width the width of the LFSR
+  * @define paramTaps
+  *   \@param taps a set of tap points to use when constructing the LFSR
+  * @define paramSeed
+  *   \@param seed an initial value for internal LFSR state. If
+  *   [[scala.None None]], then the LFSR state LSB will be set to a known safe
+  *   value on reset (to prevent lock up).
+  * @define paramReduction
+  *   \@param reduction the reduction operation (either
+  *   [[chisel3.util.random.XOR XOR]] or [[chisel3.util.random.XNOR XNOR]])
+  * @define paramStep
+  *   \@param step the number of state updates per cycle
+  * @define paramUpdateSeed
+  *   \@param updateSeed if true, when loading the seed the state will be
+  *   updated as if the seed were the current state, if false, the state will be
+  *   set to the seed
+  * @define seedExplanation
+  *   If the user specifies a seed, then a compile-time check is added that they
+  *   are not initializing the LFSR to a state which will cause it to lock up.
+  *   If the user does not set a seed, then the least significant bit of the
+  *   state will be set or reset based on the choice of reduction operator.
   */
 trait MISR extends Compressor {
 
-  /** The binary reduction operation used by this LFSR, either [[chisel3.util.random.XOR XOR]] or
-    * [[chisel3.util.random.XNOR XNOR]]. This has the effect of mandating what seed is invalid.
+  /** The binary reduction operation used by this LFSR, either
+    * [[chisel3.util.random.XOR XOR]] or [[chisel3.util.random.XNOR XNOR]]. This
+    * has the effect of mandating what seed is invalid.
     */
   def reduction: MISRReduce
 
   override protected def resetValue: Vec[Bool] = seed match {
     case Some(s) =>
       reduction match {
-        case XOR  => require(s != 0, "Seed cannot be zero")
-        case XNOR => require(s != BigInt(2).pow(width) - 1, "Seed cannot be all ones (max value)")
+        case XOR => require(s != 0, "Seed cannot be zero")
+        case XNOR =>
+          require(
+            s != BigInt(2).pow(width) - 1,
+            "Seed cannot be all ones (max value)"
+          )
       }
       super.resetValue
 
@@ -115,13 +145,16 @@ trait MISR extends Compressor {
 }
 
 object MISR {
-  private[misr] def badWidth(width: Int): Nothing = throw new IllegalArgumentException(
-    s"No max period LFSR taps stored for requested width '$width'"
-  )
+  private[misr] def badWidth(width: Int): Nothing =
+    throw new IllegalArgumentException(
+      s"No max period LFSR taps stored for requested width '$width'"
+    )
 
   lazy val tapsMaxPeriod: Map[Int, Seq[Set[Int]]] = tapsFirst ++ tapsSecond
 
-  /** First portion of known taps (a combined map hits the 64KB JVM method limit) */
+  /** First portion of known taps (a combined map hits the 64KB JVM method
+    * limit)
+    */
   private def tapsFirst = Map(
     2 -> Seq(Set(2, 1)),
     3 -> Seq(Set(3, 2)),
@@ -518,7 +551,9 @@ object MISR {
     394 -> Seq(Set(394, 259), Set(394, 392, 387, 386))
   )
 
-  /** Second portion of known taps (a combined map hits the 64KB JVM method limit) */
+  /** Second portion of known taps (a combined map hits the 64KB JVM method
+    * limit)
+    */
   private def tapsSecond = Map(
     395 -> Seq(Set(395, 390, 389, 384)),
     396 -> Seq(Set(396, 371), Set(396, 392, 390, 389)),
@@ -920,15 +955,18 @@ object MISR {
 
 /** Fibonacci Linear Feedback Shift Register (LFSR) generator.
   *
-  * A Fibonacci LFSR can be generated by defining a width and a set of tap points (corresponding to a polynomial). An
-  * optional initial seed and a reduction operation ([[XOR]], the default, or [[XNOR]]) can be used to augment the
-  * generated hardware. The resulting hardware has support for a run-time programmable seed (via [[PRNGIO.seed]]) and
-  * conditional increment (via [[PRNGIO.increment]]).
+  * A Fibonacci LFSR can be generated by defining a width and a set of tap
+  * points (corresponding to a polynomial). An optional initial seed and a
+  * reduction operation ([[XOR]], the default, or [[XNOR]]) can be used to
+  * augment the generated hardware. The resulting hardware has support for a
+  * run-time programmable seed (via [[PRNGIO.seed]]) and conditional increment
+  * (via [[PRNGIO.increment]]).
   *
   * $seedExplanation
   *
-  * In the example below, a 4-bit Fibonacci LFSR is constructed. Tap points are defined as four and three (using LFSR
-  * convention of indexing from one). This results in the hardware configuration shown in the diagram.
+  * In the example below, a 4-bit Fibonacci LFSR is constructed. Tap points are
+  * defined as four and three (using LFSR convention of indexing from one). This
+  * results in the hardware configuration shown in the diagram.
   *
   * {{{
   * val lfsr4 = Module(new FibonacciLFSR(4, Set(4, 3))
@@ -942,25 +980,22 @@ object MISR {
   * //     +-------+           +-------+           +-------+           +-------+
   * }}}
   *
-  * If you require a maximal period Fibonacci LFSR of a specific width, you can use [[MaxPeriodFibonacciLFSR]]. If you
-  * only require a pseudorandom [[UInt]] you can use the [[FibonacciLFSR$ FibonacciLFSR companion
-  * object]].
-  * @see [[https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Fibonacci_LFSRs]]
-  * $paramWidth
-  * $paramTaps
-  * $paramSeed
-  * $paramReduction
-  * $paramStep
-  * $paramUpdateSeed
+  * If you require a maximal period Fibonacci LFSR of a specific width, you can
+  * use [[MaxPeriodFibonacciLFSR]]. If you only require a pseudorandom [[UInt]]
+  * you can use the [[FibonacciLFSR$ FibonacciLFSR companion object]].
+  * @see
+  *   [[https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Fibonacci_LFSRs]]
+  *   $paramWidth $paramTaps $paramSeed $paramReduction $paramStep
+  *   $paramUpdateSeed
   */
 class FibonacciMISR(
-  width:         Int,
-  taps:          Set[Int],
-  seed:          Option[BigInt] = Some(1),
-  val reduction: MISRReduce = XOR,
-  step:          Int = 1,
-  updateSeed:    Boolean = false)
-    extends Compressor(width, seed, step, updateSeed)
+    width: Int,
+    taps: Set[Int],
+    seed: Option[BigInt] = Some(1),
+    val reduction: MISRReduce = XOR,
+    step: Int = 1,
+    updateSeed: Boolean = false
+) extends Compressor(width, seed, step, updateSeed)
     with MISR {
 
   def delta(s: Seq[Bool], in: Seq[Bool]): Seq[Bool] = {
@@ -968,23 +1003,28 @@ class FibonacciMISR(
       if (i == 0) {
         (Seq(in(0)) ++ taps.map { case i => s(i - 1) }).reduce(reduction)
       } else {
-        reduction(s(i-1), in(i))
+        reduction(s(i - 1), in(i))
       }
     })
   }
 
 }
 
-/** A maximal period Fibonacci Linear Feedback Shift Register (LFSR) generator. The maximal period taps are sourced from
+/** A maximal period Fibonacci Linear Feedback Shift Register (LFSR) generator.
+  * The maximal period taps are sourced from
   * [[LFSR.tapsMaxPeriod LFSR.tapsMaxPeriod]].
   * {{{
   * val lfsr8 = Module(new MaxPeriodFibonacciLFSR(8))
   * }}}
-  * $paramWidth
-  * $paramSeed
-  * $paramReduction
+  * $paramWidth $paramSeed $paramReduction
   */
-class MaxPeriodFibonacciMISR(width: Int, seed: Option[BigInt] = Some(1), reduction: MISRReduce = XOR)
-    extends FibonacciMISR(width, MISR.tapsMaxPeriod.getOrElse(width, MISR.badWidth(width)).head, seed, reduction)
-
-
+class MaxPeriodFibonacciMISR(
+    width: Int,
+    seed: Option[BigInt] = Some(1),
+    reduction: MISRReduce = XOR
+) extends FibonacciMISR(
+      width,
+      MISR.tapsMaxPeriod.getOrElse(width, MISR.badWidth(width)).head,
+      seed,
+      reduction
+    )

@@ -4,10 +4,9 @@ import srambist.{ProgrammableBistParams}
 import chisel3._
 import chisel3.ChiselEnum
 import chisel3.util.log2Ceil
-import chisel3.util.random.FibonacciLFSR
+import chisel3.util.random.MaxPeriodFibonacciLFSR
 
 class ProgrammableBist(params: ProgrammableBistParams) extends Module {
- 
   object OperationType extends ChiselEnum {
     val read = Value(0.U(2.W))
     val write = Value(1.U(2.W))
@@ -50,7 +49,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     // Bitwise flip data?
     val flipped = FlipType()
   }
-  
+
   class OperationElement extends Bundle {
     val operations = Vec(params.operationsPerElement, new Operation())
     val count = UInt(log2Ceil(params.operationsPerElement).W)
@@ -58,7 +57,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val mask = UInt(log2Ceil(params.patternTableLength).W)
     // Number of random addresses to try.
     // Only used if `dir` is set to `rand`.
-    val numAddrs = Uint(14.W)
+    val numAddrs = UInt(14.W)
   }
 
   class WaitElement extends Bundle {
@@ -86,29 +85,32 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val patternTable = Input(Vec(params.patternTableLength, new Pattern())) 
     val elementSequence = Input(Vec(params.elementTableLength, new Element())) 
     val cycleLimit = Input(UInt(32.W))
-
     val sramEn = Output(Bool())
     val sramWen = Output(Bool())
     val row = Output(UInt(params.maxRowAddrWidth.W))
     val col = Output(UInt(params.maxColAddrWidth.W))
     val data = Output(UInt(params.dataWidth.W))
     val mask = Output(UInt(params.dataWidth.W))
+    val checkEn = Output(Bool())
+    val fail = Output(Bool())
+    val cycle = Output(UInt(32.W))
 
   })
 
-  val lfsr = Module(new FibonacciLFSR(params.seedWidth, Set(4, 3)))
+  val lfsr = new MaxPeriodFibonacciLFSR(77);
   lfsr.io.seed := io.seed
   val rand_val = lfsr.io.out
+
   val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
   val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
   val currElement = Wire(new Element)
   val currOperation = Wire(new Operation)
-  val currOperationElement = Wire(new Operation)
+  val currOperationElement = Wire(new OperationElement)
   val inProgress = RegInit(false.B)
 
   currElement := io.elementSequence(elementIndex)
   currOperationElement := currElement.operationElement
-  currOperation := currOperationElement(opIndex)
+  currOperation := currOperationElement.operations(opIndex)
 
   io.sramEn := false.B
   io.sramWen := false.B
@@ -120,9 +122,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   }
   
   when (inProgress) {
-    when (currElement.elementType == ElementType.operationElement) {
+    when (currElement.elementType === ElementType.rwOp) {
       io.sramEn := true.B
-      io.sramWen := currOperation.
+      io.sramWen := false.B
       opIndex := opIndex + 1.U
       when (opIndex === currOperationElement.count) {
         // on the next cycle, begin a new operation
@@ -143,4 +145,3 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   */
 
 }
-
