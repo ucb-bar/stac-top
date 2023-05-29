@@ -24,7 +24,7 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.maxRowAddr.poke(maxRows.U)
       d.io.maxColAddr.poke(maxCols.U)
       d.io.innerDim.poke(d.Dimension.col)
-      d.io.numElements.poke(1.U)
+      d.io.maxElementIdx.poke(1.U)
       d.io.seed.poke(1.U)
       d.io.patternTable.poke(Vec.Lit(zeroData, zeroData, zeroData, zeroData))
       d.io.elementSequence.poke(Vec.Lit(march, march, march, march))

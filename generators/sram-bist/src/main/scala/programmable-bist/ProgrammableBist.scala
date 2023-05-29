@@ -79,7 +79,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val maxRowAddr = Input(UInt(params.maxRowAddrWidth.W))
     val maxColAddr = Input(UInt(params.maxColAddrWidth.W))
     val innerDim = Input(Dimension())
-    val numElements = Input(UInt(log2Ceil(params.elementTableLength).W))
+    val maxElementIdx = Input(UInt(log2Ceil(params.elementTableLength).W))
     val seed = Input(UInt(params.seedWidth.W))
     val patternTable =
       Input(Vec(params.patternTableLength, UInt(params.dataWidth.W)))
@@ -112,14 +112,14 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   io.done := false.B
   io.resetHash := false.B
 
-  val row = RegInit(0.asUInt(params.maxRowAddrWidth.W))
-  val col = RegInit(0.asUInt(params.maxColAddrWidth.W))
+  val rowCounter = RegInit(0.asUInt(params.maxRowAddrWidth.W))
+  val colCounter = RegInit(0.asUInt(params.maxColAddrWidth.W))
   val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
   val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
   val inProgress = RegInit(false.B)
 
-  io.row := row
-  io.col := col
+  io.row := rowCounter
+  io.col := colCounter
 
   val currElement = Wire(new Element)
   val currOperation = Wire(new Operation)
@@ -136,14 +136,21 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   opsDone := opIndex === currOperationElement.maxIdx
   up := currOperationElement.dir === Direction.up
 
+  val upNext = Mux(
+    elementIndex === io.maxElementIdx,
+    true.B,
+    io.elementSequence(elementIndex + 1.U).operationElement.dir === Direction.up
+  )
   val rowEnd = Mux(up, io.maxRowAddr, 0.U)
   val colEnd = Mux(up, io.maxColAddr, 0.U)
   val rowStart = Mux(up, 0.U, io.maxRowAddr)
   val colStart = Mux(up, 0.U, io.maxColAddr)
-  val rowNext = Mux(up, row + 1.U, row - 1.U)
-  val colNext = Mux(up, col + 1.U, col - 1.U)
-  rowsDone := row === rowEnd
-  colsDone := col === colEnd
+  val rowStartNext = Mux(upNext, 0.U, io.maxRowAddr)
+  val colStartNext = Mux(upNext, 0.U, io.maxColAddr)
+  val rowNext = Mux(up, rowCounter + 1.U, rowCounter - 1.U)
+  val colNext = Mux(up, colCounter + 1.U, colCounter - 1.U)
+  rowsDone := rowCounter === rowEnd
+  colsDone := colCounter === colEnd
   addrDone := rowsDone && colsDone
 
   io.sramEn := false.B
@@ -166,22 +173,25 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   when(opsDone) {
     opIndex := 0.U
     when(io.innerDim === Dimension.row) {
-      row := rowNext
+      rowCounter := rowNext
+    }.otherwise {
+      colCounter := colNext
     }
-      .otherwise {
-        col := colNext
-      }
     when(addrDone) {
       elementIndex := elementIndex + 1.U
       // TODO these should be rowStartNext and rowEndNext
+      rowCounter := rowStartNext
+      colCounter := colStartNext
 
     }
     when(!addrDone && rowsDone && io.innerDim === Dimension.row) {
-      row := rowStart
+      rowCounter := rowStart
+      colCounter := colNext
     }
 
     when(!addrDone && colsDone && io.innerDim === Dimension.col) {
-      col := colStart
+      colCounter := colStart
+      rowCounter := rowNext
     }
   }
 
