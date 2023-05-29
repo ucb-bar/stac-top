@@ -41,9 +41,9 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   })
 
   io.sramClk := ClockGate(clock, io.sramEn)
-  io.addr := Cat(io.row(params.rowWidth - 1, 0), io.col(params.colWidth - 1, 0))
-  io.data := io.bistData(params.dataWidth - 1, 0)
-  io.mask := io.bistMask(params.maskWidth - 1, 0)
+  io.addr := Cat(io.inRow(params.rowWidth - 1, 0), io.inCol(params.colWidth - 1, 0))
+  io.data := io.inData(params.dataWidth - 1, 0)
+  io.mask := io.inMask(params.maskWidth - 1, 0)
 
   val delay_line = Module(new DelayLine)
   delay_line.io.clk_in := clock.asBool
