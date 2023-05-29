@@ -101,6 +101,8 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   lfsr.io.seed.valid := io.start
   lfsr.io.increment := true.B
   val rand = lfsr.io.out
+  // val randAddr = rand(params.dataWidth-1, 0)
+  // val randMask = rand(2*params.dataWidth-1, params.dataWidth)
 
   io.data := 0.U
   io.mask := 0.U
@@ -162,8 +164,12 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
 
   when (opsDone) {
     opIndex := 0.U
-    row := rowNext
-    col := colNext
+    when (io.innerDim === Dimension.row) {
+      row := rowNext
+    }
+    .otherwise {
+      col := colNext
+    }
     when (addrDone) {
       elementIndex := elementIndex + 1.U
       // TODO these should be rowStartNext and rowEndNext
