@@ -1,12 +1,13 @@
-/*
-package sramtestunit.programmablebist
+package srambist.programmablebist
 
-import sramtestunit.{ProgrammableBistParams}
+import srambist.{ProgrammableBistParams}
+import chisel3._
+import chisel3.ChiselEnum
+import chisel3.util.log2Ceil
+import chisel3.util.random.FibonacciLFSR
 
 class ProgrammableBist(params: ProgrammableBistParams) extends Module {
-
-  val lfsr = LFSR(77, increment = true.B, seed = seed);
-  
+ 
   object OperationType extends ChiselEnum {
     val read = Value(0.U(2.W))
     val write = Value(1.U(2.W))
@@ -24,9 +25,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val rand = Value(2.U(2.W))
   }
 
-  object Element extends ChiselEnum {
-    val operationElement = OperationElement()
-    val waitElement = WaitElement()
+  object ElementType extends ChiselEnum {
+    val waitOp = Value(0.U(1.W))
+    val rwOp = Value(1.U(1.W))
   }
 
   object Dimension extends ChiselEnum {
@@ -41,9 +42,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   }
   
   class OperationElement extends Bundle {
-    val operations = Vec(params.operationsPerElement, Operation())
+    val operations = Vec(params.operationsPerElement, new Operation())
     val count = UInt(log2Ceil(params.operationsPerElement).W)
-    val direction = Direction()
+    val dir = Direction()
     val mask = UInt(log2Ceil(params.patternTableLength).W)
   }
 
@@ -51,28 +52,73 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val cyclesToWait = UInt(14.W)
   }
 
+  class Element extends Bundle {
+    val operationElement = new OperationElement()
+    val waitElement = new WaitElement()
+    val elementType = ElementType()
+  }
+
   class Pattern extends Bundle {
-    val pattern = UInt(64.W) // todo: what is the best size of the pattern?
+    val pattern = UInt(params.dataWidth.W) // todo: what is the best size of the pattern?
   }
 
   val io = IO(new Bundle {
     val en = Input(Bool())
-    val maxRowAddr = Input(UInt(10.W))  
-    val maxColAddr = Input(UInt(3.W))  
+    val start = Input(Bool())
+    val maxRowAddr = Input(UInt(params.maxRowAddrWidth.W))  
+    val maxColAddr = Input(UInt(params.maxColAddrWidth.W))  
     val innerDim = Input(Dimension())  
     val count = Input(UInt(log2Ceil(params.elementTableLength).W))  
-    val seed = Input(UInt(77.W))  
-    val patternTable = Input(Vec(params.patternTableLength, Pattern())) 
-    val elementSequence = Input(Vec(params.elementTableLength, Element())) 
+    val seed = Input(UInt(params.seedWidth.W))  
+    val patternTable = Input(Vec(params.patternTableLength, new Pattern())) 
+    val elementSequence = Input(Vec(params.elementTableLength, new Element())) 
 
     val sramEn = Output(Bool())
     val sramWen = Output(Bool())
-    val row = Output(UInt(10.W))
-    val col = Output(UInt(3.W))
-    val data = Output(64.W)
-    val mask = Output(64.W)
+    val row = Output(UInt(params.maxRowAddrWidth.W))
+    val col = Output(UInt(params.maxColAddrWidth.W))
+    val data = Output(UInt(params.dataWidth.W))
+    val mask = Output(UInt(params.dataWidth.W))
 
   })
 
+  val lfsr = Module(new FibonacciLFSR(params.seedWidth, Set(4, 3)))
+  lfsr.io.seed := io.seed
+  val rand_val = lfsr.io.out
+  val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
+  val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
+  val currElement = Wire(new Element)
+  val currOperation = Wire(new Operation)
+  val currOperationElement = Wire(new Operation)
+  val inProgress = RegInit(false.B)
+
+  currElement := io.elementSequence(elementIndex)
+  currOperationElement := currElement.operationElement
+  currOperation := currOperationElement(opIndex)
+    
+  when (io.start && io.en) {
+    elementIndex := 0.U
+    opIndex := 0.U
+    inProgress := true.B
+  }
+  
+  when (inProgress) {
+    when (currElement.elementType == ElementType.operationElement) {
+      when (opIndex === currOperationElement.count) {
+        elementIndex := elementIndex + 1.U
+      }
+    }
+  }
+  
+
+  /** 
+   *  for each element:
+   *    initialize address
+   *    for each address:
+   *      for each operation in element:
+   *        do operation
+   *      update address (up/down depending on element)
+  */
+
 }
-*/
+
