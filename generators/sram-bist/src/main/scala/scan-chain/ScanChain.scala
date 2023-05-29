@@ -23,7 +23,6 @@ class ScanChain(val width: Int, val seed: Option[BigInt] = Some(0)) extends Modu
 
   val state: Vec[Bool] = RegInit(resetValue)
 
-
   val scanNext = io.si +: state.dropRight(1)
 
   when (io.se) {
