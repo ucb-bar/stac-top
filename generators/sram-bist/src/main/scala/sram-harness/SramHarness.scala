@@ -8,63 +8,63 @@ import freechips.rocketchip.util.ClockGate
 import srambist.analog.{Tdc, DelayLine}
 
 case class SramHarnessParams(
-  rowWidth: Int,
-  colWidth: Int,
-  dataWidth: Int,
-  maskWidth: Int,
-
-  )
+    rowWidth: Int,
+    colWidth: Int,
+    dataWidth: Int,
+    maskWidth: Int
+)
 
 object SaeSrc extends ChiselEnum {
   val int, clk, ext = Value
 }
 
-class SramHarness(params: SramHarnessParams) (implicit p: Parameters) extends Module {
+class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
+    extends Module {
 
   val io = IO(new Bundle {
     val sramEn = Input(Bool())
-    val row = Input(UInt(10.W))
-    val col = Input(UInt(3.W))
-    val bistData = Input(UInt(64.W))
-    val bistMask = Input(UInt(64.W))
+    val inRow = Input(UInt(10.W))
+    val inCol = Input(UInt(3.W))
+    val inData = Input(UInt(64.W))
+    val inMask = Input(UInt(64.W))
     val saeInt = Input(Bool())
     val saeSel = Input(SaeSrc())
     val saeClk = Input(Bool()) // TODO: should this be a Clock?
-    val saeCtlBinary = Input(UInt(7.W))
+    val saeCtl = Input(UInt(7.W))
 
     val sramClk = Output(Clock())
     val addr = Output(UInt((params.rowWidth + params.colWidth).W))
     val data = Output(UInt(params.dataWidth.W))
     val mask = Output(UInt(params.maskWidth.W))
     val saeMuxed = Output(Bool())
-    val saeOut = Output(UInt(252.W) )
+    val saeOut = Output(UInt(252.W))
   })
 
   io.sramClk := ClockGate(clock, io.sramEn)
-  io.addr := Cat(io.row(params.rowWidth - 1, 0), io.col(params.colWidth - 1, 0))
-  io.data := io.bistData(params.dataWidth-1, 0)
-  io.mask := io.bistMask(params.maskWidth - 1, 0)
+  io.addr := Cat(io.inRow(params.rowWidth - 1, 0), io.inCol(params.colWidth - 1, 0))
+  io.data := io.inData(params.dataWidth - 1, 0)
+  io.mask := io.inMask(params.maskWidth - 1, 0)
 
   val delay_line = Module(new DelayLine)
   delay_line.io.clk_in := clock.asBool
-  val saeCtlOH = UIntToOH(io.saeCtlBinary)
+  val saeCtlOH = UIntToOH(io.saeCtl)
   delay_line.io.ctl := saeCtlOH
   delay_line.io.ctl_b := ~saeCtlOH
   io.saeMuxed := io.saeInt; // TODO: verify default
-  switch (io.saeSel) {
-    is (SaeSrc.clk) {
+  switch(io.saeSel) {
+    is(SaeSrc.clk) {
       io.saeMuxed := io.saeClk
     }
-    is (SaeSrc.ext) {
+    is(SaeSrc.ext) {
       io.saeMuxed := delay_line.io.clk_out
     }
   }
-  
+
   val tdc = Module(new Tdc)
   tdc.io.a := clock.asBool
   // TODO: insert large buffer before tdc.io.b
   tdc.io.b := io.saeMuxed
-  tdc.io.reset_b := ~reset.asBool
+  tdc.io.reset_b := ~reset.asBool // TODO: is this the right way to do this?
   io.saeOut := tdc.io.dout
 
 }

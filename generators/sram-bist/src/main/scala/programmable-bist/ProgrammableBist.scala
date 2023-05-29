@@ -6,7 +6,7 @@ import sramtestunit.{ProgrammableBistParams}
 class ProgrammableBist(params: ProgrammableBistParams) extends Module {
 
   val lfsr = LFSR(77, increment = true.B, seed = seed);
-  
+
   object OperationType extends ChiselEnum {
     val read = Value(0.U(2.W))
     val write = Value(1.U(2.W))
@@ -39,7 +39,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val patternAddress = UInt(log2Ceil(params.patternTableLength).W)
     val flipped = FlipType()
   }
-  
+
   class OperationElement extends Bundle {
     val operations = Vec(params.operationsPerElement, Operation())
     val count = UInt(log2Ceil(params.operationsPerElement).W)
@@ -57,13 +57,13 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
 
   val io = IO(new Bundle {
     val en = Input(Bool())
-    val maxRowAddr = Input(UInt(10.W))  
-    val maxColAddr = Input(UInt(3.W))  
-    val innerDim = Input(Dimension())  
-    val count = Input(UInt(log2Ceil(params.elementTableLength).W))  
-    val seed = Input(UInt(77.W))  
-    val patternTable = Input(Vec(params.patternTableLength, Pattern())) 
-    val elementSequence = Input(Vec(params.elementTableLength, Element())) 
+    val maxRowAddr = Input(UInt(10.W))
+    val maxColAddr = Input(UInt(3.W))
+    val innerDim = Input(Dimension())
+    val count = Input(UInt(log2Ceil(params.elementTableLength).W))
+    val seed = Input(UInt(77.W))
+    val patternTable = Input(Vec(params.patternTableLength, Pattern()))
+    val elementSequence = Input(Vec(params.elementTableLength, Element()))
 
     val sramEn = Output(Bool())
     val sramWen = Output(Bool())
@@ -75,4 +75,4 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   })
 
 }
-*/
+ */
