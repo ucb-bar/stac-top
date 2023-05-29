@@ -11,7 +11,8 @@ class ScanIO(val n: Int) extends Bundle {
   val q: Vec[Bool] = Output(Vec(n, Bool()))
 }
 
-class ScanChain(val width: Int, val seed: Option[BigInt] = Some(0)) extends Module {
+class ScanChain(val width: Int, val seed: Option[BigInt] = Some(0))
+    extends Module {
   require(width > 0, s"Width must be greater than zero! (Found '$width')")
 
   val io: ScanIO = IO(new ScanIO(width))
@@ -25,13 +26,13 @@ class ScanChain(val width: Int, val seed: Option[BigInt] = Some(0)) extends Modu
 
   val scanNext = io.si +: state.dropRight(1)
 
-  when (io.se) {
+  when(io.se) {
     state := scanNext
   }
-  .otherwise {
-    state := io.d
-  }
+    .otherwise {
+      state := io.d
+    }
 
   io.q := state
-  io.so := state(width-1)
+  io.so := state(width - 1)
 }
