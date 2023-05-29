@@ -37,7 +37,17 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
 
   class Operation extends Bundle {
     val operationType = OperationType()
-    val patternAddress = UInt(log2Ceil(params.patternTableLength).W)
+    // Randomize data?
+    val randData = Bool()
+    // Randomize mask?
+    val randMask = Bool()
+
+    // Data pattern address if data is not randomized.
+    val dataPattern = UInt(log2Ceil(params.patternTableLength).W)
+    // Mask pattern address if mask is not randomized.
+    val maskPattern = UInt(log2Ceil(params.patternTableLength).W)
+
+    // Bitwise flip data?
     val flipped = FlipType()
   }
   
@@ -46,6 +56,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val count = UInt(log2Ceil(params.operationsPerElement).W)
     val dir = Direction()
     val mask = UInt(log2Ceil(params.patternTableLength).W)
+    // Number of random addresses to try.
+    // Only used if `dir` is set to `rand`.
+    val numAddrs = Uint(14.W)
   }
 
   class WaitElement extends Bundle {
@@ -72,6 +85,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     val seed = Input(UInt(params.seedWidth.W))  
     val patternTable = Input(Vec(params.patternTableLength, new Pattern())) 
     val elementSequence = Input(Vec(params.elementTableLength, new Element())) 
+    val cycleLimit = Input(UInt(32.W))
 
     val sramEn = Output(Bool())
     val sramWen = Output(Bool())
