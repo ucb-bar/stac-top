@@ -184,7 +184,6 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     }
     when(addrDone) {
       elementIndex := elementIndex + 1.U
-      // TODO these should be rowStartNext and rowEndNext
       rowCounter := rowStartNext
       colCounter := colStartNext
 
