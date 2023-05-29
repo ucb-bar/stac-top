@@ -73,19 +73,21 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   }
 
   class Pattern extends Bundle {
-    val pattern = UInt(params.dataWidth.W) // todo: what is the best size of the pattern?
+    val pattern = UInt(
+      params.dataWidth.W
+    ) // todo: what is the best size of the pattern?
   }
 
   val io = IO(new Bundle {
     val en = Input(Bool())
     val start = Input(Bool())
-    val maxRowAddr = Input(UInt(params.maxRowAddrWidth.W))  
-    val maxColAddr = Input(UInt(params.maxColAddrWidth.W))  
-    val innerDim = Input(Dimension())  
-    val count = Input(UInt(log2Ceil(params.elementTableLength).W))  
-    val seed = Input(UInt(params.seedWidth.W))  
-    val patternTable = Input(Vec(params.patternTableLength, new Pattern())) 
-    val elementSequence = Input(Vec(params.elementTableLength, new Element())) 
+    val maxRowAddr = Input(UInt(params.maxRowAddrWidth.W))
+    val maxColAddr = Input(UInt(params.maxColAddrWidth.W))
+    val innerDim = Input(Dimension())
+    val count = Input(UInt(log2Ceil(params.elementTableLength).W))
+    val seed = Input(UInt(params.seedWidth.W))
+    val patternTable = Input(Vec(params.patternTableLength, new Pattern()))
+    val elementSequence = Input(Vec(params.elementTableLength, new Element()))
     val cycleLimit = Input(UInt(32.W))
     val sramEn = Output(Bool())
     val sramWen = Output(Bool())
@@ -116,34 +118,28 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
 
   io.sramEn := false.B
   io.sramWen := false.B
-    
-  when (io.start && io.en) {
+
+  when(io.start && io.en) {
     elementIndex := 0.U
     opIndex := 0.U
     inProgress := true.B
   }
-  
-  when (inProgress) {
-    when (currElement.elementType === ElementType.rwOp) {
+
+  when(inProgress) {
+    when(currElement.elementType === ElementType.rwOp) {
       io.sramEn := true.B
       io.sramWen := false.B
       opIndex := opIndex + 1.U
-      when (opIndex === currOperationElement.count) {
+      when(opIndex === currOperationElement.count) {
         // on the next cycle, begin a new operation
         elementIndex := elementIndex + 1.U
         opIndex := 0.U
       }
     }
   }
-  
 
-  /** 
-   *  for each element:
-   *    initialize address
-   *    for each address:
-   *      for each operation in element:
-   *        do operation
-   *      update address (up/down depending on element)
-  */
+  /** for each element: initialize address for each address: for each operation
+    * in element: do operation update address (up/down depending on element)
+    */
 
 }

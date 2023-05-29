@@ -6,15 +6,13 @@ import org.chipsalliance.cde.config.Parameters
 
 import srambist.analog.{Tdc, DelayLine, Sram, SramParams}
 import srambist.sramharness.{SramHarness, SramHarnessParams, SaeSrc}
-import srambist.programmablebist.{
-  ProgrammableBist,
-}
+import srambist.programmablebist.{ProgrammableBist}
 import srambist.ProgrammableBistParams
 import srambist.misr.MaxPeriodFibonacciMISR
 
 case class BistTopParams(
     srams: Seq[SramParams],
-    bistParams: ProgrammableBistParams,
+    bistParams: ProgrammableBistParams
 )
 
 object SramSrc extends ChiselEnum {
@@ -31,7 +29,8 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val misr = Module(
     new MaxPeriodFibonacciMISR(
       32
-    ))
+    )
+  )
 
   val io = IO(new Bundle {
     // Pins
@@ -56,9 +55,12 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val bistMaxRowAddr = Input(UInt(params.bistParams.maxRowAddrWidth.W))
     val bistMaxColAddr = Input(UInt(params.bistParams.maxColAddrWidth.W))
     val bistInnerDim = Input(bist.Dimension())
-    val bistPatternTable = Input(Vec(params.bistParams.patternTableLength, new bist.Pattern())) 
-    val bistElementSequence = Input(Vec(params.bistParams.elementTableLength, new bist.Element())) 
-    val bistNumElements = Input(UInt(log2Ceil(params.bistParams.elementTableLength).W))
+    val bistPatternTable =
+      Input(Vec(params.bistParams.patternTableLength, new bist.Pattern()))
+    val bistElementSequence =
+      Input(Vec(params.bistParams.elementTableLength, new bist.Element()))
+    val bistNumElements =
+      Input(UInt(log2Ceil(params.bistParams.elementTableLength).W))
     val bistCycleLimit = Input(UInt(32.W))
     val ex = Input(Bool())
 
@@ -91,7 +93,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val bistFailCycle = Reg(UInt(32.W))
   val bistExpected = Reg(UInt(32.W))
   val bistReceived = Reg(UInt(32.W))
-  
+
   io.bistFail := bistFail
   io.bistFailCycle := bistFailCycle
   io.bistExpected := bistExpected
@@ -124,7 +126,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
         is(SramSrc.bist) {
           fsmBistEn := true.B
           when(bistCheckEnPrev) {
-            when (bistDataPrev =/= io.dout) {
+            when(bistDataPrev =/= io.dout) {
               bistFail := true.B
               bistFailCycle := bistCyclePrev
               bistExpected := bistDataPrev
@@ -231,6 +233,5 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   )
 
   io.bistSignature := misr.io.out
-
 
 }
