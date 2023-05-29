@@ -3,12 +3,12 @@ package srambist
 import org.chipsalliance.cde.config.{Field, Config}
 
 case class ProgrammableBistParams(
-  elementTableLength : Int = 8,
-  operationsPerElement : Int = 8,
-  patternTableLength : Int = 8,
-  maxRowAddrWidth : Int = 10,
-  maxColAddrWidth : Int = 3,
-  dataWidth : Int = 32,
+    elementTableLength: Int = 8,
+    operationsPerElement: Int = 8,
+    patternTableLength: Int = 8,
+    maxRowAddrWidth: Int = 10,
+    maxColAddrWidth: Int = 3,
+    dataWidth: Int = 32
 ) {
   def seedWidth = dataWidth + maxColAddrWidth + maxRowAddrWidth
 }

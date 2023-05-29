@@ -55,9 +55,16 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val bistMaxRowAddr = Input(UInt(params.bistParams.maxRowAddrWidth.W))
     val bistMaxColAddr = Input(UInt(params.bistParams.maxColAddrWidth.W))
     val bistInnerDim = Input(bist.Dimension())
-    val bistPatternTable = Input(Vec(params.bistParams.patternTableLength, UInt(params.bistParams.dataWidth.W))) 
-    val bistElementSequence = Input(Vec(params.bistParams.elementTableLength, new bist.Element())) 
-    val bistNumElements = Input(UInt(log2Ceil(params.bistParams.elementTableLength).W))
+    val bistPatternTable = Input(
+      Vec(
+        params.bistParams.patternTableLength,
+        UInt(params.bistParams.dataWidth.W)
+      )
+    )
+    val bistElementSequence =
+      Input(Vec(params.bistParams.elementTableLength, new bist.Element()))
+    val bistNumElements =
+      Input(UInt(log2Ceil(params.bistParams.elementTableLength).W))
     val bistCycleLimit = Input(UInt(32.W))
     val ex = Input(Bool())
 

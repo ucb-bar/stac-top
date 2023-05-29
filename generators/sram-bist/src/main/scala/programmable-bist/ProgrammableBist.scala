@@ -76,13 +76,14 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   val io = IO(new Bundle {
     val en = Input(Bool())
     val start = Input(Bool())
-    val maxRowAddr = Input(UInt(params.maxRowAddrWidth.W))  
-    val maxColAddr = Input(UInt(params.maxColAddrWidth.W))  
-    val innerDim = Input(Dimension())  
-    val numElements = Input(UInt(log2Ceil(params.elementTableLength).W))  
-    val seed = Input(UInt(params.seedWidth.W))  
-    val patternTable = Input(Vec(params.patternTableLength, UInt(params.dataWidth.W))) 
-    val elementSequence = Input(Vec(params.elementTableLength, new Element())) 
+    val maxRowAddr = Input(UInt(params.maxRowAddrWidth.W))
+    val maxColAddr = Input(UInt(params.maxColAddrWidth.W))
+    val innerDim = Input(Dimension())
+    val numElements = Input(UInt(log2Ceil(params.elementTableLength).W))
+    val seed = Input(UInt(params.seedWidth.W))
+    val patternTable =
+      Input(Vec(params.patternTableLength, UInt(params.dataWidth.W)))
+    val elementSequence = Input(Vec(params.elementTableLength, new Element()))
     val cycleLimit = Input(UInt(32.W))
     val sramEn = Output(Bool())
     val sramWen = Output(Bool())
@@ -148,7 +149,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   io.sramEn := false.B
   io.sramWen := false.B
 
-  when (io.start && io.en) {
+  when(io.start && io.en) {
     elementIndex := 0.U
     opIndex := 0.U
     inProgress := true.B
@@ -162,24 +163,24 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     }
   }
 
-  when (opsDone) {
+  when(opsDone) {
     opIndex := 0.U
-    when (io.innerDim === Dimension.row) {
+    when(io.innerDim === Dimension.row) {
       row := rowNext
     }
-    .otherwise {
-      col := colNext
-    }
-    when (addrDone) {
+      .otherwise {
+        col := colNext
+      }
+    when(addrDone) {
       elementIndex := elementIndex + 1.U
       // TODO these should be rowStartNext and rowEndNext
 
     }
-    when (!addrDone && rowsDone && io.innerDim === Dimension.row) {
+    when(!addrDone && rowsDone && io.innerDim === Dimension.row) {
       row := rowStart
     }
 
-    when (!addrDone && colsDone && io.innerDim === Dimension.col) {
+    when(!addrDone && colsDone && io.innerDim === Dimension.col) {
       col := colStart
     }
   }
