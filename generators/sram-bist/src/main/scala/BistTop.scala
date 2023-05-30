@@ -38,7 +38,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val sramScanMode = Input(Bool())
     val sramEn = Input(Bool())
     val bistEn = Input(Bool())
-    val bistDone = Input(Bool())
 
     // MMIO registers
     val addr = Input(UInt(13.W))
@@ -72,6 +71,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val tdc = Output(UInt(252.W))
     val done = Output(Bool())
 
+    val bistDone = Output(Bool())
     val bistFail = Output(Bool())
     val bistFailCycle = Output(UInt(32.W))
     val bistExpected = Output(UInt(32.W))
@@ -110,6 +110,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   io.done := false.B
   fsmSramEn := false.B
   fsmBistEn := false.B
+  bist.io.start := false.B
   switch(state) {
     is(State.idle) {
       when(io.ex) {
@@ -117,6 +118,9 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
         state := State.executeOp
         when(io.sramSel === SramSrc.mmio) {
           fsmSramEn := true.B
+        } .otherwise {
+          fsmBistEn := true.B
+          bist.io.start := true.B
         }
       }.otherwise {
         io.done := true.B
@@ -153,10 +157,13 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   bist.io.maxRowAddr := io.bistMaxRowAddr
   bist.io.maxColAddr := io.bistMaxColAddr
   bist.io.innerDim := io.bistInnerDim
-  // TODO: bist.io.count
   bist.io.seed := io.bistRandSeed
   bist.io.patternTable := io.bistPatternTable
   bist.io.elementSequence := io.bistElementSequence
+  bist.io.numElements := io.bistNumElements
+  bist.io.cycleLimit := io.bistCycleLimit
+
+  io.bistDone := bist.io.done
 
   var (srams, harnesses) = params.srams.zipWithIndex.map {
     case (sramParams, i) => {
@@ -167,7 +174,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
         new SramHarness(
           new SramHarnessParams(
             log2Ceil(numRows),
-            log2Ceil(numCols),
+            log2Ceil(sramParams.muxRatio),
             sramParams.dataWidth,
             maskWidth
           )
@@ -179,9 +186,12 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
       sram.io.din := harness.io.data
       sram.io.saeMuxed := harness.io.saeMuxed
 
-      harness.io.sramEn := 0.U
+      harness.io.sramEn := false.B
       harness.io.inRow := 0.U
       harness.io.inCol := 0.U
+      harness.io.inData := 0.U
+      harness.io.inMask := 0.U
+      sram.io.we := false.B
       switch(io.sramSel) {
         is(SramSrc.mmio) {
           harness.io.sramEn := i.U === io.sramId & Mux(
@@ -191,9 +201,9 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
           )
           harness.io.inRow := io.addr(
             log2Ceil(sramParams.numWords) - 1,
-            log2Ceil(numCols)
+            log2Ceil(sramParams.muxRatio)
           )
-          harness.io.inCol := io.addr(log2Ceil(numCols), 0)
+          harness.io.inCol := io.addr(log2Ceil(sramParams.muxRatio) - 1, 0)
           harness.io.inData := io.din(sramParams.dataWidth - 1, 0)
           harness.io.inMask := io.mask(maskWidth - 1, 0)
           sram.io.we := io.we
@@ -213,7 +223,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
       }
 
       harness.io.saeInt := sram.io.saeInt
-      harness.io.saeInt := io.saeSel
+      harness.io.saeSel := io.saeSel
       harness.io.saeClk := io.saeClk
       harness.io.saeCtl := io.saeCtl
       (sram, harness)
@@ -227,7 +237,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   )
 
-  misr.io.in := io.dout
+  misr.io.in := io.dout.asBools
 
   io.tdc := MuxCase(
     0.U,
@@ -236,6 +246,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   )
 
-  io.bistSignature := misr.io.out
+  io.bistSignature := misr.io.out.asUInt
 
 }

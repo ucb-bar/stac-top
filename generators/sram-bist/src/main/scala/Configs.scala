@@ -18,18 +18,18 @@ case class SramTestUnitParams(
 )
 
 object ChiseltestSramFailureMode extends Enumeration {
-  type ChiseltestSramFailureMode = Value
+  type Type = Value
   val stuckAt, stuckOpen, transition, none =
     Value // TODO: Add relevant failure modes
 }
 
 case object WithChiseltestSramsKey
-    extends Field[Option[ChiseltestSramFailureMode.ChiseltestSramFailureMode]](
+    extends Field[Option[ChiseltestSramFailureMode.Type]](
       None
     )
 
 class WithChiseltestSrams(
-    failureMode: ChiseltestSramFailureMode.ChiseltestSramFailureMode
+    failureMode: ChiseltestSramFailureMode.Type
 ) extends Config((site, here, up) => { case WithChiseltestSramsKey =>
       Some(failureMode)
     })
