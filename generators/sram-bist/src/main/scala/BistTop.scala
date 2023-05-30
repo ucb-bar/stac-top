@@ -118,7 +118,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
         state := State.executeOp
         when(io.sramSel === SramSrc.mmio) {
           fsmSramEn := true.B
-        } .otherwise {
+        }.otherwise {
           fsmBistEn := true.B
           bist.io.start := true.B
         }

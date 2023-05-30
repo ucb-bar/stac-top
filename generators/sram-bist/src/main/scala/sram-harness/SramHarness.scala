@@ -41,8 +41,8 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
     val saeOut = Output(UInt(252.W))
   })
 
-  val gatedClock = if (p(WithChiseltestSramsKey).isDefined) { 
-    (clock.asBool & io.sramEn).asClock 
+  val gatedClock = if (p(WithChiseltestSramsKey).isDefined) {
+    (clock.asBool & io.sramEn).asClock
   } else {
     ClockGate(clock, io.sramEn)
   }
