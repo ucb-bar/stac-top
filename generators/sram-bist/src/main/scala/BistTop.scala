@@ -121,8 +121,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
             fsmBistEn := true.B
             bist.io.start := true.B
           }
-          is(SramSrc.mmio) {
-          }
+          is(SramSrc.mmio) {}
         }
       }.otherwise {
         io.done := true.B

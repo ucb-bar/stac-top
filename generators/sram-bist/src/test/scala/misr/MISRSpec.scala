@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 class MISRSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "MISR"
   it should "work with constant input 0000" in {
-    test(new MaxPeriodFibonacciMISR(4)) { c => 
+    test(new MaxPeriodFibonacciMISR(4)) { c =>
       c.io.in.poke(Vec.Lit(false.B, false.B, false.B, false.B))
       c.io.out.expect(Vec.Lit(true.B, false.B, false.B, false.B))
       c.clock.step()
@@ -31,7 +31,7 @@ class MISRSpec extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   it should "work with constant input 1010" in {
-    test(new MaxPeriodFibonacciMISR(4)) { c => 
+    test(new MaxPeriodFibonacciMISR(4)) { c =>
       c.io.in.poke(Vec.Lit(true.B, false.B, true.B, false.B))
       c.io.out.expect(Vec.Lit(true.B, false.B, false.B, false.B))
       c.clock.step()
@@ -53,7 +53,7 @@ class MISRSpec extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   it should "work with changing input" in {
-    test(new MaxPeriodFibonacciMISR(4)) { c => 
+    test(new MaxPeriodFibonacciMISR(4)) { c =>
       c.io.in.poke(Vec.Lit(true.B, false.B, true.B, false.B))
       c.io.out.expect(Vec.Lit(true.B, false.B, false.B, false.B))
       c.clock.step()
@@ -82,4 +82,3 @@ class MISRSpec extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
 }
-

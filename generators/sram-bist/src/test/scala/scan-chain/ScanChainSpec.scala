@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 class ScanChainSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "ScanChain"
   it should "work" in {
-    test(new ScanChain(4)) { d => 
+    test(new ScanChain(4)) { d =>
       d.io.se.poke(false.B)
       d.io.d.poke(Vec.Lit(true.B, false.B, true.B, true.B))
       d.io.si.poke(false.B)
@@ -63,4 +63,3 @@ class ScanChainSpec extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
 }
-

@@ -9,12 +9,18 @@ import org.scalatest.flatspec.AnyFlatSpec
 class SramHarnessSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "SramHarness"
   it should "work with a 128x32m8 SRAM" in {
-    test(new SramHarness(new SramHarnessParams(
-        5, 2, 32, 8
-      ))(
-    Parameters.empty
-)
-      ) { c => 
+    test(
+      new SramHarness(
+        new SramHarnessParams(
+          5,
+          2,
+          32,
+          8
+        )
+      )(
+        Parameters.empty
+      )
+    ) { c =>
       c.io.sramEn.poke(false.B)
       c.io.inRow.poke("b1001101011".U)
       c.io.inCol.poke("b101".U)
@@ -46,4 +52,3 @@ class SramHarnessSpec extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
 }
-
