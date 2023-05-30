@@ -100,6 +100,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   val currElement = Wire(new Element)
   val currOperation = Wire(new Operation)
   val currOperationElement = Wire(new OperationElement)
+  val checkEn = Wire(Bool())
   val opsDone = Wire(Bool())
   val up = Wire(Bool())
   val rowsDone = Wire(Bool())
@@ -131,14 +132,21 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
   val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
   val inProgress = RegInit(false.B)
+  val done = RegInit(true.B)
 
   currElement := io.elementSequence(elementIndex)
   currOperationElement := currElement.operationElement
   currOperation := currOperationElement.operations(opIndex)
   opsDone := opIndex === currOperationElement.maxIdx
   up := currOperationElement.dir === Direction.up
+  checkEn := currOperation.operationType === OperationType.read && !currOperation.randData && currElement.elementType === ElementType.rwOp
 
-  val detData = io.patternTable(currOperation.dataPatternIdx)
+  val dataPatternEntry = io.patternTable(currOperation.dataPatternIdx)
+  val detData = Mux(
+    currOperation.flipped === FlipType.flipped,
+    ~dataPatternEntry,
+    dataPatternEntry
+  )
   val detMask = io.patternTable(currOperation.maskPatternIdx)
 
   val upNext = Mux(
@@ -168,11 +176,16 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   }
 
   when(inProgress) {
+    done := false.B
     when(currElement.elementType === ElementType.rwOp) {
       io.sramEn := true.B
-      io.sramWen := false.B
+      io.sramWen := currOperation.operationType === OperationType.write
       opIndex := opIndex + 1.U
     }
+  }.otherwise {
+    io.sramEn := false.B
+    io.sramWen := false.B
+    done := true.B
   }
 
   when(opsDone) {
@@ -183,7 +196,12 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
       colCounter := colNext
     }
     when(addrDone) {
-      elementIndex := elementIndex + 1.U
+      when(elementIndex === io.maxElementIdx) {
+        done := true.B
+        inProgress := false.B
+      }.otherwise {
+        elementIndex := elementIndex + 1.U
+      }
       rowCounter := rowStartNext
       colCounter := colStartNext
 
@@ -215,9 +233,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   )
   io.data := Mux(currOperation.randData, randData, detData)
   io.mask := Mux(currOperation.randMask, randMask, detMask)
-  io.checkEn := false.B
+  io.checkEn := checkEn
   io.cycle := 0.U
-  io.done := false.B
+  io.done := done
   io.resetHash := false.B
 
 }
