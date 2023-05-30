@@ -6,6 +6,7 @@ import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.util.ClockGate
 
 import srambist.analog.{Tdc, DelayLine}
+import srambist.WithChiseltestSramsKey
 
 case class SramHarnessParams(
     rowWidth: Int,
@@ -40,7 +41,13 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
     val saeOut = Output(UInt(252.W))
   })
 
-  io.sramClk := ClockGate(clock, io.sramEn)
+  val gatedClock = if (p(WithChiseltestSramsKey).isDefined) {
+    (clock.asBool & io.sramEn).asClock
+  } else {
+    ClockGate(clock, io.sramEn)
+  }
+  io.sramClk := gatedClock
+
   io.addr := Cat(
     io.inRow(params.rowWidth - 1, 0),
     io.inCol(params.colWidth - 1, 0)

@@ -38,15 +38,16 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
             rdwrPort(i) := io.din(i)
           }
         }
-      }.otherwise { io.dout := rdwrPort }
+      }.otherwise { io.dout := rdwrPort.asUInt }
     }
+    io.saeInt := clock.asBool
   } else {
     val inner = Module(new SramBlackBox(params))
-    io.we := inner.io.we
-    io.wmask := inner.io.wmask
-    io.addr := inner.io.addr
-    io.din := inner.io.din
-    io.saeMuxed := inner.io.sae_muxed
+    inner.io.we := io.we
+    inner.io.wmask := io.wmask
+    inner.io.addr := io.addr
+    inner.io.din := io.din
+    inner.io.sae_muxed := io.saeMuxed
     io.dout := inner.io.dout
     io.saeInt := inner.io.sae_int
   }
