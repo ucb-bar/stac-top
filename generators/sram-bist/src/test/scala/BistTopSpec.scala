@@ -3,7 +3,6 @@ package srambist
 import chisel3._
 import chisel3.util._
 import chiseltest._
-import chisel3.stage.PrintFullStackTraceAnnotation
 import org.chipsalliance.cde.config.Parameters
 import org.scalatest.flatspec.AnyFlatSpec
 

@@ -115,15 +115,15 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   lfsr.io.seed.valid := io.start
   lfsr.io.increment := true.B
   val rand = lfsr.io.out.asUInt
-  randData := rand(0, params.dataWidth)
-  randMask := rand(params.dataWidth, 2 * params.dataWidth)
+  randData := rand(params.dataWidth-1, 0)
+  randMask := rand(2 * params.dataWidth - 1, params.dataWidth)
   randRow := rand(
+    2 * params.dataWidth + params.maxRowAddrWidth - 1,
     2 * params.dataWidth,
-    2 * params.dataWidth + params.maxRowAddrWidth
   )
   randCol := rand(
+    2 * params.dataWidth + params.maxRowAddrWidth + params.maxColAddrWidth - 1,
     2 * params.dataWidth + params.maxRowAddrWidth,
-    2 * params.dataWidth + params.maxRowAddrWidth + params.maxColAddrWidth
   )
 
   val rowCounter = RegInit(0.asUInt(params.maxRowAddrWidth.W))

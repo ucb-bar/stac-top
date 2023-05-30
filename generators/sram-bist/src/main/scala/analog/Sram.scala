@@ -29,17 +29,15 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
       params.numWords,
       Vec(wmaskWidth, UInt((params.dataWidth / wmaskWidth).W))
     )
-    io.dout := DontCare
+    io.dout := "h12345678".U
+    val rdwrPort = mem(io.addr)
     when(io.we) {
-      val rdwrPort = mem(io.addr)
-      when(io.we) {
-        for (i <- 0 to wmaskWidth - 1) {
-          when(io.wmask(i)) {
-            rdwrPort(i) := io.din(i)
-          }
+      for (i <- 0 to wmaskWidth - 1) {
+        when(io.wmask(i)) {
+          rdwrPort(i) := io.din(i)
         }
-      }.otherwise { io.dout := rdwrPort.asUInt }
-    }
+      }
+    }.otherwise { io.dout := rdwrPort.asUInt }
     io.saeInt := clock.asBool
   } else {
     val inner = Module(new SramBlackBox(params))

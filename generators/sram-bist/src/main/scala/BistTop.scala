@@ -62,7 +62,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     )
     val bistElementSequence =
       Input(Vec(params.bistParams.elementTableLength, new bist.Element()))
-    val bistNumElements =
+    val bistMaxElementIdx =
       Input(UInt(log2Ceil(params.bistParams.elementTableLength).W))
     val bistCycleLimit = Input(UInt(32.W))
     val ex = Input(Bool())
@@ -160,7 +160,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   bist.io.seed := io.bistRandSeed
   bist.io.patternTable := io.bistPatternTable
   bist.io.elementSequence := io.bistElementSequence
-  bist.io.numElements := io.bistNumElements
+  bist.io.maxElementIdx := io.bistMaxElementIdx
   bist.io.cycleLimit := io.bistCycleLimit
 
   io.bistDone := bist.io.done
