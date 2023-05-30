@@ -23,6 +23,20 @@ class SramSpec extends AnyFlatSpec with ChiselScalatestTester {
         c.io.we.poke(false.B)
         c.clock.step()
         c.io.dout.expect("habcdabcd".U)
+
+        c.io.we.poke(true.B)
+        c.io.wmask.poke("hf".U)
+        c.io.addr.poke(63.U)
+        c.io.din.poke("h12345678".U)
+        c.clock.step()
+        c.io.we.poke(false.B)
+        c.clock.step()
+        c.io.dout.expect("h12345678".U)
+
+        c.io.we.poke(false.B)
+        c.io.addr.poke(0.U)
+        c.clock.step()
+        c.io.dout.expect("habcdabcd".U)
     }
   }
 }

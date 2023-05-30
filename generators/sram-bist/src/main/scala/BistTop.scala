@@ -116,11 +116,13 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
       when(io.ex) {
         bistFail := false.B
         state := State.executeOp
-        when(io.sramSel === SramSrc.mmio) {
-          fsmSramEn := true.B
-        }.otherwise {
-          fsmBistEn := true.B
-          bist.io.start := true.B
+        switch(io.sramSel) {
+          is(SramSrc.bist) {
+            fsmBistEn := true.B
+            bist.io.start := true.B
+          }
+          is(SramSrc.mmio) {
+          }
         }
       }.otherwise {
         io.done := true.B
@@ -129,6 +131,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     is(State.executeOp) {
       switch(io.sramSel) {
         is(SramSrc.mmio) {
+          fsmSramEn := true.B // TODO: verify that this is OK for clock gating.
           state := State.delay
         }
         is(SramSrc.bist) {
