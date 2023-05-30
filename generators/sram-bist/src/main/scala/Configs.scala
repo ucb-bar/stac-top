@@ -10,7 +10,7 @@ case class ProgrammableBistParams(
     maxColAddrWidth: Int = 3,
     dataWidth: Int = 32
 ) {
-  def seedWidth = dataWidth + maxColAddrWidth + maxRowAddrWidth
+  def seedWidth = 2 * dataWidth + maxColAddrWidth + maxRowAddrWidth
 }
 
 case class SramTestUnitParams(
