@@ -28,10 +28,9 @@ class ScanChain(val width: Int, val seed: Option[BigInt] = Some(0))
 
   when(io.se) {
     state := scanNext
+  }.otherwise {
+    state := io.d
   }
-    .otherwise {
-      state := io.d
-    }
 
   io.q := state
   io.so := state(width - 1)

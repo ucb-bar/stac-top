@@ -6,17 +6,23 @@ import chisel3.ChiselEnum
 import chisel3.util.log2Ceil
 import chiseltest._
 import chisel3.experimental.VecLiterals._
+import chisel3.experimental.BundleLiterals._
+import chisel3.stage.PrintFullStackTraceAnnotation
 
 import org.scalatest.flatspec.AnyFlatSpec
 
 class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "ProgrammableBist"
   it should "work" in {
-    test(new ProgrammableBist(new ProgrammableBistParams(patternTableLength = 4, elementTableLength = 4))) { d => 
+    test(new ProgrammableBist(new ProgrammableBistParams(patternTableLength = 4, elementTableLength = 4, operationsPerElement = 4))).withAnnotations(Seq(PrintFullStackTraceAnnotation)) { d => 
       val maxRows = 15;
       val maxCols = 7;
-      // val march = chiselTypeOf(d.io.elementSequence).Lit(_.operationElement -> opElement, _.waitElement -> waitElement, _.elementType -> d.ElementType.rwOp)
-      val march = new d.Element()
+      val operation = chiselTypeOf(d.io.elementSequence(0).operationElement.operations(0)).Lit(_.operationType -> d.OperationType.read, _.randData -> false.B, _.randMask -> false.B, _.dataPatternIdx -> 0.U, _.maskPatternIdx -> 0.U, _.flipped -> d.FlipType.unflipped)
+    val opElementList = Vec(4, new d.Operation()).Lit(0 -> operation, 1 -> operation, 2 -> operation, 3 -> operation)
+      val opElement = chiselTypeOf(d.io.elementSequence(0).operationElement).Lit(_.operations -> opElementList, _.maxIdx -> 3.U, _.dir -> d.Direction.up, _.mask -> 0.U, _.numAddrs -> 0.U)
+      val waitElement = chiselTypeOf(d.io.elementSequence(0).waitElement).Lit(_.cyclesToWait -> 0.U)
+      val march = chiselTypeOf(d.io.elementSequence(0)).Lit(_.operationElement -> opElement, _.waitElement -> waitElement, _.elementType -> d.ElementType.rwOp)
+      println(march)
       val zeroData = 0.U(32.W)
 
       d.io.start.poke(true.B)
@@ -27,7 +33,7 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.maxElementIdx.poke(1.U)
       d.io.seed.poke(1.U)
       d.io.patternTable.poke(Vec.Lit(zeroData, zeroData, zeroData, zeroData))
-      d.io.elementSequence.poke(Vec.Lit(march, march, march, march))
+      d.io.elementSequence.poke(Vec(4, new d.Element()).Lit(0 -> march, 1 -> march, 2 -> march, 3 -> march))
       d.clock.step()
     }
   }
