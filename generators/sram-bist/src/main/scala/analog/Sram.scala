@@ -27,17 +27,26 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
   if (p(WithChiseltestSramsKey).isDefined) {
     val mem = SyncReadMem(
       params.numWords,
-      Vec(wmaskWidth, UInt((params.dataWidth / wmaskWidth).W))
+      Vec(wmaskWidth, UInt(params.maskGranularity.W))
     )
-    io.dout := "h12345678".U
+    io.dout := DontCare
     val rdwrPort = mem(io.addr)
     when(io.we) {
       for (i <- 0 to wmaskWidth - 1) {
         when(io.wmask(i)) {
-          rdwrPort(i) := io.din(i)
+          rdwrPort(i) := io.din(
+            params.maskGranularity * (i + 1) - 1,
+            params.maskGranularity * i
+          )
         }
       }
-    }.otherwise { io.dout := rdwrPort.asUInt }
+    }.otherwise {
+      var out = rdwrPort(0)
+      for (i <- 1 to wmaskWidth - 1) {
+        out = Cat(rdwrPort(i), out)
+      }
+      io.dout := out
+    }
     io.saeInt := clock.asBool
   } else {
     val inner = Module(new SramBlackBox(params))
