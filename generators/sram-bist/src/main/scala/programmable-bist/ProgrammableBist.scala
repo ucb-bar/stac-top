@@ -17,7 +17,7 @@ case class ProgrammableBistParams(
   def seedWidth = 2 * dataWidth + maxColAddrWidth + maxRowAddrWidth
 }
 
-class ProgrammableBist(params: ProgrammableBistParams) extends Module {
+class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
 
   object OperationType extends ChiselEnum {
     val read = Value(0.U(2.W))
