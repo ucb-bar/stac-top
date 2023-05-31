@@ -33,7 +33,8 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
         Vec(wmaskWidth, UInt(params.maskGranularity.W))
       )
       io.dout := DontCare
-      val rdwrPort = mem(io.addr)
+      val rdPort = mem(io.addr)
+      val wrPort = mem(io.addr)
       when(io.we) {
         val toWrite = Wire(Vec(params.dataWidth, Bool()))
         toWrite := io.din.asBools
@@ -45,7 +46,7 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
           }
           case ChiseltestSramFailureMode.transition => {
             when(io.addr === 15.U) {
-              when(rdwrPort(0)(0) & ~io.din(0)) {
+              when(rdPort(0)(0) & ~io.din(0)) {
                 toWrite(0) := true.B
               }
             }
@@ -54,16 +55,16 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
         }
         for (i <- 0 to wmaskWidth - 1) {
           when(io.wmask(i)) {
-            rdwrPort(i) := toWrite.asUInt(
+            wrPort(i) := toWrite.asUInt(
               params.maskGranularity * (i + 1) - 1,
               params.maskGranularity * i
             )
           }
         }
       }.otherwise {
-        var out = rdwrPort(0)
+        var out = rdPort(0)
         for (i <- 1 to wmaskWidth - 1) {
-          out = Cat(rdwrPort(i), out)
+          out = Cat(rdPort(i), out)
         }
         io.dout := out
       }
