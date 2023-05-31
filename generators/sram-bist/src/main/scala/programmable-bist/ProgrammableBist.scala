@@ -57,10 +57,9 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     // Number of operations minus 1
     val maxIdx = UInt(log2Ceil(params.operationsPerElement).W)
     val dir = Direction()
-    val mask = UInt(log2Ceil(params.patternTableLength).W)
     // Number of random addresses to try.
     // Only used if `dir` is set to `rand`.
-    val numAddrs = UInt(14.W)
+    val numAddrs = UInt(params.randAddrWidth.W)
   }
 
   class WaitElement extends Bundle {
@@ -106,6 +105,8 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   val rowsDone = Wire(Bool())
   val colsDone = Wire(Bool())
   val addrDone = Wire(Bool())
+  val randAddrOrder = Wire(Bool())
+  val sramWen = Wire(Bool())
   val randData = Wire(UInt(params.dataWidth.W))
   val randMask = Wire(UInt(params.dataWidth.W))
   val randRow = Wire(UInt(params.maxRowAddrWidth.W))
@@ -129,16 +130,18 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
 
   val rowCounter = RegInit(0.asUInt(params.maxRowAddrWidth.W))
   val colCounter = RegInit(0.asUInt(params.maxColAddrWidth.W))
+  // Used for random addresses only
+  val addrCounter = RegInit(1.asUInt(params.randAddrWidth.W))
   val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
   val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
-  val inProgress = RegInit(false.B)
-  val done = RegInit(true.B)
+  val done = RegInit(false.B)
 
   currElement := io.elementSequence(elementIndex)
   currOperationElement := currElement.operationElement
   currOperation := currOperationElement.operations(opIndex)
   opsDone := opIndex === currOperationElement.maxIdx
   up := currOperationElement.dir === Direction.up
+  randAddrOrder := currOperationElement.dir === Direction.rand
   checkEn := currOperation.operationType === OperationType.read && !currOperation.randData && currElement.elementType === ElementType.rwOp
 
   val dataPatternEntry = io.patternTable(currOperation.dataPatternIdx)
@@ -164,32 +167,30 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   val colNext = Mux(up, colCounter + 1.U, colCounter - 1.U)
   rowsDone := rowCounter === rowEnd
   colsDone := colCounter === colEnd
-  addrDone := rowsDone && colsDone
+  addrDone := Mux(
+    randAddrOrder,
+    addrCounter === currOperationElement.numAddrs,
+    rowsDone && colsDone
+  )
 
   io.sramEn := false.B
-  io.sramWen := false.B
+  sramWen := false.B
 
-  when(io.start && io.en) {
-    elementIndex := 0.U
-    opIndex := 0.U
-    inProgress := true.B
-  }
-
-  when(inProgress) {
-    done := false.B
-    when(currElement.elementType === ElementType.rwOp) {
+  when(!done) {
+    when(io.en && currElement.elementType === ElementType.rwOp) {
       io.sramEn := true.B
-      io.sramWen := currOperation.operationType === OperationType.write
+      // TODO wrong for random ops
+      sramWen := currOperation.operationType === OperationType.write
       opIndex := opIndex + 1.U
     }
   }.otherwise {
     io.sramEn := false.B
-    io.sramWen := false.B
-    done := true.B
+    sramWen := false.B
   }
 
-  when(opsDone) {
+  when(io.en && !done && opsDone) {
     opIndex := 0.U
+    addrCounter := addrCounter + 1.U
     when(io.innerDim === Dimension.row) {
       rowCounter := rowNext
     }.otherwise {
@@ -198,9 +199,11 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     when(addrDone) {
       when(elementIndex === io.maxElementIdx) {
         done := true.B
-        inProgress := false.B
+        // io.sramEn := false.B
+        // io.sramWen := false.B
       }.otherwise {
         elementIndex := elementIndex + 1.U
+        addrCounter := 1.U
       }
       rowCounter := rowStartNext
       colCounter := colStartNext
@@ -217,9 +220,14 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     }
   }
 
-  /** for each element: initialize address for each address: for each operation
-    * in element: do operation update address (up/down depending on element)
-    */
+  when(io.start) {
+    rowCounter := 0.U
+    colCounter := 0.U
+    addrCounter := 1.U
+    elementIndex := 0.U
+    opIndex := 0.U
+    done := false.B
+  }
 
   io.row := Mux(
     currOperationElement.dir === Direction.rand,
@@ -237,5 +245,6 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   io.cycle := 0.U
   io.done := done
   io.resetHash := false.B
+  io.sramWen := sramWen
 
 }
