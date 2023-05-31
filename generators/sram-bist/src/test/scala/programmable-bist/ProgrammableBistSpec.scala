@@ -11,6 +11,71 @@ import chisel3.stage.PrintFullStackTraceAnnotation
 
 import org.scalatest.flatspec.AnyFlatSpec
 
+class ProgrammableBistHelpers(val d: ProgrammableBist) {
+  val maxRows = 15;
+  val maxCols = 7;
+
+  def readOp(index: Int, flipped: Boolean = false) = {
+    val flip = if (flipped) d.FlipType.flipped else d.FlipType.unflipped
+    chiselTypeOf(
+      d.io.elementSequence(0).operationElement.operations(0)
+    ).Lit(
+      _.operationType -> d.OperationType.read,
+      _.randData -> false.B,
+      _.randMask -> false.B,
+      _.dataPatternIdx -> index.U,
+      _.maskPatternIdx -> 0.U,
+      _.flipped -> flip
+    )
+  }
+
+  val emptyOp = readOp(0)
+
+  def writeOp(dataIndex: Int, maskIndex: Int, flipped: Boolean = false) = {
+    val flip = if (flipped) d.FlipType.flipped else d.FlipType.unflipped
+    chiselTypeOf(
+      d.io.elementSequence(0).operationElement.operations(0)
+    ).Lit(
+      _.operationType -> d.OperationType.write,
+      _.randData -> false.B,
+      _.randMask -> false.B,
+      _.dataPatternIdx -> dataIndex.U,
+      _.maskPatternIdx -> maskIndex.U,
+      _.flipped -> flip
+    )
+  }
+
+  val opElementList = Vec(4, new d.Operation())
+    .Lit(
+      0 -> writeOp(2, 3),
+      1 -> readOp(2),
+      2 -> writeOp(2, 3, true),
+      3 -> readOp(2, true)
+    )
+  val opElement =
+    chiselTypeOf(d.io.elementSequence(0).operationElement).Lit(
+      _.operations -> opElementList,
+      _.maxIdx -> 3.U,
+      _.dir -> d.Direction.up,
+      _.numAddrs -> 0.U
+    )
+  val waitElement = chiselTypeOf(d.io.elementSequence(0).waitElement)
+    .Lit(_.cyclesToWait -> 0.U)
+  val march: d.Element = chiselTypeOf(d.io.elementSequence(0)).Lit(
+    _.operationElement -> opElement,
+    _.waitElement -> waitElement,
+    _.elementType -> d.ElementType.rwOp
+  )
+  val zeros = 0.U(32.W)
+  val ones = "hffffffff".U(32.W)
+
+  val elementSequence =
+    Vec(4, new d.Element()).Lit(0 -> march, 1 -> march, 2 -> march, 3 -> march)
+  val io = d.io
+  val clock = d.clock
+
+}
+
 class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "ProgrammableBist"
   it should "work for deterministic March test with cols in inner loop" in {
@@ -24,121 +89,62 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       )
     ).withAnnotations(Seq(PrintFullStackTraceAnnotation, WriteVcdAnnotation)) {
       d =>
-        val maxRows = 15;
-        val maxCols = 7;
-        val readOp = chiselTypeOf(
-          d.io.elementSequence(0).operationElement.operations(0)
-        ).Lit(
-          _.operationType -> d.OperationType.read,
-          _.randData -> false.B,
-          _.randMask -> false.B,
-          _.dataPatternIdx -> 3.U,
-          _.maskPatternIdx -> 0.U,
-          _.flipped -> d.FlipType.unflipped
-        )
-        val writeOp = chiselTypeOf(
-          d.io.elementSequence(0).operationElement.operations(0)
-        ).Lit(
-          _.operationType -> d.OperationType.write,
-          _.randData -> false.B,
-          _.randMask -> false.B,
-          _.dataPatternIdx -> 3.U,
-          _.maskPatternIdx -> 0.U,
-          _.flipped -> d.FlipType.unflipped
-        )
-        val readFlippedOp = chiselTypeOf(
-          d.io.elementSequence(0).operationElement.operations(0)
-        ).Lit(
-          _.operationType -> d.OperationType.read,
-          _.randData -> false.B,
-          _.randMask -> false.B,
-          _.dataPatternIdx -> 3.U,
-          _.maskPatternIdx -> 0.U,
-          _.flipped -> d.FlipType.flipped
-        )
-        val writeFlippedOp = chiselTypeOf(
-          d.io.elementSequence(0).operationElement.operations(0)
-        ).Lit(
-          _.operationType -> d.OperationType.write,
-          _.randData -> false.B,
-          _.randMask -> false.B,
-          _.dataPatternIdx -> 3.U,
-          _.maskPatternIdx -> 0.U,
-          _.flipped -> d.FlipType.flipped
-        )
-      val opElementList = Vec(4, new d.Operation())
-        .Lit(0 -> writeOp, 1 -> readOp, 2 -> writeFlippedOp, 3 -> readFlippedOp)
-      val opElement =
-        chiselTypeOf(d.io.elementSequence(0).operationElement).Lit(
-          _.operations -> opElementList,
-          _.maxIdx -> 3.U,
-          _.dir -> d.Direction.up,
-          _.numAddrs -> 0.U
-        )
-      val waitElement = chiselTypeOf(d.io.elementSequence(0).waitElement)
-        .Lit(_.cyclesToWait -> 0.U)
-      val march = chiselTypeOf(d.io.elementSequence(0)).Lit(
-        _.operationElement -> opElement,
-        _.waitElement -> waitElement,
-        _.elementType -> d.ElementType.rwOp
-      )
-      val zeros = 0.U(32.W)
-      val ones = "hffffffff".U(32.W)
 
-      d.clock.setTimeout((maxCols + 1) * (maxRows + 1) * 4 * 4)
-      d.io.start.poke(true.B)
-      d.io.en.poke(true.B)
-      d.io.maxRowAddr.poke(maxRows.U)
-      d.io.maxColAddr.poke(maxCols.U)
-      d.io.innerDim.poke(d.Dimension.col)
-      d.io.maxElementIdx.poke(3.U)
-      d.io.seed.poke(1.U)
-      d.io.patternTable.poke(Vec.Lit(ones, ones, zeros, zeros))
-      d.io.elementSequence.poke(
-        Vec(4, new d.Element())
-          .Lit(0 -> march, 1 -> march, 2 -> march, 3 -> march)
-      )
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.io.start.poke(false.B)
+        val h = new ProgrammableBistHelpers(d)
 
-      for (opNum <- 0 until 4) {
-        for (i <- 0 to maxRows) {
-          for (j <- 0 to maxCols) {
-            d.io.sramEn.expect(true.B)
-            d.io.row.expect(i.U)
-            d.io.col.expect(j.U)
-            d.io.data.expect(zeros)
-            d.io.sramWen.expect(true.B)
-            d.clock.step()
-            d.io.sramEn.expect(true.B)
-            d.io.row.expect(i.U)
-            d.io.col.expect(j.U)
-            d.io.data.expect(zeros)
-            d.io.sramWen.expect(false.B)
-            d.io.checkEn.expect(true.B)
-            d.clock.step()
-            d.io.sramEn.expect(true.B)
-            d.io.row.expect(i.U)
-            d.io.col.expect(j.U)
-            d.io.data.expect(ones)
-            d.io.sramWen.expect(true.B)
-            d.clock.step()
-            d.io.sramEn.expect(true.B)
-            d.io.row.expect(i.U)
-            d.io.col.expect(j.U)
-            d.io.data.expect(ones)
-            d.io.sramWen.expect(false.B)
-            d.io.checkEn.expect(true.B)
-            d.clock.step()
+        h.clock.setTimeout((h.maxCols + 1) * (h.maxRows + 1) * 4 * 4)
+        h.io.start.poke(true.B)
+        h.io.en.poke(true.B)
+        h.io.maxRowAddr.poke(h.maxRows.U)
+        h.io.maxColAddr.poke(h.maxCols.U)
+        h.io.innerDim.poke(h.d.Dimension.col)
+        h.io.maxElementIdx.poke(3.U)
+        h.io.seed.poke(1.U)
+        h.io.patternTable.poke(Vec.Lit(h.ones, h.ones, h.zeros, h.zeros))
+        h.io.elementSequence.poke(
+          h.elementSequence
+        )
+        h.clock.step()
+        h.clock.step()
+        h.clock.step()
+        h.io.start.poke(false.B)
+
+        for (opNum <- 0 until 4) {
+          for (i <- 0 to h.maxRows) {
+            for (j <- 0 to h.maxCols) {
+              h.io.sramEn.expect(true.B)
+              h.io.row.expect(i.U)
+              h.io.col.expect(j.U)
+              h.io.sramWen.expect(true.B)
+              h.io.data.expect(h.zeros)
+              h.clock.step()
+              h.io.sramEn.expect(true.B)
+              h.io.row.expect(i.U)
+              h.io.col.expect(j.U)
+              h.io.sramWen.expect(false.B)
+              h.io.data.expect(h.zeros)
+              h.io.checkEn.expect(true.B)
+              h.clock.step()
+              h.io.sramEn.expect(true.B)
+              h.io.row.expect(i.U)
+              h.io.col.expect(j.U)
+              h.io.sramWen.expect(true.B)
+              h.io.data.expect(h.ones)
+              h.clock.step()
+              h.io.sramEn.expect(true.B)
+              h.io.row.expect(i.U)
+              h.io.col.expect(j.U)
+              h.io.sramWen.expect(false.B)
+              h.io.data.expect(h.ones)
+              h.io.checkEn.expect(true.B)
+              h.clock.step()
+            }
           }
         }
-      }
 
-      d.io.sramEn.expect(false.B)
-      d.io.sramWen.expect(false.B)
-      d.io.done.expect(true.B)
+        h.io.sramEn.expect(false.B)
+        h.io.sramWen.expect(false.B)
+        h.io.done.expect(true.B)
     }
   }
 
@@ -211,7 +217,6 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         _.waitElement -> waitElement,
         _.elementType -> d.ElementType.rwOp
       )
-      println(march)
       val zeros = 0.U(32.W)
       val ones = "hffffffff".U(32.W)
 
@@ -449,6 +454,110 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         d.io.sramEn.expect(false.B)
         d.io.sramWen.expect(false.B)
         d.io.done.expect(true.B)
+    }
+  }
+
+  it should "work for a cycle limit of 40" in {
+    test(
+      new ProgrammableBist(
+        new ProgrammableBistParams(
+          patternTableLength = 4,
+          elementTableLength = 4,
+          operationsPerElement = 4
+        )
+      )
+    ).withAnnotations(Seq(PrintFullStackTraceAnnotation, WriteVcdAnnotation)) {
+      d =>
+        val maxRows = 15;
+        val maxCols = 7;
+        val readOp = chiselTypeOf(
+          d.io.elementSequence(0).operationElement.operations(0)
+        ).Lit(
+          _.operationType -> d.OperationType.read,
+          _.randData -> false.B,
+          _.randMask -> false.B,
+          _.dataPatternIdx -> 3.U,
+          _.maskPatternIdx -> 0.U,
+          _.flipped -> d.FlipType.unflipped
+        )
+        val writeOp = chiselTypeOf(
+          d.io.elementSequence(0).operationElement.operations(0)
+        ).Lit(
+          _.operationType -> d.OperationType.write,
+          _.randData -> false.B,
+          _.randMask -> false.B,
+          _.dataPatternIdx -> 3.U,
+          _.maskPatternIdx -> 0.U,
+          _.flipped -> d.FlipType.unflipped
+        )
+        val readFlippedOp = chiselTypeOf(
+          d.io.elementSequence(0).operationElement.operations(0)
+        ).Lit(
+          _.operationType -> d.OperationType.read,
+          _.randData -> false.B,
+          _.randMask -> false.B,
+          _.dataPatternIdx -> 3.U,
+          _.maskPatternIdx -> 0.U,
+          _.flipped -> d.FlipType.flipped
+        )
+        val writeFlippedOp = chiselTypeOf(
+          d.io.elementSequence(0).operationElement.operations(0)
+        ).Lit(
+          _.operationType -> d.OperationType.write,
+          _.randData -> false.B,
+          _.randMask -> false.B,
+          _.dataPatternIdx -> 3.U,
+          _.maskPatternIdx -> 0.U,
+          _.flipped -> d.FlipType.flipped
+        )
+      val opElementList = Vec(4, new d.Operation())
+        .Lit(0 -> writeOp, 1 -> readOp, 2 -> writeFlippedOp, 3 -> readFlippedOp)
+      val opElement =
+        chiselTypeOf(d.io.elementSequence(0).operationElement).Lit(
+          _.operations -> opElementList,
+          _.maxIdx -> 3.U,
+          _.dir -> d.Direction.up,
+          _.numAddrs -> 0.U
+        )
+      val waitElement = chiselTypeOf(d.io.elementSequence(0).waitElement)
+        .Lit(_.cyclesToWait -> 0.U)
+      val march = chiselTypeOf(d.io.elementSequence(0)).Lit(
+        _.operationElement -> opElement,
+        _.waitElement -> waitElement,
+        _.elementType -> d.ElementType.rwOp
+      )
+      val zeros = 0.U(32.W)
+      val ones = "hffffffff".U(32.W)
+
+      d.clock.setTimeout((maxCols + 1) * (maxRows + 1) * 4 * 4)
+      d.io.start.poke(true.B)
+      d.io.en.poke(true.B)
+      d.io.maxRowAddr.poke(maxRows.U)
+      d.io.maxColAddr.poke(maxCols.U)
+      d.io.innerDim.poke(d.Dimension.row)
+      d.io.maxElementIdx.poke(3.U)
+      d.io.seed.poke(1.U)
+      d.io.cycleLimit.poke(40.U(32.W))
+      d.io.patternTable.poke(Vec.Lit(ones, ones, zeros, zeros))
+      d.io.elementSequence.poke(
+        Vec(4, new d.Element())
+          .Lit(0 -> march, 1 -> march, 2 -> march, 3 -> march)
+      )
+      d.clock.step()
+      d.io.start.poke(false.B)
+      d.io.done.expect(false.B)
+
+      for (i <- 0 until 39) {
+        d.clock.step()
+        d.io.done.expect(false.B)
+        d.io.sramEn.expect(true.B)
+      }
+
+      d.clock.step()
+      d.io.sramEn.expect(false.B)
+      d.io.sramWen.expect(false.B)
+      d.io.done.expect(true.B)
+      d.io.cycle.expect(40.U)
     }
   }
 }
