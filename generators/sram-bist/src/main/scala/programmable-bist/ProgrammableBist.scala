@@ -110,6 +110,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   val currOperation = Wire(new Operation)
   val currOperationElement = Wire(new OperationElement)
   val checkEn = Wire(Bool())
+  val sramEn = Wire(Bool())
   val opsDone = Wire(Bool())
   val up = Wire(Bool())
   val rowsDone = Wire(Bool())
@@ -121,6 +122,8 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   val randMask = Wire(UInt(params.dataWidth.W))
   val randRow = Wire(UInt(params.maxRowAddrWidth.W))
   val randCol = Wire(UInt(params.maxColAddrWidth.W))
+  val dataPatternEntry = Wire(UInt(params.dataWidth.W))
+  val detData = Wire(UInt(params.dataWidth.W))
 
   val lfsr = Module(new MaxPeriodFibonacciLFSR(params.seedWidth))
   lfsr.io.seed.bits := io.seed.asBools
@@ -145,6 +148,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
   val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
   val done = RegInit(false.B)
+  val cycle = RegInit(1.U(32.W))
 
   currElement := io.elementSequence(elementIndex)
   currOperationElement := currElement.operationElement
@@ -154,8 +158,8 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   randAddrOrder := currOperationElement.dir === Direction.rand
   checkEn := currOperation.operationType === OperationType.read && !currOperation.randData && currElement.elementType === ElementType.rwOp
 
-  val dataPatternEntry = io.patternTable(currOperation.dataPatternIdx)
-  val detData = Mux(
+  dataPatternEntry := io.patternTable(currOperation.dataPatternIdx)
+  detData := Mux(
     currOperation.flipped === FlipType.flipped,
     ~dataPatternEntry,
     dataPatternEntry
@@ -183,19 +187,26 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
     rowsDone && colsDone
   )
 
-  io.sramEn := false.B
+  sramEn := !done && io.en && currElement.elementType === ElementType.rwOp
+  io.sramEn := sramEn
   sramWen := false.B
 
   when(!done) {
     when(io.en && currElement.elementType === ElementType.rwOp) {
-      io.sramEn := true.B
       // TODO wrong for random ops
       sramWen := currOperation.operationType === OperationType.write
       opIndex := opIndex + 1.U
     }
   }.otherwise {
-    io.sramEn := false.B
     sramWen := false.B
+  }
+
+  when(io.en && !done && cycle < io.cycleLimit) {
+    cycle := cycle + 1.U
+  }
+
+  when(cycle === io.cycleLimit) {
+    done := true.B
   }
 
   when(io.en && !done && opsDone) {
@@ -231,12 +242,18 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   }
 
   when(io.start) {
-    rowCounter := 0.U
-    colCounter := 0.U
+    when(io.elementSequence(0.U).operationElement.dir === Direction.up) {
+      rowCounter := 0.U
+      colCounter := 0.U
+    }.otherwise {
+      rowCounter := io.maxRowAddr
+      colCounter := io.maxColAddr
+    }
     addrCounter := 1.U
     elementIndex := 0.U
     opIndex := 0.U
     done := false.B
+    cycle := 1.U
   }
 
   io.row := Mux(
@@ -252,7 +269,7 @@ class ProgrammableBist(params: ProgrammableBistParams) extends Module {
   io.data := Mux(currOperation.randData, randData, detData)
   io.mask := Mux(currOperation.randMask, randMask, detMask)
   io.checkEn := checkEn
-  io.cycle := 0.U
+  io.cycle := cycle
   io.done := done
   io.resetHash := false.B
   io.sramWen := sramWen
