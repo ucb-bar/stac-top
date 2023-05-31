@@ -34,7 +34,9 @@ class ScanChainIntfIO extends Bundle {
   val bistMaxElementIdx =
     new SimpleRegIO(SramBistCtrlRegWidths.BIST_MAX_ELEMENT_IDX)
   val bistCycleLimit = new SimpleRegIO(SramBistCtrlRegWidths.BIST_CYCLE_LIMIT)
-  val bistStopOnFailure = new SimpleRegIO(SramBistCtrlRegWidths.BIST_STOP_ON_FAILURE)
+  val bistStopOnFailure = new SimpleRegIO(
+    SramBistCtrlRegWidths.BIST_STOP_ON_FAILURE
+  )
 
   val doutMmio = new SimpleRegIO(SramBistCtrlRegWidths.DOUT)
   val tdcMmio = new SimpleRegIO(SramBistCtrlRegWidths.TDC)
