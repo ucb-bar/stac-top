@@ -34,6 +34,7 @@ class ScanChainIntfIO extends Bundle {
   val bistMaxElementIdx =
     new SimpleRegIO(SramBistCtrlRegWidths.BIST_MAX_ELEMENT_IDX)
   val bistCycleLimit = new SimpleRegIO(SramBistCtrlRegWidths.BIST_CYCLE_LIMIT)
+  val bistStopOnFailure = new SimpleRegIO(SramBistCtrlRegWidths.BIST_STOP_ON_FAILURE)
 
   val doutMmio = new SimpleRegIO(SramBistCtrlRegWidths.DOUT)
   val tdcMmio = new SimpleRegIO(SramBistCtrlRegWidths.TDC)
@@ -57,9 +58,9 @@ class ScanChainIntfIO extends Bundle {
 }
 
 class ScanChainIntf extends Module {
-  val io = new ScanChainIntfIO
+  val io = IO(new ScanChainIntfIO)
 
-  val scanChain = new ScanChain(SramBistCtrlRegWidths.TOTAL)
+  val scanChain = Module(new ScanChain(SramBistCtrlRegWidths.TOTAL))
 
   scanChain.io.si := io.sramScanIn
   scanChain.io.se := io.sramScanEn
@@ -133,6 +134,12 @@ class ScanChainIntf extends Module {
       io.bistCycleLimit,
       true
     ),
+    (
+      SramBistCtrlRegs.BIST_STOP_ON_FAILURE,
+      SramBistCtrlRegWidths.BIST_STOP_ON_FAILURE,
+      io.bistStopOnFailure,
+      true
+    ),
     (SramBistCtrlRegs.DOUT, SramBistCtrlRegWidths.DOUT, io.doutMmio, false),
     (SramBistCtrlRegs.TDC, SramBistCtrlRegWidths.TDC, io.tdcMmio, false),
     (SramBistCtrlRegs.DONE, SramBistCtrlRegWidths.DONE, io.doneMmio, false),
@@ -169,13 +176,15 @@ class ScanChainIntf extends Module {
   ).foreach((args: (Int, Int, SimpleRegIO, Boolean)) => {
     args match {
       case (start, width, regIO, writable) =>
+        val q = Wire(Vec(width, Bool()))
         for (i <- 0 to width - 1) {
           if (writable) {
             scanChain.io.de(start + i) := ~io.sramScanMode & regIO.en
             scanChain.io.d(start + i) := regIO.d(i)
           }
-          regIO.q(i) := scanChain.io.q(start + i)
+          q(i) := scanChain.io.q(start + i)
         }
+        regIO.q := Reverse(Cat(q))
     }
   })
 

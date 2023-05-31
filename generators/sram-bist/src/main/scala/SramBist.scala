@@ -75,6 +75,7 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
     bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence.q
     bistTop.io.bistMaxElementIdx := scanChainIntf.io.bistMaxElementIdx.q
     bistTop.io.bistCycleLimit := scanChainIntf.io.bistCycleLimit.q
+    bistTop.io.bistStopOnFailure := scanChainIntf.io.bistStopOnFailure.q.asBool
 
     scanChainIntf.io.dout := bistTop.io.dout
     scanChainIntf.io.tdc := bistTop.io.tdc
@@ -175,6 +176,12 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
         RegField.rwReg(
           SramBistCtrlRegWidths.BIST_CYCLE_LIMIT,
           scanChainIntf.io.bistCycleLimit
+        )
+      ),
+      SramBistCtrlRegs.BIST_STOP_ON_FAILURE -> Seq(
+        RegField.rwReg(
+          SramBistCtrlRegWidths.BIST_STOP_ON_FAILURE,
+          scanChainIntf.io.bistStopOnFailure
         )
       ),
       SramBistCtrlRegs.BIST_FAIL -> Seq(

@@ -1,32 +1,33 @@
 package srambist
 
 object SramBistCtrlRegs {
-  val ADDR = 0x00
-  val DIN = 0x04
-  val MASK = 0x08
-  val WE = 0x0c
-  val SRAM_ID = 0x10
-  val SRAM_SEL = 0x14
-  val SAE_CTL = 0x18
-  val SAE_SEL = 0x1c
-  val DOUT = 0x20
-  val TDC = 0x24
-  val EX = 0x28
-  val DONE = 0x2c
-  val BIST_RAND_SEED = 0x30
-  val BIST_SIG_SEED = 0x34
-  val BIST_MAX_ROW_ADDR = 0x38
-  val BIST_MAX_COL_ADDR = 0x3c
-  val BIST_INNER_DIM = 0x40
-  val BIST_ELEMENT_SEQUENCE = 0x44
-  val BIST_PATTERN_TABLE = 0x48
-  val BIST_MAX_ELEMENT_IDX = 0x48
-  val BIST_CYCLE_LIMIT = 0x4c
-  val BIST_FAIL = 0x50
-  val BIST_FAIL_CYCLE = 0x54
-  val BIST_EXPECTED = 0x54
-  val BIST_RECEIVED = 0x54
-  val BIST_SIGNATURE = 0x54
+  val ADDR = 0
+  val DIN = 13
+  val MASK = 45
+  val WE = 77
+  val SRAM_ID = 78
+  val SRAM_SEL = 82
+  val SAE_CTL = 83
+  val SAE_SEL = 90
+  val DOUT = 92
+  val TDC = 124
+  val DONE = 376
+  val BIST_RAND_SEED = 377
+  val BIST_SIG_SEED = 454
+  val BIST_MAX_ROW_ADDR = 486
+  val BIST_MAX_COL_ADDR = 496
+  val BIST_INNER_DIM = 499
+  val BIST_ELEMENT_SEQUENCE = 500
+  val BIST_PATTERN_TABLE = 564
+  val BIST_MAX_ELEMENT_IDX = 628
+  val BIST_CYCLE_LIMIT = 634
+  val BIST_STOP_ON_FAILURE = 666
+  val BIST_FAIL = 667
+  val BIST_FAIL_CYCLE = 668
+  val BIST_EXPECTED = 700
+  val BIST_RECEIVED = 732
+  val BIST_SIGNATURE = 764
+  val EX = 796
 }
 
 object SramBistCtrlRegWidths {
@@ -50,10 +51,11 @@ object SramBistCtrlRegWidths {
   val BIST_PATTERN_TABLE = 64
   val BIST_MAX_ELEMENT_IDX = 6
   val BIST_CYCLE_LIMIT = 32
+  val BIST_STOP_ON_FAILURE = 1
   val BIST_FAIL = 1
   val BIST_FAIL_CYCLE = 32
   val BIST_EXPECTED = 32
   val BIST_RECEIVED = 32
   val BIST_SIGNATURE = 32
-  val TOTAL = 763
+  val TOTAL = 796
 }
