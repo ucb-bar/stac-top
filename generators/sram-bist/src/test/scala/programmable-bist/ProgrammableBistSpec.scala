@@ -11,11 +11,18 @@ import chisel3.stage.PrintFullStackTraceAnnotation
 
 import org.scalatest.flatspec.AnyFlatSpec
 
+object Direction extends Enumeration {
+  type Direction = Value
+  val Up, Down, Rand = Value
+}
+
+import Direction._
+
 class ProgrammableBistHelpers(val d: ProgrammableBist) {
   val maxRows = 15;
   val maxCols = 7;
 
-  def readOp(index: Int, flipped: Boolean = false) = {
+  def readOp(index: Int, flipped: Boolean = false): d.Operation = {
     val flip = if (flipped) d.FlipType.flipped else d.FlipType.unflipped
     chiselTypeOf(
       d.io.elementSequence(0).operationElement.operations(0)
@@ -31,7 +38,11 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
 
   val emptyOp = readOp(0)
 
-  def writeOp(dataIndex: Int, maskIndex: Int, flipped: Boolean = false) = {
+  def writeOp(
+      dataIndex: Int,
+      maskIndex: Int,
+      flipped: Boolean = false
+  ): d.Operation = {
     val flip = if (flipped) d.FlipType.flipped else d.FlipType.unflipped
     chiselTypeOf(
       d.io.elementSequence(0).operationElement.operations(0)
@@ -45,6 +56,21 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
     )
   }
 
+  def opList(ops: Seq[d.Operation]): Vec[d.Operation] = {
+    val elts: Seq[(Int, d.Operation)] =
+      (0 until d.params.operationsPerElement).map(i =>
+        if (i < ops.size) { (i, ops(i)) }
+        else { (i, emptyOp) }
+      )
+    Vec(d.params.operationsPerElement, new d.Operation())
+      .Lit(elts: _*)
+  }
+
+  def waitElement(cycles: Int) = {
+    chiselTypeOf(d.io.elementSequence(0).waitElement)
+      .Lit(_.cyclesToWait -> cycles.U)
+  }
+
   val opElementList = Vec(4, new d.Operation())
     .Lit(
       0 -> writeOp(2, 3),
@@ -52,25 +78,54 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
       2 -> writeOp(2, 3, true),
       3 -> readOp(2, true)
     )
-  val opElement =
-    chiselTypeOf(d.io.elementSequence(0).operationElement).Lit(
+
+  def opElement(
+      ops: Seq[d.Operation],
+      dir: Direction,
+      numAddrs: Int = 0
+  ): d.Element = {
+    val hwDir = dir match {
+      case Up   => d.Direction.up
+      case Down => d.Direction.down
+      case Rand => d.Direction.rand
+    }
+    val operations: Vec[d.Operation] = opList(ops)
+    val inner = chiselTypeOf(d.io.elementSequence(0).operationElement).Lit(
       _.operations -> opElementList,
-      _.maxIdx -> 3.U,
-      _.dir -> d.Direction.up,
-      _.numAddrs -> 0.U
+      _.maxIdx -> (ops.size - 1).U,
+      _.dir -> hwDir,
+      _.numAddrs -> numAddrs.U
     )
-  val waitElement = chiselTypeOf(d.io.elementSequence(0).waitElement)
-    .Lit(_.cyclesToWait -> 0.U)
-  val march: d.Element = chiselTypeOf(d.io.elementSequence(0)).Lit(
-    _.operationElement -> opElement,
-    _.waitElement -> waitElement,
-    _.elementType -> d.ElementType.rwOp
+    chiselTypeOf(d.io.elementSequence(0)).Lit(
+      _.operationElement -> inner,
+      _.waitElement -> waitElement(0),
+      _.elementType -> d.ElementType.rwOp
+    )
+  }
+
+  val emptyElement = opElement(Seq(readOp(0)), Rand, 2)
+
+  def elementSequence(elements: Seq[d.Element]): Vec[d.Element] = {
+    val elts: Seq[(Int, d.Element)] =
+      (0 until d.params.elementTableLength).map(i =>
+        if (i < elements.size) { (i, elements(i)) }
+        else { (i, emptyElement) }
+      )
+    Vec(d.params.elementTableLength, new d.Element())
+      .Lit(elts: _*)
+  }
+
+  val march = opElement(
+    Seq(writeOp(2, 3), readOp(2), writeOp(2, 3, true), readOp(2, true)),
+    Up,
+    0
   )
+
   val zeros = 0.U(32.W)
   val ones = "hffffffff".U(32.W)
 
-  val elementSequence =
-    Vec(4, new d.Element()).Lit(0 -> march, 1 -> march, 2 -> march, 3 -> march)
+  val simpleMarchElements = elementSequence(Seq(march, march, march, march))
+
   val io = d.io
   val clock = d.clock
 
@@ -102,7 +157,7 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         h.io.seed.poke(1.U)
         h.io.patternTable.poke(Vec.Lit(h.ones, h.ones, h.zeros, h.zeros))
         h.io.elementSequence.poke(
-          h.elementSequence
+          h.simpleMarchElements
         )
         h.clock.step()
         h.clock.step()
