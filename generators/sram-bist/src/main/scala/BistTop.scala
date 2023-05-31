@@ -80,7 +80,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   })
 
   object State extends ChiselEnum {
-    val idle, executeOp, delay = Value
+    val idle, setupBist, executeOp, delay = Value
   }
 
   val state = RegInit(State.idle)
@@ -115,17 +115,22 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     is(State.idle) {
       when(io.ex) {
         bistFail := false.B
-        state := State.executeOp
         switch(io.sramSel) {
           is(SramSrc.bist) {
-            fsmBistEn := true.B
             bist.io.start := true.B
+            state := State.setupBist
           }
-          is(SramSrc.mmio) {}
+          is(SramSrc.mmio) {
+            state := State.executeOp
+          }
         }
       }.otherwise {
         io.done := true.B
       }
+    }
+    is(State.setupBist) {
+      bist.io.start := true.B
+      state := State.executeOp
     }
     is(State.executeOp) {
       switch(io.sramSel) {

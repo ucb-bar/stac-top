@@ -3,7 +3,7 @@ package srambist.analog
 import chisel3._
 import chisel3.util._
 import org.chipsalliance.cde.config.Parameters
-import srambist.WithChiseltestSramsKey
+import srambist.{WithChiseltestSramsKey, ChiseltestSramFailureMode}
 
 case class SramParams(
     maskGranularity: Int,
@@ -24,39 +24,61 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
     val saeInt = Output(Bool())
   })
 
-  if (p(WithChiseltestSramsKey).isDefined) {
-    val mem = SyncReadMem(
-      params.numWords,
-      Vec(wmaskWidth, UInt(params.maskGranularity.W))
-    )
-    io.dout := DontCare
-    val rdwrPort = mem(io.addr)
-    when(io.we) {
-      for (i <- 0 to wmaskWidth - 1) {
-        when(io.wmask(i)) {
-          rdwrPort(i) := io.din(
-            params.maskGranularity * (i + 1) - 1,
-            params.maskGranularity * i
-          )
+  val chiseltestCfg = p(WithChiseltestSramsKey)
+
+  chiseltestCfg match {
+    case (Some(failureMode)) => {
+      val mem = SyncReadMem(
+        params.numWords,
+        Vec(wmaskWidth, UInt(params.maskGranularity.W))
+      )
+      io.dout := DontCare
+      val rdwrPort = mem(io.addr)
+      when(io.we) {
+        val toWrite = Wire(Vec(params.dataWidth, Bool()))
+        toWrite := io.din.asBools
+        failureMode match {
+          case ChiseltestSramFailureMode.stuckAt => {
+            when(io.addr === 29.U) {
+              toWrite(5) := false.B
+            }
+          }
+          case ChiseltestSramFailureMode.transition => {
+            when(io.addr === 15.U) {
+              when(rdwrPort(0)(0) & ~io.din(0)) {
+                toWrite(0) := true.B
+              }
+            }
+          }
+          case _ => {}
         }
+        for (i <- 0 to wmaskWidth - 1) {
+          when(io.wmask(i)) {
+            rdwrPort(i) := toWrite.asUInt(
+              params.maskGranularity * (i + 1) - 1,
+              params.maskGranularity * i
+            )
+          }
+        }
+      }.otherwise {
+        var out = rdwrPort(0)
+        for (i <- 1 to wmaskWidth - 1) {
+          out = Cat(rdwrPort(i), out)
+        }
+        io.dout := out
       }
-    }.otherwise {
-      var out = rdwrPort(0)
-      for (i <- 1 to wmaskWidth - 1) {
-        out = Cat(rdwrPort(i), out)
-      }
-      io.dout := out
+      io.saeInt := clock.asBool
     }
-    io.saeInt := clock.asBool
-  } else {
-    val inner = Module(new SramBlackBox(params))
-    inner.io.we := io.we
-    inner.io.wmask := io.wmask
-    inner.io.addr := io.addr
-    inner.io.din := io.din
-    inner.io.sae_muxed := io.saeMuxed
-    io.dout := inner.io.dout
-    io.saeInt := inner.io.sae_int
+    case None => {
+      val inner = Module(new SramBlackBox(params))
+      inner.io.we := io.we
+      inner.io.wmask := io.wmask
+      inner.io.addr := io.addr
+      inner.io.din := io.din
+      inner.io.sae_muxed := io.saeMuxed
+      io.dout := inner.io.dout
+      io.saeInt := inner.io.sae_int
+    }
   }
 
 }

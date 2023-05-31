@@ -19,7 +19,7 @@ case class SramTestUnitParams(
 
 object ChiseltestSramFailureMode extends Enumeration {
   type Type = Value
-  val stuckAt, stuckOpen, transition, none =
+  val stuckAt, transition, none =
     Value // TODO: Add relevant failure modes
 }
 
