@@ -6,13 +6,13 @@ import org.chipsalliance.cde.config.Parameters
 
 import srambist.analog.{Tdc, DelayLine, Sram, SramParams}
 import srambist.sramharness.{SramHarness, SramHarnessParams, SaeSrc}
-import srambist.programmablebist.{ProgrammableBist}
-import srambist.ProgrammableBistParams
+import srambist.programmablebist.{ProgrammableBist, ProgrammableBistParams}
 import srambist.misr.MaxPeriodFibonacciMISR
 
 case class BistTopParams(
-    srams: Seq[SramParams],
-    bistParams: ProgrammableBistParams
+    srams: Seq[SramParams] =
+      Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+    bistParams: ProgrammableBistParams = new ProgrammableBistParams()
 )
 
 object SramSrc extends ChiselEnum {
@@ -80,7 +80,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   })
 
   object State extends ChiselEnum {
-    val idle, executeOp, delay = Value
+    val idle, setupBist, executeOp, delay = Value
   }
 
   val state = RegInit(State.idle)
@@ -115,17 +115,22 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     is(State.idle) {
       when(io.ex) {
         bistFail := false.B
-        state := State.executeOp
         switch(io.sramSel) {
           is(SramSrc.bist) {
-            fsmBistEn := true.B
             bist.io.start := true.B
+            state := State.setupBist
           }
-          is(SramSrc.mmio) {}
+          is(SramSrc.mmio) {
+            state := State.executeOp
+          }
         }
       }.otherwise {
         io.done := true.B
       }
+    }
+    is(State.setupBist) {
+      bist.io.start := true.B
+      state := State.executeOp
     }
     is(State.executeOp) {
       switch(io.sramSel) {

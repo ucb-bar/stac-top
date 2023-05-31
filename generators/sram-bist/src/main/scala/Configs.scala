@@ -2,25 +2,15 @@ package srambist
 
 import org.chipsalliance.cde.config.{Field, Config}
 
-case class ProgrammableBistParams(
-    elementTableLength: Int = 8,
-    operationsPerElement: Int = 8,
-    patternTableLength: Int = 8,
-    maxRowAddrWidth: Int = 10,
-    maxColAddrWidth: Int = 3,
-    dataWidth: Int = 32,
-    randAddrWidth: Int = 14
-) {
-  def seedWidth = 2 * dataWidth + maxColAddrWidth + maxRowAddrWidth
-}
-
-case class SramTestUnitParams(
-    programmableBistParams: ProgrammableBistParams
+case class SramBistParams(
+    address: BigInt = 0x1000
 )
+
+case object SramBistKey extends Field[Option[SramBistParams]](None)
 
 object ChiseltestSramFailureMode extends Enumeration {
   type Type = Value
-  val stuckAt, stuckOpen, transition, none =
+  val stuckAt, transition, none =
     Value // TODO: Add relevant failure modes
 }
 
@@ -34,26 +24,3 @@ class WithChiseltestSrams(
 ) extends Config((site, here, up) => { case WithChiseltestSramsKey =>
       Some(failureMode)
     })
-/*
-// case object ProgrammableBistKey extends Field[Option[ProgrammableBistParams]](None)
-case object SramTestUnitKey extends Field[Option[SramTestUnitParams]](None)
-
-trait CanHaveSramBist {
-  // connect sram unit to subsystem here
-}
-
-class WithSramBist(base: BigInt) extends Config((site, here, up) => {
-  case SramTestUnitKey => Some(SramTestUnitParams(
-    programmableBistParams = ProgrammableBistParams(
-      addr = base)
-    ))
-})
-
-//trait CanHavePeripheryProgrammableBist {
-// connect Programmable BIST to subsystem here
-//}
-
-// class WithProgrammableBist() extends Config((site, here, up) => {
-//  case ProgrammableBistKey => Some(ProgrammableBistParams())
-//})
- */

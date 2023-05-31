@@ -1,6 +1,5 @@
 package srambist.programmablebist
 
-import srambist.{ProgrammableBistParams}
 import chisel3._
 import chisel3.ChiselEnum
 import chisel3.util.log2Ceil

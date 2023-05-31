@@ -5,6 +5,7 @@ import chisel3.util._
 
 class ScanIO(val n: Int) extends Bundle {
   val d: Vec[Bool] = Input(Vec(n, Bool()))
+  val de: Vec[Bool] = Input(Vec(n, Bool()))
   val se: Bool = Input(Bool())
   val si: Bool = Input(Bool())
   val so: Bool = Output(Bool())
@@ -29,7 +30,11 @@ class ScanChain(val width: Int, val seed: Option[BigInt] = Some(0))
   when(io.se) {
     state := scanNext
   }.otherwise {
-    state := io.d
+    for (i <- 0 to width - 1) {
+      when(io.de(i)) {
+        state(i) := io.d(i)
+      }
+    }
   }
 
   io.q := state
