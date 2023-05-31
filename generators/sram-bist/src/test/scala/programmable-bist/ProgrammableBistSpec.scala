@@ -936,4 +936,56 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         h.expectDone()
     }
   }
+
+  it should "work for march-wait-march test with cycle limit expiring during second march" in {
+    test(
+      new ProgrammableBist(
+        new ProgrammableBistParams(
+          patternTableLength = 4,
+          elementTableLength = 8,
+          operationsPerElement = 4
+        )
+      )
+    ).withAnnotations(Seq(PrintFullStackTraceAnnotation, WriteVcdAnnotation)) {
+      d =>
+
+        val h = new ProgrammableBistHelpers(d)
+
+        h.clock.setTimeout((h.maxCols + 1) * (h.maxRows + 1) * 4 * 4)
+        h.io.start.poke(true.B)
+        h.io.en.poke(true.B)
+        h.io.maxRowAddr.poke(h.maxRows.U)
+        h.io.maxColAddr.poke(h.maxCols.U)
+        h.io.innerDim.poke(h.d.Dimension.row)
+        h.io.maxElementIdx.poke(2.U)
+        h.io.seed.poke(1.U)
+        h.io.patternTable.poke(Vec.Lit(h.zeros, h.ones, h.bp0, h.zeros))
+        h.io.elementSequence.poke(
+          h.marchWaitMarch
+        )
+        val cycleLimit = 4 * (h.maxCols + 1) * (h.maxRows + 1) + 100 + 73
+        h.io.cycleLimit.poke(cycleLimit.U(32.W))
+        h.clock.step()
+        h.clock.step()
+        h.clock.step()
+        h.io.start.poke(false.B)
+
+        for (j <- 0 to h.maxCols) {
+          for (i <- 0 to h.maxRows) {
+            h.expectWrite(i, j, h.bp0)
+            h.expectRead(i, j, h.bp0)
+            h.expectWrite(i, j, h.bp0f)
+            h.expectRead(i, j, h.bp0f)
+          }
+        }
+
+        h.expectWait(100)
+
+        for (i <- 0 to 73) {
+          h.clock.step()
+        }
+
+        h.expectDone()
+    }
+  }
 }
