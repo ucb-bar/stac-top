@@ -214,7 +214,6 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
       )
     )
   }
-
 }
 
 class TLSramBist(busWidthBytes: Int, params: SramBistParams)(implicit

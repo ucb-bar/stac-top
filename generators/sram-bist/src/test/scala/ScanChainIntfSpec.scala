@@ -63,7 +63,7 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
         for (i <- 1 to width) {
           var bit = d.io.sramScanOut.peek().litToBoolean
           var digit = if (bit) 1 else 0
-          num = num << 1 + digit
+          num = num * 2 + digit
           d.clock.step()
         }
         assert(num == value)
@@ -76,8 +76,36 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
       scanOutAndAssert(SramBistCtrlRegWidths.BIST_FAIL, 1)
 
       // Test updating registers via scan in.
-      
 
+      val scanIn = (width: Int, value: Int) => {
+        var bitSeq = Seq[Int]()
+        var v = value
+        for (i <- 1 to width) {
+          bitSeq = (v % 2) +: bitSeq
+          v /= 2
+        }
+        for (bit <- bitSeq) {
+          d.io.sramScanIn.poke((bit == 1).B)
+          d.clock.step()
+        }
+      }
+
+      scanIn(SramBistCtrlRegWidths.WE, 0)
+      scanIn(SramBistCtrlRegWidths.MASK, 15)
+      scanIn(SramBistCtrlRegWidths.DIN, 20)
+      scanIn(SramBistCtrlRegWidths.ADDR, 25)
+
+      d.io.sramScanEn.poke(false.B)
+      d.io.addr.q.expect(25.U)
+      d.io.din.q.expect(20.U)
+      d.io.mask.q.expect(15.U)
+      d.io.we.q.expect(0.U)
+
+      d.clock.step()
+      d.io.addr.q.expect(25.U)
+      d.io.din.q.expect(20.U)
+      d.io.mask.q.expect(15.U)
+      d.io.we.q.expect(0.U)
     }
   }
 }
