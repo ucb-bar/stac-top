@@ -288,8 +288,3 @@ lazy val sram_bist = (project in file("generators/sram-bist"))
   .settings(libraryDependencies ++= rocketLibDeps.value)
   .settings(chiselTestSettings)
   .settings(commonSettings)
-
-lazy val generatortest = (project in file("generators/generatortest"))
-  .settings(libraryDependencies ++= rocketLibDeps.value)
-  .settings(chiselTestSettings)
-  .settings(commonSettings)
