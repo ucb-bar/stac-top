@@ -65,7 +65,7 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
       .Lit(elts: _*)
   }
 
-  def waitElement(cycles: Int) = {
+  def waitElementInner(cycles: Int) = {
     chiselTypeOf(d.io.elementSequence(0).waitElement)
       .Lit(_.cyclesToWait -> cycles.U)
   }
@@ -97,12 +97,29 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
     )
     chiselTypeOf(d.io.elementSequence(0)).Lit(
       _.operationElement -> inner,
-      _.waitElement -> waitElement(0),
+      _.waitElement -> waitElementInner(0),
       _.elementType -> d.ElementType.rwOp
     )
   }
 
   val emptyElement = opElement(Seq(readOp(0)), Rand, 2)
+
+  def waitElement(
+      cycles: Int
+  ): d.Element = {
+    val operations: Vec[d.Operation] = opList(Seq())
+    val inner = chiselTypeOf(d.io.elementSequence(0).operationElement).Lit(
+      _.operations -> operations,
+      _.maxIdx -> 0.U,
+      _.dir -> d.Direction.up,
+      _.numAddrs -> 0.U
+    )
+    chiselTypeOf(d.io.elementSequence(0)).Lit(
+      _.operationElement -> inner,
+      _.waitElement -> waitElementInner(cycles),
+      _.elementType -> d.ElementType.waitOp
+    )
+  }
 
   def elementSequence(elements: Seq[d.Element]): Vec[d.Element] = {
     val elts: Seq[(Int, d.Element)] =
@@ -118,6 +135,8 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
     Seq(writeOp(2, 3), readOp(2), writeOp(2, 3, true), readOp(2, true)),
     Up
   )
+
+  val wait100 = waitElement(100)
 
   def marchCm(patternIdx: Int, onesIdx: Int): Vec[d.Element] = {
     // w0
@@ -150,26 +169,27 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
   val bp0f = "ha0e56af2".U(32.W)
 
   val simpleMarchElements = elementSequence(Seq(march, march, march, march))
+  val marchWaitMarch = elementSequence(Seq(march, wait100, march))
 
   val io = d.io
   val clock = d.clock
 
   def expectRead(i: Int, j: Int, pattern: UInt) = {
-    d.io.sramEn.expect(true.B)
     d.io.row.expect(i.U)
     d.io.col.expect(j.U)
-    d.io.sramWen.expect(false.B)
     d.io.data.expect(pattern)
+    d.io.sramEn.expect(true.B)
+    d.io.sramWen.expect(false.B)
     d.io.checkEn.expect(true.B)
     d.io.done.expect(false.B)
     d.clock.step()
   }
   def expectWrite(i: Int, j: Int, pattern: UInt) = {
-    d.io.sramEn.expect(true.B)
     d.io.row.expect(i.U)
     d.io.col.expect(j.U)
-    d.io.sramWen.expect(true.B)
     d.io.data.expect(pattern)
+    d.io.sramEn.expect(true.B)
+    d.io.sramWen.expect(true.B)
     d.io.checkEn.expect(false.B)
     d.io.done.expect(false.B)
     d.clock.step()
@@ -180,6 +200,14 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
     d.io.done.expect(true.B)
   }
 
+  def expectWait(cycles: Int) = {
+    for (i <- 0 until cycles) {
+      d.io.sramEn.expect(false.B)
+      d.io.sramWen.expect(false.B)
+      d.io.done.expect(false.B)
+      d.clock.step()
+    }
+  }
 }
 
 class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
@@ -801,6 +829,160 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
           for (i <- 0 to h.maxRows) {
             h.expectRead(i, j, h.bp0)
           }
+        }
+
+        h.expectDone()
+    }
+  }
+
+  it should "work for march-wait-march test with rows in inner loop" in {
+    test(
+      new ProgrammableBist(
+        new ProgrammableBistParams(
+          patternTableLength = 4,
+          elementTableLength = 8,
+          operationsPerElement = 4
+        )
+      )
+    ).withAnnotations(Seq(PrintFullStackTraceAnnotation, WriteVcdAnnotation)) {
+      d =>
+
+        val h = new ProgrammableBistHelpers(d)
+
+        h.clock.setTimeout((h.maxCols + 1) * (h.maxRows + 1) * 4 * 4)
+        h.io.start.poke(true.B)
+        h.io.en.poke(true.B)
+        h.io.maxRowAddr.poke(h.maxRows.U)
+        h.io.maxColAddr.poke(h.maxCols.U)
+        h.io.innerDim.poke(h.d.Dimension.row)
+        h.io.maxElementIdx.poke(2.U)
+        h.io.seed.poke(1.U)
+        h.io.patternTable.poke(Vec.Lit(h.zeros, h.ones, h.bp0, h.zeros))
+        h.io.elementSequence.poke(
+          h.marchWaitMarch
+        )
+        h.clock.step()
+        h.clock.step()
+        h.clock.step()
+        h.io.start.poke(false.B)
+
+        for (j <- 0 to h.maxCols) {
+          for (i <- 0 to h.maxRows) {
+            h.expectWrite(i, j, h.bp0)
+            h.expectRead(i, j, h.bp0)
+            h.expectWrite(i, j, h.bp0f)
+            h.expectRead(i, j, h.bp0f)
+          }
+        }
+
+        h.expectWait(100)
+
+        for (j <- 0 to h.maxCols) {
+          for (i <- 0 to h.maxRows) {
+            h.expectWrite(i, j, h.bp0)
+            h.expectRead(i, j, h.bp0)
+            h.expectWrite(i, j, h.bp0f)
+            h.expectRead(i, j, h.bp0f)
+          }
+        }
+
+        h.expectDone()
+    }
+  }
+
+  it should "work for march-wait-march test with cycle limit expiring during wait" in {
+    test(
+      new ProgrammableBist(
+        new ProgrammableBistParams(
+          patternTableLength = 4,
+          elementTableLength = 8,
+          operationsPerElement = 4
+        )
+      )
+    ).withAnnotations(Seq(PrintFullStackTraceAnnotation, WriteVcdAnnotation)) {
+      d =>
+
+        val h = new ProgrammableBistHelpers(d)
+
+        h.clock.setTimeout((h.maxCols + 1) * (h.maxRows + 1) * 4 * 4)
+        h.io.start.poke(true.B)
+        h.io.en.poke(true.B)
+        h.io.maxRowAddr.poke(h.maxRows.U)
+        h.io.maxColAddr.poke(h.maxCols.U)
+        h.io.innerDim.poke(h.d.Dimension.row)
+        h.io.maxElementIdx.poke(2.U)
+        h.io.seed.poke(1.U)
+        h.io.patternTable.poke(Vec.Lit(h.zeros, h.ones, h.bp0, h.zeros))
+        h.io.elementSequence.poke(
+          h.marchWaitMarch
+        )
+        val cycleLimit = 4 * (h.maxCols + 1) * (h.maxRows + 1) + 73
+        h.io.cycleLimit.poke(cycleLimit.U(32.W))
+        h.clock.step()
+        h.clock.step()
+        h.clock.step()
+        h.io.start.poke(false.B)
+
+        for (j <- 0 to h.maxCols) {
+          for (i <- 0 to h.maxRows) {
+            h.expectWrite(i, j, h.bp0)
+            h.expectRead(i, j, h.bp0)
+            h.expectWrite(i, j, h.bp0f)
+            h.expectRead(i, j, h.bp0f)
+          }
+        }
+
+        h.expectWait(73)
+        h.expectDone()
+    }
+  }
+
+  it should "work for march-wait-march test with cycle limit expiring during second march" in {
+    test(
+      new ProgrammableBist(
+        new ProgrammableBistParams(
+          patternTableLength = 4,
+          elementTableLength = 8,
+          operationsPerElement = 4
+        )
+      )
+    ).withAnnotations(Seq(PrintFullStackTraceAnnotation, WriteVcdAnnotation)) {
+      d =>
+
+        val h = new ProgrammableBistHelpers(d)
+
+        h.clock.setTimeout((h.maxCols + 1) * (h.maxRows + 1) * 4 * 4)
+        h.io.start.poke(true.B)
+        h.io.en.poke(true.B)
+        h.io.maxRowAddr.poke(h.maxRows.U)
+        h.io.maxColAddr.poke(h.maxCols.U)
+        h.io.innerDim.poke(h.d.Dimension.row)
+        h.io.maxElementIdx.poke(2.U)
+        h.io.seed.poke(1.U)
+        h.io.patternTable.poke(Vec.Lit(h.zeros, h.ones, h.bp0, h.zeros))
+        h.io.elementSequence.poke(
+          h.marchWaitMarch
+        )
+        val cycleLimit = 4 * (h.maxCols + 1) * (h.maxRows + 1) + 100 + 73
+        h.io.cycleLimit.poke(cycleLimit.U(32.W))
+        h.clock.step()
+        h.clock.step()
+        h.clock.step()
+        h.io.start.poke(false.B)
+
+        for (j <- 0 to h.maxCols) {
+          for (i <- 0 to h.maxRows) {
+            h.expectWrite(i, j, h.bp0)
+            h.expectRead(i, j, h.bp0)
+            h.expectWrite(i, j, h.bp0f)
+            h.expectRead(i, j, h.bp0f)
+          }
+        }
+
+        h.expectWait(100)
+
+        for (i <- 0 to 73) {
+          h.clock.step()
         }
 
         h.expectDone()
