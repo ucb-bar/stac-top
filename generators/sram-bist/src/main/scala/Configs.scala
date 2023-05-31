@@ -8,7 +8,8 @@ case class ProgrammableBistParams(
     patternTableLength: Int = 8,
     maxRowAddrWidth: Int = 10,
     maxColAddrWidth: Int = 3,
-    dataWidth: Int = 32
+    dataWidth: Int = 32,
+    randAddrWidth: Int = 14
 ) {
   def seedWidth = 2 * dataWidth + maxColAddrWidth + maxRowAddrWidth
 }
