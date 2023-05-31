@@ -134,6 +134,7 @@ class BistTopTestHelpers(val c: BistTop) {
       bistElementSequence: Vec[c.bist.Element],
       bistMaxElementIdx: UInt,
       bistCycleLimit: UInt,
+      bistStopOnFailure: Bool,
       sramId: UInt,
       sramSel: SramSrc.Type,
       saeSel: SaeSrc.Type
@@ -158,6 +159,8 @@ class BistTopTestHelpers(val c: BistTop) {
     c.clock.step()
     c.io.bistCycleLimit.poke(bistCycleLimit)
     c.clock.step()
+    c.io.bistStopOnFailure.poke(bistStopOnFailure)
+    c.clock.step()
     c.io.sramId.poke(sramId)
     c.clock.step()
     c.io.sramSel.poke(sramSel)
@@ -170,7 +173,9 @@ class BistTopTestHelpers(val c: BistTop) {
     // Once all registers are set up, enable the BIST until the test completes.
     c.io.bistEn.poke(true.B)
     c.clock.step()
-    while (!c.io.bistDone.peek().litToBoolean) {
+    while (
+      !c.io.bistDone.peek().litToBoolean && !c.io.bistFail.peek().litToBoolean
+    ) {
       c.clock.step()
     }
     c.io.bistEn.poke(false.B)
@@ -211,6 +216,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       )
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
 
+      // TODO: Test on SRAMs with smaller than 32 data width to make sure we aren't checking too many bits.
       val testhelpers = new BistTopTestHelpers(c)
       c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
@@ -238,7 +244,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("habcdabcd".U)
+        testhelpers.c.io.dout.expect("habcdabcd".U)
 
         // Test write with mask.
         testhelpers.populateSramRegisters(
@@ -250,7 +256,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SramSrc.mmio,
           SaeSrc.int
         )
-        c.io.dout.expect(
+        testhelpers.c.io.dout.expect(
           "habcdabcd".U
         ) // Dout should retain its value while registers are being set up.
         executeFn()
@@ -265,7 +271,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("hab00ab00".U)
+        testhelpers.c.io.dout.expect("hab00ab00".U)
 
         // Test write to second SRAM.
         testhelpers.populateSramRegisters(
@@ -289,7 +295,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("h12345678".U)
+        testhelpers.c.io.dout.expect("h12345678".U)
 
         // Test that first SRAM retains original value.
         testhelpers.populateSramRegisters(
@@ -302,7 +308,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("hab00ab00".U)
+        testhelpers.c.io.dout.expect("hab00ab00".U)
 
         // Test writing to extreme addresses of both SRAMs. Verify that original data doesn't change.
         testhelpers.populateSramRegisters(
@@ -326,7 +332,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("h87654321".U)
+        testhelpers.c.io.dout.expect("h87654321".U)
 
         testhelpers.populateSramRegisters(
           0.U,
@@ -338,7 +344,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("hab00ab00".U)
+        testhelpers.c.io.dout.expect("hab00ab00".U)
 
         testhelpers.populateSramRegisters(
           1023.U,
@@ -361,7 +367,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("hdeadbeef".U)
+        testhelpers.c.io.dout.expect("hdeadbeef".U)
 
         testhelpers.populateSramRegisters(
           0.U,
@@ -373,7 +379,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("h12345678".U)
+        testhelpers.c.io.dout.expect("h12345678".U)
       }
 
       val testBistMethod = (scanChain: Boolean) => {
@@ -417,13 +423,14 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
             ),
           3.U,
           0.U,
+          true.B,
           0.U,
           SramSrc.bist,
           SaeSrc.int
         )
         executeOp()
-        c.io.bistDone.expect(true.B)
-        c.io.bistFail.expect(false.B)
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(false.B)
 
       }
 
@@ -431,10 +438,10 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // SCAN CHAIN -> SRAM
       // ******************
 
-      c.io.sramExtEn.poke(true.B)
-      c.io.sramScanMode.poke(true.B)
-      c.io.sramEn.poke(false.B)
-      c.io.bistEn.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(true.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.sramEn.poke(false.B)
+      testhelpers.c.io.bistEn.poke(false.B)
 
       testSramMethod(testhelpers.executeScanChainSramOp)
 
@@ -442,8 +449,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // MMIO -> SRAM
       // ************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
 
       testSramMethod(testhelpers.executeMmioOp)
 
@@ -451,9 +458,9 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // SCAN CHAIN -> BIST
       // ******************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(true.B)
-      c.io.bistEn.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.bistEn.poke(false.B)
 
       testBistMethod(true)
 
@@ -461,8 +468,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // MMIO -> BIST
       // ************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
 
       testBistMethod(false)
 
@@ -493,6 +500,17 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         // Test write.
         testhelpers.populateSramRegisters(
           29.U,
+          0.U,
+          "hf".U,
+          true.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+
+        testhelpers.populateSramRegisters(
+          29.U,
           "hffffffff".U,
           "hf".U,
           true.B,
@@ -512,7 +530,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("hffffffdf".U)
+        testhelpers.c.io.dout.expect("hffffffdf".U)
       }
 
       val testBistMethod = (scanChain: Boolean) => {
@@ -556,25 +574,26 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
             ),
           3.U,
           0.U,
+          true.B,
           0.U,
           SramSrc.bist,
           SaeSrc.int
         )
         executeOp()
-        c.io.bistDone.expect(true.B)
-        c.io.bistFail.expect(true.B)
-        c.io.bistExpected.expect("hffffffff".U)
-        c.io.bistReceived.expect("hffffffdf".U)
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(true.B)
+        testhelpers.c.io.bistExpected.expect("hffffffff".U)
+        testhelpers.c.io.bistReceived.expect("hffffffdf".U)
       }
 
       // ******************
       // SCAN CHAIN -> SRAM
       // ******************
 
-      c.io.sramExtEn.poke(true.B)
-      c.io.sramScanMode.poke(true.B)
-      c.io.sramEn.poke(false.B)
-      c.io.bistEn.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(true.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.sramEn.poke(false.B)
+      testhelpers.c.io.bistEn.poke(false.B)
 
       testSramMethod(testhelpers.executeScanChainSramOp)
 
@@ -582,8 +601,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // MMIO -> SRAM
       // ************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
 
       testSramMethod(testhelpers.executeMmioOp)
 
@@ -591,9 +610,9 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // SCAN CHAIN -> BIST
       // ******************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(true.B)
-      c.io.bistEn.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.bistEn.poke(false.B)
 
       testBistMethod(true)
 
@@ -601,8 +620,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // MMIO -> BIST
       // ************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
 
       testBistMethod(false)
 
@@ -662,7 +681,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        c.io.dout.expect("h00000001".U)
+        testhelpers.c.io.dout.expect("h00000001".U)
       }
 
       val testBistMethod = (scanChain: Boolean) => {
@@ -706,25 +725,26 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
             ),
           3.U,
           0.U,
+          true.B,
           0.U,
           SramSrc.bist,
           SaeSrc.int
         )
         executeOp()
-        c.io.bistDone.expect(true.B)
-        c.io.bistFail.expect(true.B)
-        c.io.bistExpected.expect("h00000000".U)
-        c.io.bistReceived.expect("h00000001".U)
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(true.B)
+        testhelpers.c.io.bistExpected.expect("h00000000".U)
+        testhelpers.c.io.bistReceived.expect("h00000001".U)
       }
 
       // ******************
       // SCAN CHAIN -> SRAM
       // ******************
 
-      c.io.sramExtEn.poke(true.B)
-      c.io.sramScanMode.poke(true.B)
-      c.io.sramEn.poke(false.B)
-      c.io.bistEn.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(true.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.sramEn.poke(false.B)
+      testhelpers.c.io.bistEn.poke(false.B)
 
       testSramMethod(testhelpers.executeScanChainSramOp)
 
@@ -732,8 +752,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // MMIO -> SRAM
       // ************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
 
       testSramMethod(testhelpers.executeMmioOp)
 
@@ -741,9 +761,9 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // SCAN CHAIN -> BIST
       // ******************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(true.B)
-      c.io.bistEn.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.bistEn.poke(false.B)
 
       testBistMethod(true)
 
@@ -751,8 +771,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // MMIO -> BIST
       // ************
 
-      c.io.sramExtEn.poke(false.B)
-      c.io.sramScanMode.poke(false.B)
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
 
       testBistMethod(false)
 

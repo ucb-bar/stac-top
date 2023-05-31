@@ -167,14 +167,15 @@ class ScanChainIntf extends Module {
       false
     )
   ).foreach((args: (Int, Int, SimpleRegIO, Boolean)) => {
-    args match { case (start, width, regIO, writable) =>
-    for (i <- 0 to width - 1) {
-      if (writable) {
-        scanChain.io.de(start + i) := ~io.sramScanMode & regIO.en
-        scanChain.io.d(start + i) := regIO.d(i)
-      }
-      regIO.q(i) := scanChain.io.q(start + i)
-    }
+    args match {
+      case (start, width, regIO, writable) =>
+        for (i <- 0 to width - 1) {
+          if (writable) {
+            scanChain.io.de(start + i) := ~io.sramScanMode & regIO.en
+            scanChain.io.d(start + i) := regIO.d(i)
+          }
+          regIO.q(i) := scanChain.io.q(start + i)
+        }
     }
   })
 
@@ -204,11 +205,12 @@ class ScanChainIntf extends Module {
       io.bistSignature
     )
   ).foreach((args: (Int, Int, UInt)) => {
-    args match { case (start, width, in) =>
-    for (i <- 0 to width - 1) {
-      scanChain.io.de(start + i) := true.B
-      scanChain.io.d(start + i) := in(i)
-    }
+    args match {
+      case (start, width, in) =>
+        for (i <- 0 to width - 1) {
+          scanChain.io.de(start + i) := true.B
+          scanChain.io.d(start + i) := in(i)
+        }
     }
   })
 }
