@@ -6,13 +6,13 @@ import org.chipsalliance.cde.config.Parameters
 
 import srambist.analog.{Tdc, DelayLine, Sram, SramParams}
 import srambist.sramharness.{SramHarness, SramHarnessParams, SaeSrc}
-import srambist.programmablebist.{ProgrammableBist}
-import srambist.ProgrammableBistParams
+import srambist.programmablebist.{ProgrammableBist, ProgrammableBistParams}
 import srambist.misr.MaxPeriodFibonacciMISR
 
 case class BistTopParams(
-    srams: Seq[SramParams],
-    bistParams: ProgrammableBistParams
+    srams: Seq[SramParams] =
+      Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+    bistParams: ProgrammableBistParams = new ProgrammableBistParams()
 )
 
 object SramSrc extends ChiselEnum {

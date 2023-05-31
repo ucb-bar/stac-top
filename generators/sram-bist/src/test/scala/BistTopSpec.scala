@@ -10,6 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 
 import srambist.analog.SramParams
 import srambist.sramharness.SaeSrc
+import srambist.programmablebist.ProgrammableBistParams
 
 class BistTopTestHelpers(val c: BistTop) {
   val maxRows = 15;
@@ -169,7 +170,7 @@ class BistTopTestHelpers(val c: BistTop) {
     // Once all registers are set up, enable the BIST until the test completes.
     c.io.bistEn.poke(true.B)
     c.clock.step()
-    while (!c.io.done.peek().litToBoolean) {
+    while (!c.io.bistDone.peek().litToBoolean) {
       c.clock.step()
     }
     c.io.bistEn.poke(false.B)
@@ -211,6 +212,9 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
 
       val testhelpers = new BistTopTestHelpers(c)
+      c.clock.setTimeout(
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
+      )
       val testSramMethod = (executeFn: () => Unit) => {
         // Test write.
         testhelpers.populateSramRegisters(
@@ -482,6 +486,9 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
 
       val testhelpers = new BistTopTestHelpers(c)
+      c.clock.setTimeout(
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
+      )
       val testSramMethod = (executeFn: () => Unit) => {
         // Test write.
         testhelpers.populateSramRegisters(
@@ -507,7 +514,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         executeFn()
         c.io.dout.expect("hffffffdf".U)
       }
-
 
       val testBistMethod = (scanChain: Boolean) => {
 
@@ -535,9 +541,19 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           testhelpers.maxRows.U,
           testhelpers.maxCols.U,
           testhelpers.c.bist.Dimension.col,
-          Vec.Lit(testhelpers.ones, testhelpers.ones, testhelpers.zeros, testhelpers.zeros),
+          Vec.Lit(
+            testhelpers.ones,
+            testhelpers.ones,
+            testhelpers.zeros,
+            testhelpers.zeros
+          ),
           Vec(4, new testhelpers.c.bist.Element())
-            .Lit(0 -> testhelpers.march, 1 -> testhelpers.march, 2 -> testhelpers.march, 3 -> testhelpers.march),
+            .Lit(
+              0 -> testhelpers.march,
+              1 -> testhelpers.march,
+              2 -> testhelpers.march,
+              3 -> testhelpers.march
+            ),
           3.U,
           0.U,
           0.U,
@@ -610,6 +626,9 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
 
       val testhelpers = new BistTopTestHelpers(c)
+      c.clock.setTimeout(
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
+      )
       val testSramMethod = (executeFn: () => Unit) => {
         testhelpers.populateSramRegisters(
           15.U,
@@ -646,7 +665,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         c.io.dout.expect("h00000001".U)
       }
 
-
       val testBistMethod = (scanChain: Boolean) => {
 
         val maybeReset = () => {
@@ -673,9 +691,19 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           testhelpers.maxRows.U,
           testhelpers.maxCols.U,
           testhelpers.c.bist.Dimension.col,
-          Vec.Lit(testhelpers.ones, testhelpers.ones, testhelpers.zeros, testhelpers.zeros),
+          Vec.Lit(
+            testhelpers.ones,
+            testhelpers.ones,
+            testhelpers.zeros,
+            testhelpers.zeros
+          ),
           Vec(4, new testhelpers.c.bist.Element())
-            .Lit(0 -> testhelpers.march, 1 -> testhelpers.march, 2 -> testhelpers.march, 3 -> testhelpers.march),
+            .Lit(
+              0 -> testhelpers.march,
+              1 -> testhelpers.march,
+              2 -> testhelpers.march,
+              3 -> testhelpers.march
+            ),
           3.U,
           0.U,
           0.U,

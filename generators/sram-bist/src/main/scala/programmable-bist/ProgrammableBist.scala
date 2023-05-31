@@ -5,7 +5,17 @@ import chisel3.ChiselEnum
 import chisel3.util.log2Ceil
 import chisel3.util.random.MaxPeriodFibonacciLFSR
 
-import srambist.ProgrammableBistParams
+case class ProgrammableBistParams(
+    elementTableLength: Int = 8,
+    operationsPerElement: Int = 8,
+    patternTableLength: Int = 8,
+    maxRowAddrWidth: Int = 10,
+    maxColAddrWidth: Int = 3,
+    dataWidth: Int = 32,
+    randAddrWidth: Int = 14
+) {
+  def seedWidth = 2 * dataWidth + maxColAddrWidth + maxRowAddrWidth
+}
 
 class ProgrammableBist(params: ProgrammableBistParams) extends Module {
 
