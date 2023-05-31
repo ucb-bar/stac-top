@@ -189,16 +189,14 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
 
   sramEn := !done && io.en && currElement.elementType === ElementType.rwOp
   io.sramEn := sramEn
-  sramWen := false.B
+
+  // TODO wrong for random ops
+  sramWen := !done && io.en && currOperation.operationType === OperationType.write
 
   when(!done) {
     when(io.en && currElement.elementType === ElementType.rwOp) {
-      // TODO wrong for random ops
-      sramWen := currOperation.operationType === OperationType.write
       opIndex := opIndex + 1.U
     }
-  }.otherwise {
-    sramWen := false.B
   }
 
   when(io.en && !done && cycle < io.cycleLimit) {
