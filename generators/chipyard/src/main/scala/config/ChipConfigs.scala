@@ -66,5 +66,6 @@ class SRAMDigitalConfig extends Config(
   new chipyard.config.WithCbusToPbusCrossingType(AsynchronousCrossing()) ++  // Add Async crossing between PBUS and CBUS
   new chipyard.config.WithSbusToMbusCrossingType(AsynchronousCrossing()) ++  // Add Async crossings between backside of L2 and MBUS
 
+  new srambist.WithSramBist(srambist.SramBistParams())
   new chipyard.config.AbstractConfig)
 

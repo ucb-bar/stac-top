@@ -3,10 +3,14 @@ package srambist
 import chisel3._
 import chisel3.util._
 import org.chipsalliance.cde.config.Parameters
-import freechips.rocketchip.regmapper._
 import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.interrupts._
+import freechips.rocketchip.prci._
 import freechips.rocketchip.regmapper._
+import freechips.rocketchip.subsystem._
 import freechips.rocketchip.tilelink._
+import freechips.rocketchip.devices.tilelink._
+import freechips.rocketchip.util._
 
 import srambist.analog.SramParams
 
@@ -206,26 +210,73 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
 
 }
 
-/*
-// case object ProgrammableBistKey extends Field[Option[ProgrammableBistParams]](None)
-case object SramTestUnitKey extends Field[Option[SramTestUnitParams]](None)
+class TLSramBist(busWidthBytes: Int, params: SramBistParams)(implicit
+    p: Parameters
+) extends SramBist(busWidthBytes, params)
+    with HasTLControlRegMap
 
-trait CanHaveSramBist {
-  // connect sram unit to subsystem here
+case class SramBistAttachParams(
+    device: SramBistParams,
+    controlWhere: TLBusWrapperLocation = PBUS,
+    blockerAddr: Option[BigInt] = None,
+    controlXType: ClockCrossingType = NoCrossing,
+    intXType: ClockCrossingType = NoCrossing
+) {
+  def attachTo(where: Attachable)(implicit p: Parameters): TLSramBist = {
+    val name = "sram_bist"
+    val tlbus = where.locateTLBusWrapper(controlWhere)
+    val sramBistClockDomainWrapper = LazyModule(
+      new ClockSinkDomain(take = None)
+    )
+    val sramBist = sramBistClockDomainWrapper {
+      LazyModule(new TLSramBist(tlbus.beatBytes, device))
+    }
+    sramBist.suggestName(name)
+
+    tlbus.coupleTo(s"device_named_$name") { bus =>
+
+      val blockerOpt = blockerAddr.map { a =>
+        val blocker = LazyModule(
+          new TLClockBlocker(
+            BasicBusBlockerParams(a, tlbus.beatBytes, tlbus.beatBytes)
+          )
+        )
+        tlbus.coupleTo(s"bus_blocker_for_$name") {
+          blocker.controlNode := TLFragmenter(tlbus) := _
+        }
+        blocker
+      }
+
+      sramBistClockDomainWrapper.clockNode := (controlXType match {
+        case _: SynchronousCrossing =>
+          tlbus.dtsClk.map(_.bind(sramBist.device))
+          tlbus.fixedClockNode
+        case _: RationalCrossing =>
+          tlbus.clockNode
+        case _: AsynchronousCrossing =>
+          val sramBistClockGroup = ClockGroup()
+          sramBistClockGroup := where.asyncClockGroupsNode
+          blockerOpt.map { _.clockNode := sramBistClockGroup }.getOrElse {
+            sramBistClockGroup
+          }
+      })
+
+      (sramBist.controlXing(controlXType)
+        := TLFragmenter(tlbus)
+        := blockerOpt.map { _.node := bus }.getOrElse { bus })
+    }
+
+    sramBist
+  }
 }
 
-class WithSramBist(base: BigInt) extends Config((site, here, up) => {
-  case SramTestUnitKey => Some(SramTestUnitParams(
-    programmableBistParams = ProgrammableBistParams(
-      addr = base)
-    ))
-})
+object SramBist {
+  val nextId = { var i = -1; () => { i += 1; i } }
 
-//trait CanHavePeripheryProgrammableBist {
-// connect Programmable BIST to subsystem here
-//}
-
-// class WithProgrammableBist() extends Config((site, here, up) => {
-//  case ProgrammableBistKey => Some(ProgrammableBistParams())
-//})
- */
+  def makePort(node: BundleBridgeSource[SramBistTopIO], name: String)(implicit
+      p: Parameters
+  ): ModuleValue[SramBistTopIO] = {
+    val sramBistNode = node.makeSink()
+    InModuleBody { sramBistNode.makeIO()(ValName(name)) }
+  }
+}
