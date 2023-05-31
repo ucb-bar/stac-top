@@ -14,7 +14,8 @@ case class ProgrammableBistParams(
     dataWidth: Int = 32,
     randAddrWidth: Int = 14
 ) {
-  def seedWidth = 2 * dataWidth + maxColAddrWidth + maxRowAddrWidth
+  // data + mask + row addr + col addr + operation
+  def seedWidth = 2 * dataWidth + maxColAddrWidth + maxRowAddrWidth + 1
 }
 
 class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
@@ -73,7 +74,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   }
 
   class WaitElement extends Bundle {
-    val cyclesToWait = UInt(14.W)
+    val cyclesToWait = UInt(params.randAddrWidth.W)
   }
 
   class Element extends Bundle {
@@ -109,6 +110,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   val currElement = Wire(new Element)
   val currOperation = Wire(new Operation)
   val currOperationElement = Wire(new OperationElement)
+  val currWaitElement = Wire(new WaitElement)
   val checkEn = Wire(Bool())
   val sramEn = Wire(Bool())
   val opsDone = Wire(Bool())
@@ -122,6 +124,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   val randMask = Wire(UInt(params.dataWidth.W))
   val randRow = Wire(UInt(params.maxRowAddrWidth.W))
   val randCol = Wire(UInt(params.maxColAddrWidth.W))
+  val randWen = Wire(Bool())
   val dataPatternEntry = Wire(UInt(params.dataWidth.W))
   val detData = Wire(UInt(params.dataWidth.W))
 
@@ -140,11 +143,16 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
     2 * params.dataWidth + params.maxRowAddrWidth + params.maxColAddrWidth - 1,
     2 * params.dataWidth + params.maxRowAddrWidth
   )
+  randWen := rand(
+    2 * params.dataWidth + params.maxRowAddrWidth + params.maxColAddrWidth
+  )
 
   val rowCounter = RegInit(0.asUInt(params.maxRowAddrWidth.W))
   val colCounter = RegInit(0.asUInt(params.maxColAddrWidth.W))
   // Used for random addresses only
   val addrCounter = RegInit(1.asUInt(params.randAddrWidth.W))
+  // Counts the number of cycles passed when executing a wait element
+  val waitCycleCounter = RegInit(1.asUInt(params.randAddrWidth.W))
   val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
   val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
   val done = RegInit(false.B)
@@ -152,6 +160,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
 
   currElement := io.elementSequence(elementIndex)
   currOperationElement := currElement.operationElement
+  currWaitElement := currElement.waitElement
   currOperation := currOperationElement.operations(opIndex)
   opsDone := opIndex === currOperationElement.maxIdx
   up := currOperationElement.dir === Direction.up
@@ -188,14 +197,16 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   )
 
   sramEn := !done && io.en && currElement.elementType === ElementType.rwOp
-  io.sramEn := sramEn
 
   // TODO wrong for random ops
-  sramWen := !done && io.en && currOperation.operationType === OperationType.write
+  sramWen := !done && io.en && (currOperation.operationType === OperationType.write || (currOperation.operationType === OperationType.rand && randWen))
 
   when(!done) {
     when(io.en && currElement.elementType === ElementType.rwOp) {
       opIndex := opIndex + 1.U
+    }
+    when(io.en && currElement.elementType === ElementType.waitOp) {
+      waitCycleCounter := waitCycleCounter + 1.U
     }
   }
 
@@ -207,7 +218,23 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
     done := true.B
   }
 
-  when(io.en && !done && opsDone) {
+  when(
+    io.en && waitCycleCounter === currWaitElement.cyclesToWait && currElement.elementType === ElementType.waitOp
+  ) {
+    when(elementIndex === io.maxElementIdx) {
+      done := true.B
+    }.otherwise {
+      elementIndex := elementIndex + 1.U
+      addrCounter := 1.U
+      waitCycleCounter := 1.U
+      rowCounter := rowStartNext
+      colCounter := colStartNext
+    }
+  }
+
+  when(
+    io.en && !done && opsDone && currElement.elementType === ElementType.rwOp
+  ) {
     opIndex := 0.U
     addrCounter := addrCounter + 1.U
     when(io.innerDim === Dimension.row) {
@@ -215,6 +242,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
     }.otherwise {
       colCounter := colNext
     }
+
     when(addrDone) {
       when(elementIndex === io.maxElementIdx) {
         done := true.B
@@ -223,11 +251,12 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
       }.otherwise {
         elementIndex := elementIndex + 1.U
         addrCounter := 1.U
+        waitCycleCounter := 1.U
       }
       rowCounter := rowStartNext
       colCounter := colStartNext
-
     }
+
     when(!addrDone && rowsDone && io.innerDim === Dimension.row) {
       rowCounter := rowStart
       colCounter := colNext
@@ -270,6 +299,6 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   io.cycle := cycle
   io.done := done
   io.resetHash := false.B
+  io.sramEn := sramEn
   io.sramWen := sramWen
-
 }
