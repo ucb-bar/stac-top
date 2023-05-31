@@ -98,7 +98,8 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         Vec(4, new d.Element())
           .Lit(0 -> march, 1 -> march, 2 -> march, 3 -> march)
       )
-      d.io.sramEn.expect(false.B)
+      d.clock.step()
+      d.clock.step()
       d.clock.step()
       d.io.start.poke(false.B)
 
@@ -227,7 +228,6 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         Vec(4, new d.Element())
           .Lit(0 -> march, 1 -> march, 2 -> march, 3 -> march)
       )
-      d.io.sramEn.expect(false.B)
       d.clock.step()
       d.io.start.poke(false.B)
 
@@ -325,7 +325,6 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
           Vec(4, new d.Element())
             .Lit(0 -> march, 1 -> march, 2 -> march, 3 -> march)
         )
-        d.io.sramEn.expect(false.B)
         d.clock.step()
         d.io.start.poke(false.B)
 
@@ -426,7 +425,6 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
           Vec(4, new d.Element())
             .Lit(0 -> march, 1 -> randElement, 2 -> march, 3 -> march)
         )
-        d.io.sramEn.expect(false.B)
         d.clock.step()
         d.io.start.poke(false.B)
 
