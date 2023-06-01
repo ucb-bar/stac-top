@@ -210,11 +210,11 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
     }
   }
 
-  when(io.en && !done && cycle < io.cycleLimit) {
+  when(io.en && !done && (cycle < io.cycleLimit || io.cycleLimit === 0.U)) {
     cycle := cycle + 1.U
   }
 
-  when(cycle === io.cycleLimit) {
+  when(cycle === io.cycleLimit && io.cycleLimit =/= 0.U) {
     done := true.B
   }
 
