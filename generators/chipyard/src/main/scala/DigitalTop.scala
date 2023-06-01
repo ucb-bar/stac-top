@@ -48,6 +48,6 @@ class DigitalTopModule[+L <: DigitalTop](l: L) extends ChipyardSystemModule(l)
   with sifive.blocks.devices.spi.HasPeripherySPIFlashModuleImp
   with sifive.blocks.devices.spi.HasPeripherySPIModuleImp
   with chipyard.example.CanHavePeripheryGCDModuleImp
-  with srambist.CanHavePeripherySramBistModuleImp
+  with srambist.HasPeripherySramBistModuleImp
   with freechips.rocketchip.util.DontTouch
 // DOC include end: DigitalTop

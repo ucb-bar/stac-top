@@ -5,7 +5,7 @@
 // DOC include start: SRAM BIST test
 int main(void)
 {
-  uint32_t result, ref, x = 20, y = 15;
+  uint32_t result, ref;
 
   reg_write32(SRAMBIST, 0);
   reg_write32(SRAMBIST + 13, 25);
@@ -16,7 +16,7 @@ int main(void)
   reg_write8(SRAMBIST + 796, 0xff);
 
   // wait for peripheral to complete
-  while ((reg_read8(SRAM_BIST + 376) & 0x1) == 0) ;
+  while ((reg_read8(SRAMBIST + 376) & 0x1) == 0) ;
 
   reg_write32(SRAMBIST, 0);
   reg_write32(SRAMBIST + 13, 25);
@@ -27,7 +27,7 @@ int main(void)
   reg_write8(SRAMBIST + 796, 0xff);
 
   // wait for peripheral to complete
-  while ((reg_read8(SRAM_BIST + 376) & 0x1) == 0) ;
+  while ((reg_read8(SRAMBIST + 376) & 0x1) == 0) ;
 
   result = reg_read32(SRAMBIST + 92);
   ref = 25;

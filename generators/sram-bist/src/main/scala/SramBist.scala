@@ -13,6 +13,7 @@ import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.util._
 
 import srambist.analog.SramParams
+import srambist.sramharness.SaeSrc
 
 class SramBistTopIO extends Bundle {
   val sramExtEn = Input(Bool())
@@ -41,7 +42,8 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
   lazy val module = new LazyModuleImp(this) {
     val io = ioNode.bundle
     val scanChainIntf = Module(new ScanChainIntf)
-    val bistTop = Module(new BistTop(new BistTopParams))
+    val bistTopParams = new BistTopParams
+    val bistTop = Module(new BistTop(bistTopParams))
 
     val ex = Wire(new DecoupledIO(Bool()))
 
@@ -63,16 +65,16 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
     bistTop.io.mask := scanChainIntf.io.mask.q
     bistTop.io.we := scanChainIntf.io.we.q.asBool
     bistTop.io.sramId := scanChainIntf.io.sramId.q
-    bistTop.io.sramSel := scanChainIntf.io.sramSel.q
+    bistTop.io.sramSel := scanChainIntf.io.sramSel.q.asTypeOf(SramSrc())
     bistTop.io.saeCtl := scanChainIntf.io.saeCtl.q
-    bistTop.io.saeSel := scanChainIntf.io.saeSel.q
+    bistTop.io.saeSel := scanChainIntf.io.saeSel.q.asTypeOf(SaeSrc())
     bistTop.io.bistRandSeed := scanChainIntf.io.bistRandSeed.q
     bistTop.io.bistSigSeed := scanChainIntf.io.bistSigSeed.q
     bistTop.io.bistMaxRowAddr := scanChainIntf.io.bistMaxRowAddr.q
     bistTop.io.bistMaxColAddr := scanChainIntf.io.bistMaxColAddr.q
-    bistTop.io.bistInnerDim := scanChainIntf.io.bistInnerDim.q
-    bistTop.io.bistPatternTable := scanChainIntf.io.bistPatternTable.q
-    bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence.q
+    bistTop.io.bistInnerDim := scanChainIntf.io.bistInnerDim.q.asTypeOf(bistTop.bist.Dimension())
+    bistTop.io.bistPatternTable := scanChainIntf.io.bistPatternTable.q.asTypeOf(Vec(bistTopParams.bistParams.patternTableLength, UInt(bistTopParams.bistParams.dataWidth.W)))
+    bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence.q.asTypeOf(Vec(bistTopParams.bistParams.elementTableLength, new bistTop.bist.Element()))
     bistTop.io.bistMaxElementIdx := scanChainIntf.io.bistMaxElementIdx.q
     bistTop.io.bistCycleLimit := scanChainIntf.io.bistCycleLimit.q
     bistTop.io.bistStopOnFailure := scanChainIntf.io.bistStopOnFailure.q.asBool
