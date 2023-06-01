@@ -13,8 +13,7 @@ vlsi.inputs.hierarchical:
   top_module: ChipTop
   config_source: manual
   manual_modules:
-    - ChipTop:
-      - RocketTile
+    - ChipTop: []
 
   constraints:
     - ChipTop:
@@ -25,46 +24,13 @@ vlsi.inputs.hierarchical:
             - {name: "VDD", pin: "VDD"}
           ground:
             - {name: "VDD", pin: "VDD"}
-      - vlsi.inputs.pin.assignments:
-          # FIXME: actually place all the pins lol (following are copied from propel2)
-          - {pins: uart_0_rxd, side: right, layers: [met3], location: [3377.035, 1420.815]}
-          - {pins: uart_0_txd, side: right, layers: [met3], location: [3377.035, 1702.005]}
-    - RocketTile:
-      - vlsi.inputs.clocks:
-          - {name: "clock", period: "10ns", uncertainty: "0.1ns"} # temporary
-      - vlsi.inputs.pin.assignments:
-          - {pins: "*", layers: [met2, met4], side: top}
-          # TODO: more intelligent pin placement
 
   manual_placement_constraints:
     - ChipTop:
         - path: ChipTop
           type: toplevel
-          # FIXME: fix x/y/width/height
-          #x: 210.965
-          #y: 197.965
           x: 0
           y: 0
-          width: 3166.07
-          height: 4779.07
-          margins: {left: 0, right: 0, top: 0, bottom: 0}
-        - path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile
-          type: hardmacro
-          # temp, copied from propel2
-          x: 132.5
-          y: 132.5
-
-    - RocketTile:
-        - path: RocketTile
-          type: toplevel
-          x: 0
-          y: 0
-          # FIXME: width/height
-          width: 2700
-          height: 1000
-          margins: {left: 0, right: 0, top: 0, bottom: 0}
-        # TODO: improve sram placements
-        - {path: RocketTile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, x: 0.0, y: 0.0, orientation: my90}
-        - {path: RocketTile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, x: 1176.68, y: 0.0, orientation: r270}
-        - {path: RocketTile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, x: 2334.855, y: 0.0, orientation: r270}
-        - {path: RocketTile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, x: 1324.8, y: 0.0, orientation: my90}
+          width: 3588
+          height: 5188
+          margins: {left: 250, right: 250, top: 250, bottom: 250}
