@@ -1,6 +1,6 @@
 package chipyard.sky130
 
-import barstools.iocell.chisel.{AnalogIOCell, AnalogIOCellBundle, DigitalGPIOCell, DigitalGPIOCellBundle, DigitalInIOCell, DigitalInIOCellBundle, DigitalOutIOCell, DigitalOutIOCellBundle, IOCellTypeParams}
+import barstools.iocell.chisel.{AnalogIOCell, AnalogIOCellBundle, DigitalGPIOCell, DigitalGPIOCellBundle, DigitalInIOCell, DigitalInIOCellBundle, DigitalOutIOCell, DigitalOutIOCellBundle, IOCell, IOCellTypeParams}
 import chipyard.iobinders.IOCellKey
 import chisel3._
 import chisel3.experimental.{Analog, attach}
@@ -52,7 +52,7 @@ class Sky130EFGPIOV2IO[PadView <: Data](padView: PadView) extends Bundle {
   val TIE_LO_ESD = Output(Bool())
 }
 
-private object consts {
+object consts {
   val defaultCellName = "sky130_ef_io__gpiov2_pad_wrapped"
 }
 
@@ -67,12 +67,6 @@ class Sky130EFGPIOV2Cell[PadView <: Data](
 
 abstract class Sky130EFGPIOV2CellIOCellBase[PadView <: Data](cellName: String, padView: PadView) extends Module {
   val cell = Module(new Sky130EFGPIOV2Cell(cellName = cellName, padView = padView))
-
-  override def suggestName(seed: => String): this.type = {
-    // this doesn't do anything :(
-    cell.suggestName(seed)
-    super.suggestName(s"${seed}_wrapper")
-  }
 
   // special nets
   cell.io.ENABLE_INP_H := cell.io.TIE_LO_ESD // tie - disable HV (VDDIO) input
@@ -160,6 +154,20 @@ class Sky130EFGPIOV2CellOut(cellName: String = consts.defaultCellName)
   cell.io.INP_DIS := true.B
 }
 
+class Sky130EFGPIOV2CellNoConn(cellName: String = consts.defaultCellName)
+  extends Sky130EFGPIOV2CellIOCellBase(cellName, Analog(1.W)) with IOCell {
+  val io = IO(new Bundle {
+    val pad = Analog(1.W)
+  })
+
+  attach(io.pad, cell.io.PAD)
+
+  cell.io.DM := "b000".U(3.W)
+  cell.io.OUT := false.B
+  cell.io.OE_N := true.B
+  cell.io.INP_DIS := true.B
+}
+
 case class Sky130EFIOCellTypeParams(cellName: String = consts.defaultCellName)
   extends IOCellTypeParams {
   def analog() = Module(new Sky130EFGPIOV2CellAnalog(cellName = cellName))
@@ -171,6 +179,11 @@ case class Sky130EFIOCellTypeParams(cellName: String = consts.defaultCellName)
   def output() = Module(new Sky130EFGPIOV2CellOut(cellName = cellName))
 }
 
+
+/**
+ * Use Sky130 gpiov2 IO cells
+ * @param cellName name of gpiov2 cell to instantiate
+ */
 class WithSky130EFIOCells(cellName: String = consts.defaultCellName) extends Config((site, here, up) => {
   case IOCellKey => Sky130EFIOCellTypeParams(cellName = cellName)
 })
