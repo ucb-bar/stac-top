@@ -137,7 +137,7 @@ lazy val chipyard = (project in file("generators/chipyard"))
     sha3, // On separate line to allow for cleaner tutorial-setup patches
     dsptools, `rocket-dsp-utils`,
     gemmini, icenet, tracegen, cva6, nvdla, sodor, ibex, fft_generator,
-    constellation, mempress)
+    constellation, mempress, sram_bist)
   .settings(libraryDependencies ++= rocketLibDeps.value)
   .settings(
     libraryDependencies ++= Seq(

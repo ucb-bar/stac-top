@@ -28,6 +28,7 @@ class DigitalTop(implicit p: Parameters) extends ChipyardSystem
   with icenet.CanHavePeripheryIceNIC // Enables optionally adding the IceNIC for FireSim
   with chipyard.example.CanHavePeripheryInitZero // Enables optionally adding the initzero example widget
   with chipyard.example.CanHavePeripheryGCD // Enables optionally adding the GCD example widget
+  with srambist.CanHavePeripherySramBist // Enables optionally adding the SRAM bist peripheral
   with chipyard.example.CanHavePeripheryStreamingFIR // Enables optionally adding the DSPTools FIR example widget
   with chipyard.example.CanHavePeripheryStreamingPassthrough // Enables optionally adding the DSPTools streaming-passthrough example widget
   with nvidia.blocks.dla.CanHavePeripheryNVDLA // Enables optionally having an NVDLA
@@ -47,5 +48,6 @@ class DigitalTopModule[+L <: DigitalTop](l: L) extends ChipyardSystemModule(l)
   with sifive.blocks.devices.spi.HasPeripherySPIFlashModuleImp
   with sifive.blocks.devices.spi.HasPeripherySPIModuleImp
   with chipyard.example.CanHavePeripheryGCDModuleImp
+  with srambist.CanHavePeripherySramBistModuleImp
   with freechips.rocketchip.util.DontTouch
 // DOC include end: DigitalTop
