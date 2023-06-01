@@ -60,6 +60,6 @@ class STACConfig extends Config(
   new chipyard.config.WithBroadcastManager ++                      // Replace L2 with a broadcast hub for coherence
   new freechips.rocketchip.subsystem.WithBufferlessBroadcastHub ++ // Remove buffers from broadcast manager
   new freechips.rocketchip.subsystem.WithCoherentBusTopology ++    // use coherent bus topology
-  new srambist.WithSramBist(new srambist.SramBistParams()) ++    // add SRAM bist peripheral
+  new srambist.WithSramBist(new srambist.SramBistParams()) ++    // add SRAM BIST peripheral
 
   new chipyard.config.AbstractConfig)
