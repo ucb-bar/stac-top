@@ -1,0 +1,23 @@
+pins:
+  S2: reset
+  S3: clock_clock
+  S5: jtag_TCK
+  S6: jtag_TMS
+  S7: jtag_TDI
+  S8: jtag_TDO
+  E1: custom_boot
+  W10: uart_0_txd
+  W11: uart_0_rxd
+  E20: serial_tl_clock
+  W19: serial_tl_bits_in_valid
+  W18: serial_tl_bits_out_bits
+  W17: serial_tl_bits_in_bits
+  W16: serial_tl_bits_in_ready
+  W15: serial_tl_bits_in_valid
+  W14: serial_tl_bits_out_ready
+  E19: spi0_clk
+  E18: spi0_csn0
+  E17: spi0_dq3
+  E16: spi0_dq2
+  E15: spi0_dq1
+  E14: spi0_dq0

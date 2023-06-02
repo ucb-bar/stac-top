@@ -3,7 +3,7 @@ package chipyard.sky130
 import chipyard.iobinders.HasIOBinders
 import chisel3._
 import chisel3.experimental.{Analog, attach}
-import freechips.rocketchip.diplomacy.{InModuleBody, LazyModule}
+import freechips.rocketchip.diplomacy.{InModuleBody, LazyModule, ModuleValue}
 import org.chipsalliance.cde.config.{Config, Field}
 
 case class FillNoConnCellsParams(totalCells: Int, cellName: String)
@@ -11,25 +11,30 @@ case class FillNoConnCellsParams(totalCells: Int, cellName: String)
 case object FillNoConnCellsKey extends Field[FillNoConnCellsParams]()
 
 trait HasSky130EFIONoConnCells {
-  this: HasIOBinders with LazyModule =>
+  this: HasSky130EFIOCells with HasIOBinders with LazyModule =>
 
   val params = p(FillNoConnCellsKey)
 
-  InModuleBody {
+  val noconnIOCells: ModuleValue[Seq[Sky130EFGPIOV2CellIOCellBase]] = InModuleBody {
     val instantiatedCount = iocells.getWrappedValue.size
 
     val toGenerate = params.totalCells - instantiatedCount
     require(toGenerate >= 0,
       s"Too many cells instantiated (got $instantiatedCount, but can only have ${params.totalCells})")
 
-    (0 until (params.totalCells - instantiatedCount)).foreach { i =>
-      val pad = IO(Analog(1.W)).suggestName(s"pad_nc_$i")
+    val cells = (0 until (params.totalCells - instantiatedCount)).map { i =>
+      val pad = dontTouch(IO(Analog(1.W)).suggestName(s"pad_nc_$i"))
       val cell = Module(new Sky130EFGPIOV2CellNoConn(params.cellName)).named(s"nc_$i")
       attach(pad, cell.io.pad)
+
+      registerSky130EFIOCell(cell)
+      cell
     }
 
     println()
     println(s"Sky130EFIO: Generated $toGenerate no-conn IO cells/pads")
+
+    cells.toSeq
   }
 }
 
