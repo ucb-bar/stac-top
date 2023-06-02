@@ -77,6 +77,5 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   tdc.io.b := io.saeMuxed
   tdc.io.reset_b := ~reset.asBool // TODO: is this the right way to do this?
   io.saeOut := tdc.io.dout
-  io.saeOut := 0.U
 
 }

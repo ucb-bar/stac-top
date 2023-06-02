@@ -78,8 +78,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val bistExpected = Output(UInt(32.W))
     val bistReceived = Output(UInt(32.W))
     val bistSignature = Output(UInt(32.W))
-
-    val checkClk = Output(Bool())
   })
 
   object State extends ChiselEnum {
@@ -196,9 +194,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
         )
       )
 
-      if (i == 0) {
-        io.checkClk := harness.io.sramClk.asBool
-      }
       val sram = withClock(harness.io.sramClk) { Module(new Sram(sramParams)) }
 
       sram.io.wmask := harness.io.mask

@@ -428,6 +428,35 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       testhelpers.c.io.bistEn.poke(false.B)
 
       testSramMethod(testhelpers.executeScanChainSramOp)
+
+      // ************
+      // MMIO -> SRAM
+      // ************
+
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
+
+      testSramMethod(testhelpers.executeMmioOp)
+
+      // ******************
+      // SCAN CHAIN -> BIST
+      // ******************
+
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.bistEn.poke(false.B)
+
+      testBistMethod(true)
+
+      // ************
+      // MMIO -> BIST
+      // ************
+
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
+
+      testBistMethod(false)
+
     }
   }
   it should "work with chiseltest SRAMs" in {
