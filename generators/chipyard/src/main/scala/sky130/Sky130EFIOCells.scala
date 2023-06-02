@@ -31,18 +31,6 @@ class Sky130EFGPIOV2IO extends Bundle {
   val ENABLE_VDDA_H = Input(Bool())
   val ENABLE_VSWITCH_H = Input(Bool())
 
-  // Power
-  val VDDIO = Analog(1.W)
-  val VDDIO_Q = Analog(1.W)
-  val VDDA = Analog(1.W)
-  val VCCD = Analog(1.W)
-  val VSWITCH = Analog(1.W)
-  val VCCHIB = Analog(1.W)
-  val VSSA = Analog(1.W)
-  val VSSD = Analog(1.W)
-  val VSSIO_Q = Analog(1.W)
-  val VSSIO = Analog(1.W)
-
   val PAD = Analog(1.W)
 
   // Direct pad connections - VDDIO domain
