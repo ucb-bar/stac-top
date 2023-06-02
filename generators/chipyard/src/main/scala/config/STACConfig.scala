@@ -22,7 +22,7 @@ class STACConfig extends Config(
   //==================================
   // Set up I/O
   //==================================
-  new testchipip.WithSerialTLWidth(64) ++
+  new testchipip.WithSerialTLWidth(1) ++
   // No AXI backing memory in sim since that causes AMBA prot fields to stay in
   // the main design, which the serdes do not support.
   new chipyard.config.WithSerialTLBackingMemory ++                                      // Backing memory is over serial TL protocol
@@ -61,5 +61,6 @@ class STACConfig extends Config(
   new freechips.rocketchip.subsystem.WithBufferlessBroadcastHub ++ // Remove buffers from broadcast manager
   new freechips.rocketchip.subsystem.WithCoherentBusTopology ++    // use coherent bus topology
   new srambist.WithSramBist(new srambist.SramBistParams()) ++    // add SRAM BIST peripheral
+  new WithNBitPeripheryBus(64) ++
 
   new chipyard.config.AbstractConfig)
