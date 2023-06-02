@@ -6,6 +6,8 @@ import chisel3.stage.PrintFullStackTraceAnnotation
 
 import org.scalatest.flatspec.AnyFlatSpec
 
+import srambist.SramBistCtrlRegs._
+
 class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "ScanChainIntf"
   it should "work" in {
@@ -71,11 +73,11 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
             assert(num == value)
           }
 
-          scanOutAndAssert(SramBistCtrlRegWidths.BIST_SIGNATURE, 0)
-          scanOutAndAssert(SramBistCtrlRegWidths.BIST_RECEIVED, 70)
-          scanOutAndAssert(SramBistCtrlRegWidths.BIST_EXPECTED, 60)
-          scanOutAndAssert(SramBistCtrlRegWidths.BIST_FAIL_CYCLE, 50)
-          scanOutAndAssert(SramBistCtrlRegWidths.BIST_FAIL, 1)
+          scanOutAndAssert(REG_WIDTH(BIST_SIGNATURE), 0)
+          scanOutAndAssert(REG_WIDTH(BIST_RECEIVED), 70)
+          scanOutAndAssert(REG_WIDTH(BIST_EXPECTED), 60)
+          scanOutAndAssert(REG_WIDTH(BIST_FAIL_CYCLE), 50)
+          scanOutAndAssert(REG_WIDTH(BIST_FAIL), 1)
 
           // Test updating registers via scan in.
 
@@ -92,10 +94,10 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
             }
           }
 
-          scanIn(SramBistCtrlRegWidths.WE, 0)
-          scanIn(SramBistCtrlRegWidths.MASK, 15)
-          scanIn(SramBistCtrlRegWidths.DIN, 20)
-          scanIn(SramBistCtrlRegWidths.ADDR, 25)
+          scanIn(REG_WIDTH(WE), 0)
+          scanIn(REG_WIDTH(MASK), 15)
+          scanIn(REG_WIDTH(DIN), 20)
+          scanIn(REG_WIDTH(ADDR), 25)
 
           d.io.sramScanEn.poke(false.B)
           d.io.addr.q.expect(25.U)

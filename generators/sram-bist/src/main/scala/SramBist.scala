@@ -14,6 +14,7 @@ import freechips.rocketchip.util._
 
 import srambist.analog.SramParams
 import srambist.sramharness.SaeSrc
+import srambist.SramBistCtrlRegs._
 
 class SramBistTopIO extends Bundle {
   val sramExtEn = Input(Bool())
@@ -68,13 +69,13 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
     bistTop.io.sramSel := scanChainIntf.io.sramSel.q.asTypeOf(SramSrc())
     bistTop.io.saeCtl := scanChainIntf.io.saeCtl.q
     bistTop.io.saeSel := scanChainIntf.io.saeSel.q.asTypeOf(SaeSrc())
-    bistTop.io.bistRandSeed := scanChainIntf.io.bistRandSeed.q
+    bistTop.io.bistRandSeed := scanChainIntf.io.bistRandSeed
     bistTop.io.bistSigSeed := scanChainIntf.io.bistSigSeed.q
     bistTop.io.bistMaxRowAddr := scanChainIntf.io.bistMaxRowAddr.q
     bistTop.io.bistMaxColAddr := scanChainIntf.io.bistMaxColAddr.q
     bistTop.io.bistInnerDim := scanChainIntf.io.bistInnerDim.q.asTypeOf(bistTop.bist.Dimension())
-    bistTop.io.bistPatternTable := scanChainIntf.io.bistPatternTable.q.asTypeOf(Vec(bistTopParams.bistParams.patternTableLength, UInt(bistTopParams.bistParams.dataWidth.W)))
-    bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence.q.asTypeOf(Vec(bistTopParams.bistParams.elementTableLength, new bistTop.bist.Element()))
+    bistTop.io.bistPatternTable := scanChainIntf.io.bistPatternTable.asTypeOf(Vec(bistTopParams.bistParams.patternTableLength, UInt(bistTopParams.bistParams.dataWidth.W)))
+    bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence.asTypeOf(Vec(bistTopParams.bistParams.elementTableLength, new bistTop.bist.Element()))
     bistTop.io.bistMaxElementIdx := scanChainIntf.io.bistMaxElementIdx.q
     bistTop.io.bistCycleLimit := scanChainIntf.io.bistCycleLimit.q
     bistTop.io.bistStopOnFailure := scanChainIntf.io.bistStopOnFailure.q.asBool
@@ -92,125 +93,125 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
     io.bistDone := bistTop.io.bistDone
 
     regmap(
-      SramBistCtrlRegs.ADDR -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.ADDR, scanChainIntf.io.addr)
+      SCAN_CHAIN_OFFSET(ADDR) -> Seq(
+        RegField.rwReg(REG_WIDTH(ADDR), scanChainIntf.io.addr)
       ),
-      SramBistCtrlRegs.DIN -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.DIN, scanChainIntf.io.din)
+      SCAN_CHAIN_OFFSET(DIN) -> Seq(
+        RegField.rwReg(REG_WIDTH(DIN), scanChainIntf.io.din)
       ),
-      SramBistCtrlRegs.MASK -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.MASK, scanChainIntf.io.mask)
+      SCAN_CHAIN_OFFSET(MASK) -> Seq(
+        RegField.rwReg(REG_WIDTH(MASK), scanChainIntf.io.mask)
       ),
-      SramBistCtrlRegs.WE -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.WE, scanChainIntf.io.we)
+      SCAN_CHAIN_OFFSET(WE) -> Seq(
+        RegField.rwReg(REG_WIDTH(WE), scanChainIntf.io.we)
       ),
-      SramBistCtrlRegs.SRAM_ID -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.SRAM_ID, scanChainIntf.io.sramId)
+      SCAN_CHAIN_OFFSET(SRAM_ID) -> Seq(
+        RegField.rwReg(REG_WIDTH(SRAM_ID), scanChainIntf.io.sramId)
       ),
-      SramBistCtrlRegs.SRAM_SEL -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.SRAM_SEL, scanChainIntf.io.sramSel)
+      SCAN_CHAIN_OFFSET(SRAM_SEL) -> Seq(
+        RegField.rwReg(REG_WIDTH(SRAM_SEL), scanChainIntf.io.sramSel)
       ),
-      SramBistCtrlRegs.SAE_CTL -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.SAE_CTL, scanChainIntf.io.saeCtl)
+      SCAN_CHAIN_OFFSET(SAE_CTL) -> Seq(
+        RegField.rwReg(REG_WIDTH(SAE_CTL), scanChainIntf.io.saeCtl)
       ),
-      SramBistCtrlRegs.SAE_SEL -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.SAE_SEL, scanChainIntf.io.saeSel)
+      SCAN_CHAIN_OFFSET(SAE_SEL) -> Seq(
+        RegField.rwReg(REG_WIDTH(SAE_SEL), scanChainIntf.io.saeSel)
       ),
-      SramBistCtrlRegs.DOUT -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.DOUT, scanChainIntf.io.doutMmio)
+      SCAN_CHAIN_OFFSET(DOUT) -> Seq(
+        RegField.rwReg(REG_WIDTH(DOUT), scanChainIntf.io.doutMmio)
       ),
-      SramBistCtrlRegs.TDC -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.TDC, scanChainIntf.io.tdcMmio)
+    SCAN_CHAIN_OFFSET(TDC) -> (0 until 4) .map { i => 
+        RegField.rwReg(REG_WIDTH(TDC), scanChainIntf.io.tdcMmio(i))
+      },
+      SCAN_CHAIN_OFFSET(EX) -> Seq(RegField.w(1, ex)),
+      SCAN_CHAIN_OFFSET(DONE) -> Seq(
+        RegField.rwReg(REG_WIDTH(DONE), scanChainIntf.io.doneMmio)
       ),
-      SramBistCtrlRegs.EX -> Seq(RegField.w(1, ex)),
-      SramBistCtrlRegs.DONE -> Seq(
-        RegField.rwReg(SramBistCtrlRegWidths.DONE, scanChainIntf.io.doneMmio)
-      ),
-      SramBistCtrlRegs.BIST_RAND_SEED -> Seq(
+    SCAN_CHAIN_OFFSET(BIST_RAND_SEED) -> (0 until 2).map { i =>
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_RAND_SEED,
-          scanChainIntf.io.bistRandSeed
+          REG_WIDTH(BIST_RAND_SEED),
+          scanChainIntf.io.bistRandSeedMmio(i)
         )
-      ),
-      SramBistCtrlRegs.BIST_SIG_SEED -> Seq(
+      },
+      SCAN_CHAIN_OFFSET(BIST_SIG_SEED) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_SIG_SEED,
+          REG_WIDTH(BIST_SIG_SEED),
           scanChainIntf.io.bistSigSeed
         )
       ),
-      SramBistCtrlRegs.BIST_MAX_ROW_ADDR -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_MAX_ROW_ADDR) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_MAX_ROW_ADDR,
+          REG_WIDTH(BIST_MAX_ROW_ADDR),
           scanChainIntf.io.bistMaxRowAddr
         )
       ),
-      SramBistCtrlRegs.BIST_MAX_COL_ADDR -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_MAX_COL_ADDR) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_MAX_COL_ADDR,
+          REG_WIDTH(BIST_MAX_COL_ADDR),
           scanChainIntf.io.bistMaxColAddr
         )
       ),
-      SramBistCtrlRegs.BIST_INNER_DIM -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_INNER_DIM) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_INNER_DIM,
+          REG_WIDTH(BIST_INNER_DIM),
           scanChainIntf.io.bistInnerDim
         )
       ),
-      SramBistCtrlRegs.BIST_ELEMENT_SEQUENCE -> Seq(
+    SCAN_CHAIN_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 9).map { i =>
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_ELEMENT_SEQUENCE,
-          scanChainIntf.io.bistElementSequence
+          REG_WIDTH(BIST_ELEMENT_SEQUENCE),
+          scanChainIntf.io.bistElementSequenceMmio(i)
         )
-      ),
-      SramBistCtrlRegs.BIST_PATTERN_TABLE -> Seq(
+      },
+      SCAN_CHAIN_OFFSET(BIST_PATTERN_TABLE) -> (0 until 4).map { i =>
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_PATTERN_TABLE,
-          scanChainIntf.io.bistPatternTable
+          REG_WIDTH(BIST_PATTERN_TABLE),
+          scanChainIntf.io.bistPatternTableMmio(i)
         )
-      ),
-      SramBistCtrlRegs.BIST_MAX_ELEMENT_IDX -> Seq(
+      },
+      SCAN_CHAIN_OFFSET(BIST_MAX_ELEMENT_IDX) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_MAX_ELEMENT_IDX,
+          REG_WIDTH(BIST_MAX_ELEMENT_IDX),
           scanChainIntf.io.bistMaxElementIdx
         )
       ),
-      SramBistCtrlRegs.BIST_CYCLE_LIMIT -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_CYCLE_LIMIT) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_CYCLE_LIMIT,
+          REG_WIDTH(BIST_CYCLE_LIMIT),
           scanChainIntf.io.bistCycleLimit
         )
       ),
-      SramBistCtrlRegs.BIST_STOP_ON_FAILURE -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_STOP_ON_FAILURE) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_STOP_ON_FAILURE,
+          REG_WIDTH(BIST_STOP_ON_FAILURE),
           scanChainIntf.io.bistStopOnFailure
         )
       ),
-      SramBistCtrlRegs.BIST_FAIL -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_FAIL) -> Seq(
         RegField
-          .rwReg(SramBistCtrlRegWidths.BIST_FAIL, scanChainIntf.io.bistFailMmio)
+          .rwReg(REG_WIDTH(BIST_FAIL), scanChainIntf.io.bistFailMmio)
       ),
-      SramBistCtrlRegs.BIST_FAIL_CYCLE -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_FAIL_CYCLE) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_FAIL_CYCLE,
+          REG_WIDTH(BIST_FAIL_CYCLE),
           scanChainIntf.io.bistFailCycleMmio
         )
       ),
-      SramBistCtrlRegs.BIST_EXPECTED -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_EXPECTED) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_EXPECTED,
+          REG_WIDTH(BIST_EXPECTED),
           scanChainIntf.io.bistExpectedMmio
         )
       ),
-      SramBistCtrlRegs.BIST_RECEIVED -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_RECEIVED) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_RECEIVED,
+          REG_WIDTH(BIST_RECEIVED),
           scanChainIntf.io.bistReceivedMmio
         )
       ),
-      SramBistCtrlRegs.BIST_SIGNATURE -> Seq(
+      SCAN_CHAIN_OFFSET(BIST_SIGNATURE) -> Seq(
         RegField.rwReg(
-          SramBistCtrlRegWidths.BIST_SIGNATURE,
+          REG_WIDTH(BIST_SIGNATURE),
           scanChainIntf.io.bistSignatureMmio
         )
       )

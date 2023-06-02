@@ -1,61 +1,64 @@
 package srambist
 
-object SramBistCtrlRegs {
-  val ADDR = 0
-  val DIN = 13
-  val MASK = 45
-  val WE = 77
-  val SRAM_ID = 78
-  val SRAM_SEL = 82
-  val SAE_CTL = 83
-  val SAE_SEL = 90
-  val DOUT = 92
-  val TDC = 124
-  val DONE = 376
-  val BIST_RAND_SEED = 377
-  val BIST_SIG_SEED = 454
-  val BIST_MAX_ROW_ADDR = 486
-  val BIST_MAX_COL_ADDR = 496
-  val BIST_INNER_DIM = 499
-  val BIST_ELEMENT_SEQUENCE = 500
-  val BIST_PATTERN_TABLE = 564
-  val BIST_MAX_ELEMENT_IDX = 628
-  val BIST_CYCLE_LIMIT = 634
-  val BIST_STOP_ON_FAILURE = 666
-  val BIST_FAIL = 667
-  val BIST_FAIL_CYCLE = 668
-  val BIST_EXPECTED = 700
-  val BIST_RECEIVED = 732
-  val BIST_SIGNATURE = 764
-  val EX = 796
-}
+object SramBistCtrlRegs extends Enumeration{
+  type Type = Value
+  val ADDR,
+  DIN,
+  MASK,
+  WE,
+  SRAM_ID,
+  SRAM_SEL,
+  SAE_CTL,
+  SAE_SEL,
+  DOUT,
+  TDC,
+  DONE,
+  BIST_RAND_SEED ,
+  BIST_SIG_SEED,
+  BIST_MAX_ROW_ADDR ,
+  BIST_MAX_COL_ADDR,
+  BIST_INNER_DIM ,
+  BIST_ELEMENT_SEQUENCE ,
+  BIST_PATTERN_TABLE ,
+  BIST_MAX_ELEMENT_IDX ,
+  BIST_CYCLE_LIMIT ,
+  BIST_STOP_ON_FAILURE ,
+  BIST_FAIL ,
+  BIST_FAIL_CYCLE ,
+  BIST_EXPECTED ,
+  BIST_RECEIVED ,
+  BIST_SIGNATURE ,
+  EX = Value
 
-object SramBistCtrlRegWidths {
-  val ADDR = 13
-  val DIN = 32
-  val MASK = 32
-  val WE = 1
-  val SRAM_ID = 4
-  val SRAM_SEL = 1
-  val SAE_CTL = 7
-  val SAE_SEL = 2
-  val DOUT = 32
-  val TDC = 252
-  val DONE = 1
-  val BIST_RAND_SEED = 77
-  val BIST_SIG_SEED = 32
-  val BIST_MAX_ROW_ADDR = 10
-  val BIST_MAX_COL_ADDR = 3
-  val BIST_INNER_DIM = 1
-  val BIST_ELEMENT_SEQUENCE = 64
-  val BIST_PATTERN_TABLE = 64
-  val BIST_MAX_ELEMENT_IDX = 6
-  val BIST_CYCLE_LIMIT = 32
-  val BIST_STOP_ON_FAILURE = 1
-  val BIST_FAIL = 1
-  val BIST_FAIL_CYCLE = 32
-  val BIST_EXPECTED = 32
-  val BIST_RECEIVED = 32
-  val BIST_SIGNATURE = 32
-  val TOTAL = 796
+  val REG_WIDTH = Map(
+    ADDR -> 13,
+  DIN -> 32,
+  MASK -> 32,
+  WE -> 1,
+  SRAM_ID -> 4,
+  SRAM_SEL -> 1,
+  SAE_CTL -> 7,
+  SAE_SEL -> 2,
+  DOUT -> 32,
+  TDC -> 252,
+  DONE -> 1,
+  BIST_RAND_SEED -> 77,
+  BIST_SIG_SEED -> 32,
+  BIST_MAX_ROW_ADDR -> 10,
+  BIST_MAX_COL_ADDR -> 3,
+  BIST_INNER_DIM -> 1,
+  BIST_ELEMENT_SEQUENCE -> 552,
+  BIST_PATTERN_TABLE -> 256,
+  BIST_MAX_ELEMENT_IDX -> 6,
+  BIST_CYCLE_LIMIT -> 32,
+  BIST_STOP_ON_FAILURE -> 1,
+  BIST_FAIL -> 1,
+  BIST_FAIL_CYCLE -> 32,
+  BIST_EXPECTED -> 32,
+  BIST_RECEIVED -> 32,
+  BIST_SIGNATURE -> 32
+  )
+  val TOTAL_REG_WIDTH = REG_WIDTH.values.sum
+
+  val SCAN_CHAIN_OFFSET = REG_WIDTH.keys.zip(REG_WIDTH.values.scanLeft(0)(_+_).dropRight(1)).toMap
 }
