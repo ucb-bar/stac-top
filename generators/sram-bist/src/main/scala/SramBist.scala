@@ -115,7 +115,7 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
 
     val sramBist = Module(new SramBist())
 
-    io := sramBist.io.top
+    io <> sramBist.io.top
 
     regmap(
       REGMAP_OFFSET(ADDR) -> Seq(
@@ -257,7 +257,7 @@ case class SramBistAttachParams(
     intXType: ClockCrossingType = NoCrossing
 ) {
   def attachTo(where: Attachable)(implicit p: Parameters): TLSramBist = {
-    val name = "sram_bist"
+    val name = s"sram_bist_${SramBist.nextId()}"
     val tlbus = where.locateTLBusWrapper(controlWhere)
     val sramBistClockDomainWrapper = LazyModule(
       new ClockSinkDomain(take = None)
@@ -306,11 +306,4 @@ case class SramBistAttachParams(
 
 object SramBist {
   val nextId = { var i = -1; () => { i += 1; i } }
-
-  def makePort(node: BundleBridgeSource[SramBistTopIO], name: String)(implicit
-      p: Parameters
-  ): ModuleValue[SramBistTopIO] = {
-    val sramBistNode = node.makeSink()
-    InModuleBody { sramBistNode.makeIO()(ValName(name)) }
-  }
 }
