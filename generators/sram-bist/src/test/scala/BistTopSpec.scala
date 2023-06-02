@@ -199,7 +199,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new freechips.rocketchip.subsystem.WithClockGateModel
       )
-    ).withAnnotations(Seq(VerilatorBackendAnnotation, VerilatorFlags(Seq("--no-timing")), WriteVcdAnnotation)) { c => 
+    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { c => 
       val testhelpers = new BistTopTestHelpers(c)
       c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
