@@ -2,6 +2,7 @@ package chipyard
 
 import org.chipsalliance.cde.config.Config
 import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.subsystem.WithNBitPeripheryBus
 
 class STACConfig extends Config(
   //==================================
