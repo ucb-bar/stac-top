@@ -15,11 +15,10 @@ vlsi.inputs:
     - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
 
   placement_constraints:
-    - ChipTop:
-        - path: ChipTop
-          type: toplevel
-          x: 0
-          y: 0
-          width: 3588
-          height: 5188
-          margins: {left: 250, right: 250, top: 250, bottom: 250}
+    - path: ChipTop
+      type: toplevel
+      x: 0
+      y: 0
+      width: 3588
+      height: 5188
+      margins: {left: 250, right: 250, top: 250, bottom: 250}
