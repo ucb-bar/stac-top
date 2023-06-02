@@ -44,6 +44,7 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   val gatedClock = if (p(WithChiseltestSramsKey).isDefined) {
     (clock.asBool & io.sramEn).asClock
   } else {
+    // (clock.asBool & io.sramEn).asClock
     ClockGate(clock, io.sramEn)
   }
   io.sramClk := gatedClock
@@ -76,5 +77,6 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   tdc.io.b := io.saeMuxed
   tdc.io.reset_b := ~reset.asBool // TODO: is this the right way to do this?
   io.saeOut := tdc.io.dout
+  io.saeOut := 0.U
 
 }

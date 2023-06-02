@@ -3,6 +3,7 @@ package srambist
 import chisel3._
 import chisel3.util._
 import chiseltest._
+import chiseltest.simulator.VerilatorFlags
 import chisel3.experimental.VecLiterals._
 import chisel3.experimental.BundleLiterals._
 import org.chipsalliance.cde.config.Parameters
@@ -90,19 +91,19 @@ class BistTopTestHelpers(val c: BistTop) {
     // Interleave with clock steps to make sure that operations do not occur while registers are being set up.
     // Will be tested more thoroughly with scan chain module.
     c.io.addr.poke(addr)
-    c.clock.step()
+    // c.clock.step()
     c.io.din.poke(din)
-    c.clock.step()
+    // c.clock.step()
     c.io.mask.poke(mask)
-    c.clock.step()
+    // c.clock.step()
     c.io.we.poke(we)
-    c.clock.step()
+    // c.clock.step()
     c.io.sramId.poke(sramId)
-    c.clock.step()
+    // c.clock.step()
     c.io.sramSel.poke(sramSel)
-    c.clock.step()
+    // c.clock.step()
     c.io.saeSel.poke(saeSel)
-    c.clock.step()
+    // c.clock.step()
   }
 
   def executeScanChainSramOp(): Unit = {
@@ -188,7 +189,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32)),
+          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
           new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
@@ -196,9 +197,238 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           )
         )
       )(
-        Parameters.empty
+        new freechips.rocketchip.subsystem.WithClockGateModel
       )
-    ) { c => }
+    ).withAnnotations(Seq(VerilatorBackendAnnotation, VerilatorFlags(Seq("--no-timing")), WriteVcdAnnotation)) { c => 
+      val testhelpers = new BistTopTestHelpers(c)
+      c.clock.setTimeout(
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
+      )
+      val testSramMethod = (executeFn: () => Unit) => {
+        // Test write.
+        testhelpers.populateSramRegisters(
+          0.U,
+          "habcdabcd".U,
+          "hf".U,
+          true.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("habcdabcd".U)
+
+        // Test write with mask.
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          5.U,
+          true.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        testhelpers.c.io.dout.expect(
+          "habcdabcd".U
+        ) // Dout should retain its value while registers are being set up.
+        executeFn()
+
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("hab00ab00".U)
+        testhelpers.c.io.checkClk.expect(false.B)
+
+        // Test write to second SRAM.
+        testhelpers.populateSramRegisters(
+          0.U,
+          "h12345678".U,
+          "hf".U,
+          true.B,
+          1.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          1.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("h12345678".U)
+
+        // Test that first SRAM retains original value.
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("hab00ab00".U)
+
+        // Test writing to extreme addresses of both SRAMs. Verify that original data doesn't change.
+        testhelpers.populateSramRegisters(
+          63.U,
+          "h87654321".U,
+          "hf".U,
+          true.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+
+        testhelpers.populateSramRegisters(
+          63.U,
+          0.U,
+          0.U,
+          false.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("h87654321".U)
+
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("hab00ab00".U)
+
+        testhelpers.populateSramRegisters(
+          1023.U,
+          "hdeadbeef".U,
+          "hf".U,
+          true.B,
+          1.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+
+        testhelpers.populateSramRegisters(
+          1023.U,
+          0.U,
+          0.U,
+          false.B,
+          1.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("hdeadbeef".U)
+
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          1.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("h12345678".U)
+      }
+
+      val testBistMethod = (scanChain: Boolean) => {
+
+        val maybeReset = () => {
+          if (scanChain) {
+            c.reset.poke(true.B)
+            c.clock.step()
+            c.reset.poke(false.B)
+            c.clock.step()
+          }
+        }
+        val executeOp = () => {
+          if (scanChain) {
+            testhelpers.executeScanChainBistOp()
+          } else {
+            testhelpers.executeMmioOp()
+          }
+        }
+
+        maybeReset()
+        // TODO: Use correct cycle limit.
+        testhelpers.populateBistRegisters(
+          1.U,
+          1.U,
+          testhelpers.maxRows.U,
+          testhelpers.maxCols.U,
+          testhelpers.c.bist.Dimension.col,
+          Vec.Lit(
+            testhelpers.ones,
+            testhelpers.ones,
+            testhelpers.zeros,
+            testhelpers.zeros
+          ),
+          Vec(4, new testhelpers.c.bist.Element())
+            .Lit(
+              0 -> testhelpers.march,
+              1 -> testhelpers.march,
+              2 -> testhelpers.march,
+              3 -> testhelpers.march
+            ),
+          3.U,
+          0.U,
+          true.B,
+          0.U,
+          SramSrc.bist,
+          SaeSrc.int
+        )
+        executeOp()
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(false.B)
+
+      }
+
+      // ******************
+      // SCAN CHAIN -> SRAM
+      // ******************
+
+      testhelpers.c.io.sramExtEn.poke(true.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.sramEn.poke(false.B)
+      testhelpers.c.io.bistEn.poke(false.B)
+
+      testSramMethod(testhelpers.executeScanChainSramOp)
+    }
   }
   it should "work with chiseltest SRAMs" in {
     test(

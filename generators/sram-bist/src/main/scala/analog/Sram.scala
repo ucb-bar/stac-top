@@ -72,6 +72,7 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
     }
     case None => {
       val inner = Module(new SramBlackBox(params))
+      inner.io.clk := clock
       inner.io.we := io.we
       inner.io.wmask := io.wmask
       inner.io.addr := io.addr
@@ -89,6 +90,7 @@ class SramBlackBox(params: SramParams)
     with HasBlackBoxResource {
   val wmaskWidth = params.dataWidth / params.maskGranularity
   val io = IO(new Bundle {
+    val clk = Input(Clock())
     val we = Input(Bool())
     val wmask = Input(UInt(wmaskWidth.W))
     val addr = Input(UInt(log2Ceil(params.numWords).W))
@@ -100,4 +102,6 @@ class SramBlackBox(params: SramParams)
 
   override val desiredName =
     s"sram22_${params.numWords}x${params.dataWidth}m${params.muxRatio}w${params.maskGranularity}"
+
+  addResource(s"/vsrc/$desiredName.v")
 }
