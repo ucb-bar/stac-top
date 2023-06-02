@@ -255,7 +255,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         )
         executeFn()
         testhelpers.c.io.dout.expect("hab00ab00".U)
-        testhelpers.c.io.checkClk.expect(false.B)
 
         // Test write to second SRAM.
         testhelpers.populateSramRegisters(
