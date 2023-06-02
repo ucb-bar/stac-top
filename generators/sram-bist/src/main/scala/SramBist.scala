@@ -119,128 +119,128 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
     io := sramBist.io.top
 
     regmap(
-      8 * SCAN_CHAIN_OFFSET(ADDR) -> Seq(
+      REGMAP_OFFSET(ADDR) -> Seq(
         RegField.rwReg(REG_WIDTH(ADDR), sramBist.io.mmio.addr)
       ),
-      8 * SCAN_CHAIN_OFFSET(DIN) -> Seq(
+      REGMAP_OFFSET(DIN) -> Seq(
         RegField.rwReg(REG_WIDTH(DIN), sramBist.io.mmio.din)
       ),
-      8 * SCAN_CHAIN_OFFSET(MASK) -> Seq(
+      REGMAP_OFFSET(MASK) -> Seq(
         RegField.rwReg(REG_WIDTH(MASK), sramBist.io.mmio.mask)
       ),
-      8 * SCAN_CHAIN_OFFSET(WE) -> Seq(
+      REGMAP_OFFSET(WE) -> Seq(
         RegField.rwReg(REG_WIDTH(WE), sramBist.io.mmio.we)
       ),
-      8 * SCAN_CHAIN_OFFSET(SRAM_ID) -> Seq(
+      REGMAP_OFFSET(SRAM_ID) -> Seq(
         RegField.rwReg(REG_WIDTH(SRAM_ID), sramBist.io.mmio.sramId)
       ),
-      8 * SCAN_CHAIN_OFFSET(SRAM_SEL) -> Seq(
+      REGMAP_OFFSET(SRAM_SEL) -> Seq(
         RegField.rwReg(REG_WIDTH(SRAM_SEL), sramBist.io.mmio.sramSel)
       ),
-      8 * SCAN_CHAIN_OFFSET(SAE_CTL) -> Seq(
+      REGMAP_OFFSET(SAE_CTL) -> Seq(
         RegField.rwReg(REG_WIDTH(SAE_CTL), sramBist.io.mmio.saeCtl)
       ),
-      8 * SCAN_CHAIN_OFFSET(SAE_SEL) -> Seq(
+      REGMAP_OFFSET(SAE_SEL) -> Seq(
         RegField.rwReg(REG_WIDTH(SAE_SEL), sramBist.io.mmio.saeSel)
       ),
-      8 * SCAN_CHAIN_OFFSET(DOUT) -> Seq(
+      REGMAP_OFFSET(DOUT) -> Seq(
         RegField.rwReg(REG_WIDTH(DOUT), sramBist.io.mmio.doutMmio)
       ),
-      8 * SCAN_CHAIN_OFFSET(TDC) -> (0 until 4).map { i =>
-        RegField.rwReg(REG_WIDTH(TDC), sramBist.io.mmio.tdcMmio(i))
+      REGMAP_OFFSET(TDC) -> (0 until 4).map { i =>
+        RegField.rwReg(64, sramBist.io.mmio.tdcMmio(i))
       },
-      8 * SCAN_CHAIN_OFFSET(DONE) -> Seq(
+      REGMAP_OFFSET(DONE) -> Seq(
         RegField.rwReg(REG_WIDTH(DONE), sramBist.io.mmio.doneMmio)
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_RAND_SEED) -> (0 until 2).map { i =>
+      REGMAP_OFFSET(BIST_RAND_SEED) -> (0 until 2).map { i =>
         RegField.rwReg(
-          REG_WIDTH(BIST_RAND_SEED),
+          64,
           sramBist.io.mmio.bistRandSeedMmio(i)
         )
       },
-      8 * SCAN_CHAIN_OFFSET(BIST_SIG_SEED) -> Seq(
+      REGMAP_OFFSET(BIST_SIG_SEED) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_SIG_SEED),
           sramBist.io.mmio.bistSigSeed
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_MAX_ROW_ADDR) -> Seq(
+      REGMAP_OFFSET(BIST_MAX_ROW_ADDR) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_MAX_ROW_ADDR),
           sramBist.io.mmio.bistMaxRowAddr
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_MAX_COL_ADDR) -> Seq(
+      REGMAP_OFFSET(BIST_MAX_COL_ADDR) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_MAX_COL_ADDR),
           sramBist.io.mmio.bistMaxColAddr
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_INNER_DIM) -> Seq(
+      REGMAP_OFFSET(BIST_INNER_DIM) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_INNER_DIM),
           sramBist.io.mmio.bistInnerDim
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 9).map { i =>
+      REGMAP_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 9).map { i =>
         RegField.rwReg(
-          REG_WIDTH(BIST_ELEMENT_SEQUENCE),
+          64,
           sramBist.io.mmio.bistElementSequenceMmio(i)
         )
       },
-      8 * SCAN_CHAIN_OFFSET(BIST_PATTERN_TABLE) -> (0 until 4).map { i =>
+      REGMAP_OFFSET(BIST_PATTERN_TABLE) -> (0 until 4).map { i =>
         RegField.rwReg(
-          REG_WIDTH(BIST_PATTERN_TABLE),
+          64,
           sramBist.io.mmio.bistPatternTableMmio(i)
         )
       },
-      8 * SCAN_CHAIN_OFFSET(BIST_MAX_ELEMENT_IDX) -> Seq(
+      REGMAP_OFFSET(BIST_MAX_ELEMENT_IDX) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_MAX_ELEMENT_IDX),
           sramBist.io.mmio.bistMaxElementIdx
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_CYCLE_LIMIT) -> Seq(
+      REGMAP_OFFSET(BIST_CYCLE_LIMIT) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_CYCLE_LIMIT),
           sramBist.io.mmio.bistCycleLimit
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_STOP_ON_FAILURE) -> Seq(
+      REGMAP_OFFSET(BIST_STOP_ON_FAILURE) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_STOP_ON_FAILURE),
           sramBist.io.mmio.bistStopOnFailure
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_FAIL) -> Seq(
+      REGMAP_OFFSET(BIST_FAIL) -> Seq(
         RegField
           .rwReg(REG_WIDTH(BIST_FAIL), sramBist.io.mmio.bistFailMmio)
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_FAIL_CYCLE) -> Seq(
+      REGMAP_OFFSET(BIST_FAIL_CYCLE) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_FAIL_CYCLE),
           sramBist.io.mmio.bistFailCycleMmio
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_EXPECTED) -> Seq(
+      REGMAP_OFFSET(BIST_EXPECTED) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_EXPECTED),
           sramBist.io.mmio.bistExpectedMmio
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_RECEIVED) -> Seq(
+      REGMAP_OFFSET(BIST_RECEIVED) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_RECEIVED),
           sramBist.io.mmio.bistReceivedMmio
         )
       ),
-      8 * SCAN_CHAIN_OFFSET(BIST_SIGNATURE) -> Seq(
+      REGMAP_OFFSET(BIST_SIGNATURE) -> Seq(
         RegField.rwReg(
           REG_WIDTH(BIST_SIGNATURE),
           sramBist.io.mmio.bistSignatureMmio
         )
       ),
-      TOTAL_REG_WIDTH -> Seq(RegField.w(1, sramBist.io.ex)),
+      REGMAP_OFFSET(EX) -> Seq(RegField.w(1, sramBist.io.ex)),
     )
   }
 }
