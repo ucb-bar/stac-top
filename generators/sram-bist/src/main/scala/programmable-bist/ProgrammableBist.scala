@@ -165,7 +165,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   opsDone := opIndex === currOperationElement.maxIdx
   up := currOperationElement.dir === Direction.up
   randAddrOrder := currOperationElement.dir === Direction.rand
-  checkEn := currOperation.operationType === OperationType.read && !currOperation.randData && currElement.elementType === ElementType.rwOp
+  checkEn := currOperation.operationType === OperationType.read && !currOperation.randData && currElement.elementType === ElementType.rwOp && currOperationElement.dir =/= Direction.rand
 
   dataPatternEntry := io.patternTable(currOperation.dataPatternIdx)
   detData := Mux(

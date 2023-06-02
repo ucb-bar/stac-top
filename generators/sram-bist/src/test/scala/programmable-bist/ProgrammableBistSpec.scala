@@ -55,6 +55,52 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
     )
   }
 
+  // A deterministic operation (R/W) with random data and fixed mask
+  def randDataOp(write: Boolean = false, maskIndex: Int = 0): d.Operation = {
+    val operationType =
+      if (write) d.OperationType.write else d.OperationType.read
+    chiselTypeOf(
+      d.io.elementSequence(0).operationElement.operations(0)
+    ).Lit(
+      _.operationType -> operationType,
+      _.randData -> true.B,
+      _.randMask -> false.B,
+      _.dataPatternIdx -> 0.U,
+      _.maskPatternIdx -> maskIndex.U,
+      _.flipped -> d.FlipType.unflipped
+    )
+  }
+
+  // A deterministic operation (R/W) with random data and mask
+  def randDataMaskOp(write: Boolean = false): d.Operation = {
+    val operationType =
+      if (write) d.OperationType.write else d.OperationType.read
+    chiselTypeOf(
+      d.io.elementSequence(0).operationElement.operations(0)
+    ).Lit(
+      _.operationType -> operationType,
+      _.randData -> true.B,
+      _.randMask -> true.B,
+      _.dataPatternIdx -> 0.U,
+      _.maskPatternIdx -> 0.U,
+      _.flipped -> d.FlipType.unflipped
+    )
+  }
+
+  // A totally random operation (random write enable, data, mask)
+  def randOp(): d.Operation = {
+    chiselTypeOf(
+      d.io.elementSequence(0).operationElement.operations(0)
+    ).Lit(
+      _.operationType -> d.OperationType.rand,
+      _.randData -> true.B,
+      _.randMask -> true.B,
+      _.dataPatternIdx -> 0.U,
+      _.maskPatternIdx -> 0.U,
+      _.flipped -> d.FlipType.unflipped
+    )
+  }
+
   def opList(ops: Seq[d.Operation]): Vec[d.Operation] = {
     val elts: Seq[(Int, d.Operation)] =
       (0 until d.params.operationsPerElement).map(i =>
@@ -163,6 +209,22 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
     elementSequence(Seq(m1, m2, m3, m4, m5, m6))
   }
 
+  // Fills the SRAM with a pseudorandom pattern, then runs pseudorandom operations
+  def randFillRand(onesIdx: Int): Vec[d.Element] = {
+    // possible randomizations: address we data
+    val m1 = opElement(Seq(randDataOp(write = true, maskIndex = onesIdx)), Down)
+    val m2 =
+      opElement(
+        Seq(randDataMaskOp(write = true), randDataMaskOp(write = false)),
+        Up
+      )
+    val m3 =
+      opElement(Seq(randOp()), Rand, numAddrs = 273)
+    val m4 =
+      opElement(Seq(randDataMaskOp(write = false)), Rand, numAddrs = 514)
+    elementSequence(Seq(m1, m2, m3, m4))
+  }
+
   val zeros = 0.U(32.W)
   val ones = "hffffffff".U(32.W)
   val bp0 = "h5f1a950d".U(32.W)
@@ -190,6 +252,37 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
     d.io.data.expect(pattern)
     d.io.sramEn.expect(true.B)
     d.io.sramWen.expect(true.B)
+    d.io.checkEn.expect(false.B)
+    d.io.done.expect(false.B)
+    d.clock.step()
+  }
+  def expectRandWrite(i: Int, j: Int) = {
+    d.io.row.expect(i.U)
+    d.io.col.expect(j.U)
+    d.io.sramEn.expect(true.B)
+    d.io.sramWen.expect(true.B)
+    d.io.checkEn.expect(false.B)
+    d.io.done.expect(false.B)
+    d.clock.step()
+  }
+  def expectRandRead(i: Int, j: Int) = {
+    d.io.row.expect(i.U)
+    d.io.col.expect(j.U)
+    d.io.sramEn.expect(true.B)
+    d.io.sramWen.expect(false.B)
+    d.io.checkEn.expect(false.B)
+    d.io.done.expect(false.B)
+    d.clock.step()
+  }
+  def expectRandReadRandAddr() = {
+    d.io.sramEn.expect(true.B)
+    d.io.sramWen.expect(false.B)
+    d.io.checkEn.expect(false.B)
+    d.io.done.expect(false.B)
+    d.clock.step()
+  }
+  def expectRandOp() = {
+    d.io.sramEn.expect(true.B)
     d.io.checkEn.expect(false.B)
     d.io.done.expect(false.B)
     d.clock.step()
@@ -983,6 +1076,62 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
 
         for (i <- 0 to 73) {
           h.clock.step()
+        }
+
+        h.expectDone()
+    }
+  }
+
+  it should "work for random fill followed by random operations" in {
+    test(
+      new ProgrammableBist(
+        new ProgrammableBistParams(
+          patternTableLength = 4,
+          elementTableLength = 8,
+          operationsPerElement = 4
+        )
+      )
+    ).withAnnotations(Seq(PrintFullStackTraceAnnotation, WriteVcdAnnotation)) {
+      d =>
+
+        val h = new ProgrammableBistHelpers(d)
+
+        h.clock.setTimeout(16384)
+        h.io.start.poke(true.B)
+        h.io.en.poke(true.B)
+        h.io.maxRowAddr.poke(h.maxRows.U)
+        h.io.maxColAddr.poke(h.maxCols.U)
+        h.io.innerDim.poke(h.d.Dimension.row)
+        h.io.maxElementIdx.poke(3.U)
+        h.io.seed.poke(1.U)
+        h.io.patternTable.poke(Vec.Lit(h.zeros, h.ones, h.bp0, h.zeros))
+        h.io.elementSequence.poke(
+          h.randFillRand(1)
+        )
+        h.io.cycleLimit.poke(0.U(32.W))
+        h.clock.step()
+        h.clock.step()
+        h.io.start.poke(false.B)
+
+        for (j <- (0 to h.maxCols).reverse) {
+          for (i <- (0 to h.maxRows).reverse) {
+            h.expectRandWrite(i, j)
+          }
+        }
+
+        for (j <- 0 to h.maxCols) {
+          for (i <- 0 to h.maxRows) {
+            h.expectRandWrite(i, j)
+            h.expectRandRead(i, j)
+          }
+        }
+
+        for (i <- 0 until 273) {
+          h.expectRandOp()
+        }
+
+        for (i <- 0 until 514) {
+          h.expectRandReadRandAddr()
         }
 
         h.expectDone()
