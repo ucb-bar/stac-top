@@ -31,7 +31,7 @@ class SramBistTopIO extends Bundle {
 
 class SramBistIO extends Bundle {
   val top = new SramBistTopIO
-  val ex = new Flipped(Decoupled(Bool()))
+  val ex = Flipped(Decoupled(Bool()))
   val mmio = new MmioRegIO
 }
 
