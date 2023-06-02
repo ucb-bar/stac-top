@@ -131,9 +131,9 @@ clamp_cells: dict[str, str | Callable[[str], str]] = {
 
 def get_side_for_name(name: str) -> str:
     match name[0]:
-        case "E": return "left"
+        case "E": return "right"
         case "N": return "top"
-        case "W": return "right"
+        case "W": return "left"
         case "S": return "bottom"
         case _:
             raise ValueError(f"'{name}' is not a valid name")
@@ -168,7 +168,6 @@ SIDE_ORIENTATIONS = {
 skeleton: IOFileModel = {
     "global": {
         "version": 3,
-        "space": 0,
         "io_order": "default",
     },
     "row_margin": {
@@ -223,7 +222,7 @@ def write_iofile(data: IOFileModel, writer: TextIO, indent_level: int = 0):
 
 
 def get_inst_path_for_signal(signal_name: str) -> str:
-    return f"iocell_{signal_name}/cell"
+    return f"iocell_{signal_name}/iocell"
 
 def get_inst_path_for_nc(idx: int) -> str:
     return get_inst_path_for_signal(f"nc_{idx}")
@@ -235,7 +234,7 @@ def generate_iofile(mapping: dict[str, str]) -> IOFileModel:
     n_clamps = 0
     n_signals = 0
     cells: dict[str, list[IOFileElement]] = {
-        side: [] for side in ALL_SIDES
+        side: [E("locals", {"ring_number": 1})] for side in ALL_SIDES
     }
 
     for site_name, location in cell_locations.items():
@@ -269,7 +268,7 @@ def generate_iofile(mapping: dict[str, str]) -> IOFileModel:
                 add({"name": get_inst_path_for_nc(nc_idx)})
                 nc_idx += 1
 
-    n_total = sum(map(len, cells.values()))
+    n_total = sum(1 for r in cells.values() for x in r if isinstance(x, E) and x.name == "inst")
     assert n_signals + nc_idx + n_clamps == n_total
     print(f"Generated IO file for {n_signals} signals, {n_clamps} clamps, {nc_idx} NC")
     print(f"  ({n_signals + nc_idx} non-power, {n_total} total)")

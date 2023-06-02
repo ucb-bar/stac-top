@@ -84,36 +84,36 @@ trait HasSky130EFIOCellCommonIO {
 }
 
 abstract class Sky130EFGPIOV2CellIOCellBase(cellName: String) extends RawModule with HasSky130EFIOCellCommonIO {
-  val cell = Module(new Sky130EFGPIOV2Cell(cellName = cellName))
+  val iocell = Module(new Sky130EFGPIOV2Cell(cellName = cellName))
 
   // special nets
-  cell.io.ENABLE_INP_H := cell.io.TIE_LO_ESD // tie - disable input when enable_h low
+  iocell.io.ENABLE_INP_H := iocell.io.TIE_LO_ESD // tie - disable input when enable_h low
 
   // VDDIO domain
-  cell.io.HLD_H_N := cell.io.TIE_HI_ESD // stay out of hibernate/hold mode
+  iocell.io.HLD_H_N := iocell.io.TIE_HI_ESD // stay out of hibernate/hold mode
 
   // VCCD (core) domain
-  cell.io.SLOW := false.B // no slow mode
-  cell.io.HLD_OVR := false.B // turn off overide
-  cell.io.VTRIP_SEL := false.B // CMOS input signalling not LVTTL
-  cell.io.IB_MODE_SEL := false.B // use VDDIO not VCCHIB for pad input signalling
+  iocell.io.SLOW := false.B // no slow mode
+  iocell.io.HLD_OVR := false.B // turn off overide
+  iocell.io.VTRIP_SEL := false.B // CMOS input signalling not LVTTL
+  iocell.io.IB_MODE_SEL := false.B // use VDDIO not VCCHIB for pad input signalling
   // FIXME: how to handle? see ENABLE_H
   // enable_vddio=1 implies VCCHIB + HV supplies valid, VCCD (+ LV) control signals valid
   // caravel ties to nearby VCCD supply
-  cell.io.ENABLE_VDDIO := true.B // enable HV circuits
-  cell.io.ANALOG_EN := false.B // disable analog driver
-  cell.io.ANALOG_SEL := false.B // tie off analog AMUXBUS sel for good measure
-  cell.io.ANALOG_POL := false.B // tie off analog polarity sel for good measure
+  iocell.io.ENABLE_VDDIO := true.B // enable HV circuits
+  iocell.io.ANALOG_EN := false.B // disable analog driver
+  iocell.io.ANALOG_SEL := false.B // tie off analog AMUXBUS sel for good measure
+  iocell.io.ANALOG_POL := false.B // tie off analog polarity sel for good measure
 
   // VDDA domain
-  cell.io.ENABLE_VDDA_H := cell.io.TIE_LO_ESD // disable analog supplies to analog block
+  iocell.io.ENABLE_VDDA_H := iocell.io.TIE_LO_ESD // disable analog supplies to analog block
 
   // VSWITCH domain
-  cell.io.ENABLE_VSWITCH_H := cell.io.TIE_LO_ESD // disable pumped-up VDDA supply
+  iocell.io.ENABLE_VSWITCH_H := iocell.io.TIE_LO_ESD // disable pumped-up VDDA supply
 
 
   // VDDIO domain
-  cell.io.ENABLE_H := commonIO.porb_h
+  iocell.io.ENABLE_H := commonIO.porb_h
 }
 
 class Sky130EFGPIOV2CellAnalog(cellName: String = consts.defaultCellName)
@@ -122,51 +122,51 @@ class Sky130EFGPIOV2CellAnalog(cellName: String = consts.defaultCellName)
 
   // FIXME: replace with analog pad cell
 
-  attach(io.pad, cell.io.PAD)
-  attach(io.core, cell.io.PAD_A_NOESD_H)
+  attach(io.pad, iocell.io.PAD)
+  attach(io.core, iocell.io.PAD_A_NOESD_H)
   // FIXME: what even should happen here...
-  cell.io.DM := "b000".U(3.W)
-  cell.io.OUT := false.B
-  cell.io.OE_N := true.B
-  cell.io.INP_DIS := true.B
+  iocell.io.DM := "b000".U(3.W)
+  iocell.io.OUT := false.B
+  iocell.io.OE_N := true.B
+  iocell.io.INP_DIS := true.B
 }
 
 class Sky130EFGPIOV2CellIO(cellName: String = consts.defaultCellName)
   extends Sky130EFGPIOV2CellIOCellBase(cellName) with DigitalGPIOCell {
   val io = IO(new DigitalGPIOCellBundle)
 
-  attach(io.pad, cell.io.PAD)
+  attach(io.pad, iocell.io.PAD)
 
-  cell.io.DM := "b110".U(3.W)
-  cell.io.OUT := io.o
-  cell.io.OE_N := !io.oe
-  io.i := cell.io.IN
-  cell.io.INP_DIS := !io.ie
+  iocell.io.DM := "b110".U(3.W)
+  iocell.io.OUT := io.o
+  iocell.io.OE_N := !io.oe
+  io.i := iocell.io.IN
+  iocell.io.INP_DIS := !io.ie
 }
 
 class Sky130EFGPIOV2CellIn(cellName: String = consts.defaultCellName)
   extends Sky130EFGPIOV2CellIOCellBase(cellName) with DigitalInIOCell {
   val io = IO(new DigitalInIOCellBundle)
 
-  ConvertAnalog.drive(cell.io.PAD, from = io.pad)
+  ConvertAnalog.drive(iocell.io.PAD, from = io.pad)
 
-  cell.io.DM := "b001".U(3.W)
-  cell.io.OUT := false.B
-  cell.io.OE_N := true.B
-  io.i := cell.io.IN
-  cell.io.INP_DIS := !io.ie
+  iocell.io.DM := "b001".U(3.W)
+  iocell.io.OUT := false.B
+  iocell.io.OE_N := true.B
+  io.i := iocell.io.IN
+  iocell.io.INP_DIS := !io.ie
 }
 
 class Sky130EFGPIOV2CellOut(cellName: String = consts.defaultCellName)
   extends Sky130EFGPIOV2CellIOCellBase(cellName) with DigitalOutIOCell {
   val io = IO(new DigitalOutIOCellBundle)
 
-  io.pad := ConvertAnalog.readFrom(cell.io.PAD)
+  io.pad := ConvertAnalog.readFrom(iocell.io.PAD)
 
-  cell.io.DM := "b110".U(3.W)
-  cell.io.OUT := io.o
-  cell.io.OE_N := !io.oe
-  cell.io.INP_DIS := true.B
+  iocell.io.DM := "b110".U(3.W)
+  iocell.io.OUT := io.o
+  iocell.io.OE_N := !io.oe
+  iocell.io.INP_DIS := true.B
 }
 
 class Sky130EFGPIOV2CellNoConn(cellName: String = consts.defaultCellName)
@@ -175,12 +175,12 @@ class Sky130EFGPIOV2CellNoConn(cellName: String = consts.defaultCellName)
     val pad = Analog(1.W)
   })
 
-  attach(io.pad, cell.io.PAD)
+  attach(io.pad, iocell.io.PAD)
 
-  cell.io.DM := "b000".U(3.W)
-  cell.io.OUT := false.B
-  cell.io.OE_N := true.B
-  cell.io.INP_DIS := true.B
+  iocell.io.DM := "b000".U(3.W)
+  iocell.io.OUT := false.B
+  iocell.io.OE_N := true.B
+  iocell.io.INP_DIS := true.B
 }
 
 case class Sky130EFIOCellTypeParams(cellName: String = consts.defaultCellName)
