@@ -1,4 +1,5 @@
 vlsi.inputs:
+  power_spec_type: cpf
   power_spec_mode: auto
   supplies:
     power:
@@ -8,24 +9,12 @@ vlsi.inputs:
     VDD: "1.8 V"
     GND: "0 V"
 
-vlsi.inputs.hierarchical:
-  mode: hierarchical
   top_module: ChipTop
-  config_source: manual
-  manual_modules:
-    - ChipTop: []
 
-  constraints:
-    - ChipTop:
-      - vlsi.inputs.clocks:
-          - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
-      - vlsi.inputs.supplies:
-          power:
-            - {name: "VDD", pin: "VDD"}
-          ground:
-            - {name: "VDD", pin: "VDD"}
+  clocks:
+    - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
 
-  manual_placement_constraints:
+  placement_constraints:
     - ChipTop:
         - path: ChipTop
           type: toplevel
