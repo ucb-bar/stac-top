@@ -22,7 +22,7 @@ class STACConfig extends Config(
   //==================================
   // Set up I/O
   //==================================
-  new testchipip.WithSerialTLWidth(1) ++
+  new testchipip.WithSerialTLWidth(64) ++
   // No AXI backing memory in sim since that causes AMBA prot fields to stay in
   // the main design, which the serdes do not support.
   new chipyard.config.WithSerialTLBackingMemory ++                                      // Backing memory is over serial TL protocol
