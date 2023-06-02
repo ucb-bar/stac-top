@@ -27,9 +27,12 @@ class ScanChainIntfIO extends Bundle {
   val bistMaxRowAddr = new SimpleRegIO(REG_WIDTH(BIST_MAX_ROW_ADDR))
   val bistMaxColAddr = new SimpleRegIO(REG_WIDTH(BIST_MAX_COL_ADDR))
   val bistInnerDim = new SimpleRegIO(REG_WIDTH(BIST_INNER_DIM))
-  val bistPatternTableMmio = Vec(4, new SimpleRegIO(
-    64
-  ))
+  val bistPatternTableMmio = Vec(
+    4,
+    new SimpleRegIO(
+      64
+    )
+  )
   val bistElementSequenceMmio =
     Vec(9, new SimpleRegIO(64))
   val bistMaxElementIdx =
@@ -73,7 +76,6 @@ class ScanChainIntf extends Module {
   scanChain.io.se := io.sramScanEn
   io.sramScanOut := scanChain.io.so
 
-
   Seq(
     (
       SCAN_CHAIN_OFFSET(BIST_RAND_SEED),
@@ -93,7 +95,7 @@ class ScanChainIntf extends Module {
       io.bistElementSequenceMmio,
       true
     ),
-    (SCAN_CHAIN_OFFSET(TDC), REG_WIDTH(TDC), io.tdcMmio, false),
+    (SCAN_CHAIN_OFFSET(TDC), REG_WIDTH(TDC), io.tdcMmio, false)
   ).foreach((args: (Int, Int, Vec[SimpleRegIO], Boolean)) => {
     args match {
       case (start, width, regIO, writable) =>
@@ -101,13 +103,13 @@ class ScanChainIntf extends Module {
         val q = Wire(Vec(vecWidth, Vec(64, Bool())))
         for (i <- 0 until width) {
           if (writable) {
-            scanChain.io.de(start + i) := ~io.sramScanMode & regIO(i/64).en
-            scanChain.io.d(start + i) := regIO(i/64).d(i % 64)
+            scanChain.io.de(start + i) := ~io.sramScanMode & regIO(i / 64).en
+            scanChain.io.d(start + i) := regIO(i / 64).d(i % 64)
           }
-          q(i/64)(i % 64) := scanChain.io.q(start + i)
+          q(i / 64)(i % 64) := scanChain.io.q(start + i)
         }
         for (i <- width until vecWidth * 64) {
-          q(i/64)(i % 64) := DontCare
+          q(i / 64)(i % 64) := DontCare
         }
 
         for (i <- 0 until vecWidth) {
@@ -117,13 +119,24 @@ class ScanChainIntf extends Module {
   })
 
   Seq(
-    (SCAN_CHAIN_OFFSET(BIST_RAND_SEED), REG_WIDTH(BIST_RAND_SEED), io.bistRandSeed),
-    (SCAN_CHAIN_OFFSET(BIST_PATTERN_TABLE), REG_WIDTH(BIST_PATTERN_TABLE), io.bistPatternTable),
-    (SCAN_CHAIN_OFFSET(BIST_ELEMENT_SEQUENCE), REG_WIDTH(BIST_ELEMENT_SEQUENCE), io.bistElementSequence),
+    (
+      SCAN_CHAIN_OFFSET(BIST_RAND_SEED),
+      REG_WIDTH(BIST_RAND_SEED),
+      io.bistRandSeed
+    ),
+    (
+      SCAN_CHAIN_OFFSET(BIST_PATTERN_TABLE),
+      REG_WIDTH(BIST_PATTERN_TABLE),
+      io.bistPatternTable
+    ),
+    (
+      SCAN_CHAIN_OFFSET(BIST_ELEMENT_SEQUENCE),
+      REG_WIDTH(BIST_ELEMENT_SEQUENCE),
+      io.bistElementSequence
+    )
   ).foreach((args: (Int, Int, UInt)) => {
     args match {
       case (start, width, out) =>
-        
         val q = Wire(Vec(width, Bool()))
         for (i <- 0 until width) {
           q(i) := scanChain.io.q(start + i)

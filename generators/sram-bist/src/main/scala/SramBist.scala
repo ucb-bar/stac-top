@@ -73,9 +73,21 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
     bistTop.io.bistSigSeed := scanChainIntf.io.bistSigSeed.q
     bistTop.io.bistMaxRowAddr := scanChainIntf.io.bistMaxRowAddr.q
     bistTop.io.bistMaxColAddr := scanChainIntf.io.bistMaxColAddr.q
-    bistTop.io.bistInnerDim := scanChainIntf.io.bistInnerDim.q.asTypeOf(bistTop.bist.Dimension())
-    bistTop.io.bistPatternTable := scanChainIntf.io.bistPatternTable.asTypeOf(Vec(bistTopParams.bistParams.patternTableLength, UInt(bistTopParams.bistParams.dataWidth.W)))
-    bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence.asTypeOf(Vec(bistTopParams.bistParams.elementTableLength, new bistTop.bist.Element()))
+    bistTop.io.bistInnerDim := scanChainIntf.io.bistInnerDim.q
+      .asTypeOf(bistTop.bist.Dimension())
+    bistTop.io.bistPatternTable := scanChainIntf.io.bistPatternTable.asTypeOf(
+      Vec(
+        bistTopParams.bistParams.patternTableLength,
+        UInt(bistTopParams.bistParams.dataWidth.W)
+      )
+    )
+    bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence
+      .asTypeOf(
+        Vec(
+          bistTopParams.bistParams.elementTableLength,
+          new bistTop.bist.Element()
+        )
+      )
     bistTop.io.bistMaxElementIdx := scanChainIntf.io.bistMaxElementIdx.q
     bistTop.io.bistCycleLimit := scanChainIntf.io.bistCycleLimit.q
     bistTop.io.bistStopOnFailure := scanChainIntf.io.bistStopOnFailure.q.asBool
@@ -120,14 +132,14 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
       SCAN_CHAIN_OFFSET(DOUT) -> Seq(
         RegField.rwReg(REG_WIDTH(DOUT), scanChainIntf.io.doutMmio)
       ),
-    SCAN_CHAIN_OFFSET(TDC) -> (0 until 4) .map { i => 
+      SCAN_CHAIN_OFFSET(TDC) -> (0 until 4).map { i =>
         RegField.rwReg(REG_WIDTH(TDC), scanChainIntf.io.tdcMmio(i))
       },
       SCAN_CHAIN_OFFSET(EX) -> Seq(RegField.w(1, ex)),
       SCAN_CHAIN_OFFSET(DONE) -> Seq(
         RegField.rwReg(REG_WIDTH(DONE), scanChainIntf.io.doneMmio)
       ),
-    SCAN_CHAIN_OFFSET(BIST_RAND_SEED) -> (0 until 2).map { i =>
+      SCAN_CHAIN_OFFSET(BIST_RAND_SEED) -> (0 until 2).map { i =>
         RegField.rwReg(
           REG_WIDTH(BIST_RAND_SEED),
           scanChainIntf.io.bistRandSeedMmio(i)
@@ -157,7 +169,7 @@ abstract class SramBist(busWidthBytes: Int, params: SramBistParams)(implicit
           scanChainIntf.io.bistInnerDim
         )
       ),
-    SCAN_CHAIN_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 9).map { i =>
+      SCAN_CHAIN_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 9).map { i =>
         RegField.rwReg(
           REG_WIDTH(BIST_ELEMENT_SEQUENCE),
           scanChainIntf.io.bistElementSequenceMmio(i)
