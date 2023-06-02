@@ -11,11 +11,16 @@ def check_timing_intent(x: HammerTool) -> bool:
     x.append('check_timing_intent')
     return True
 
+def syn_donttouch_iocells(x: HammerTool) -> bool:
+    x.append('set_dont_touch [get_db insts -if {.base_cell.name == sky130_ef_io__*}] true')
+    return True
+
 
 class Driver(CLIDriver):
     def get_extra_synthesis_hooks(self) -> List[HammerToolHookAction]:
         return [
             HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
+            HammerTool.make_post_insertion_hook("init_environment", syn_donttouch_iocells),
         ]
 
     def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
