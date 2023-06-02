@@ -238,8 +238,7 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
           REG_WIDTH(BIST_SIGNATURE),
           sramBist.io.mmio.bistSignatureMmio
         )
-      ),
-      REGMAP_OFFSET(EX) -> Seq(RegField.w(1, sramBist.io.ex)),
+      )
     )
   }
 }
