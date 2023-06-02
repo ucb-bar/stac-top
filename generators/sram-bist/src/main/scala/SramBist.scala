@@ -40,6 +40,8 @@ class SramBist()(implicit p: Parameters) extends Module {
     val bistTopParams = new BistTopParams
     val bistTop = Module(new BistTop(bistTopParams))
 
+    val ready = RegNext(bistTop.io.done)
+
     scanChainIntf.io.sramScanMode := io.top.sramScanMode
     scanChainIntf.io.sramScanIn := io.top.sramScanIn
     scanChainIntf.io.sramScanEn := io.top.sramScanEn
@@ -51,7 +53,7 @@ class SramBist()(implicit p: Parameters) extends Module {
     bistTop.io.bistEn := io.top.bistEn
     bistTop.io.saeClk := io.top.sramSaeClk
     bistTop.io.ex := io.ex.valid & io.ex.bits
-    io.ex.ready := bistTop.io.done
+    io.ex.ready := ready // TODO: have someone verify that this is correct.
 
     bistTop.io.addr := scanChainIntf.io.mmio.addr.q
     bistTop.io.din := scanChainIntf.io.mmio.din.q
@@ -116,8 +118,10 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
     val sramBist = Module(new SramBist())
 
     io <> sramBist.io.top
-    sramBist.io.ex.valid := true.B
-    sramBist.io.ex.bits := false.B
+    val ex = Wire(new DecoupledIO(UInt(params.width.W)))
+    sramBist.io.ex.valid := ex.valid
+    sramBist.io.ex.bits := ex.bits
+    ex.ready := sramBist.io.ex.ready
 
     regmap(
       REGMAP_OFFSET(ADDR) -> Seq(
@@ -239,6 +243,12 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
         RegField.rwReg(
           REG_WIDTH(BIST_SIGNATURE),
           sramBist.io.mmio.bistSignatureMmio
+        )
+      )
+      REGMAP_OFFSET(EX) -> Seq(
+        RegField.w(
+          1,
+          ex
         )
       )
     )
