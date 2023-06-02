@@ -21,10 +21,10 @@ class SramBistTopIO extends Bundle {
   val sramScanMode = Input(Bool())
   val sramEn = Input(Bool())
   val sramScanIn = Input(Bool())
-  val sramScanOut = Input(Bool())
   val sramScanEn = Input(Bool())
   val sramSaeClk = Input(Bool())
   val bistEn = Input(Bool())
+  val sramScanOut = Output(Bool())
   val bistDone = Output(Bool())
   val mmio = new MmioRegIO
 }
