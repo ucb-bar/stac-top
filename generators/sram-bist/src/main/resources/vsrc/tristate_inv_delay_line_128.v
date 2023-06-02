@@ -6,7 +6,7 @@ module tristate_inv_delay_line_128(
     vdd,
     vss,
 `endif
-    clk_in, clk_out, ctl[CONTROL_WIDTH-1:0], ctl_b[CONTROL_WIDTH-1:0]
+    clk_in, clk_out, ctl, ctl_b
   );
 
   parameter CONTROL_WIDTH = 128 ;

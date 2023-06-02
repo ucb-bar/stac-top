@@ -6,7 +6,7 @@ module tdc_64(
     vdd,
     vss,
 `endif
-    a, b, reset_b, dout[DATA_WIDTH-1:0]
+    a, b, reset_b, dout
   );
 
   parameter DATA_WIDTH = 252 ;

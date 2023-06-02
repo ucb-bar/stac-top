@@ -91,19 +91,19 @@ class BistTopTestHelpers(val c: BistTop) {
     // Interleave with clock steps to make sure that operations do not occur while registers are being set up.
     // Will be tested more thoroughly with scan chain module.
     c.io.addr.poke(addr)
-    // c.clock.step()
+    c.clock.step()
     c.io.din.poke(din)
-    // c.clock.step()
+    c.clock.step()
     c.io.mask.poke(mask)
-    // c.clock.step()
+    c.clock.step()
     c.io.we.poke(we)
-    // c.clock.step()
+    c.clock.step()
     c.io.sramId.poke(sramId)
-    // c.clock.step()
+    c.clock.step()
     c.io.sramSel.poke(sramSel)
-    // c.clock.step()
+    c.clock.step()
     c.io.saeSel.poke(saeSel)
-    // c.clock.step()
+    c.clock.step()
   }
 
   def executeScanChainSramOp(): Unit = {
