@@ -13,36 +13,29 @@ def check_timing_intent(x: HammerTool) -> bool:
 
 
 class Driver(CLIDriver):
-    def get_extra_hierarchical_synthesis_hooks(self, driver: HammerDriver) -> Dict[str, List[HammerToolHookAction]]:
-        return {
-            "ChipTop": [
-                HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
-            ],
-            "RocketTile": [
-                HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
-            ],
-        }
+    def get_extra_synthesis_hooks(self) -> List[HammerToolHookAction]:
+        return [
+            HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
+        ]
 
-    def get_extra_hierarchical_par_hooks(self, driver: HammerDriver) -> Dict[str, List[HammerToolHookAction]]:
-        return {
-            "ChipTop": [
-                # Default set of steps can be found in the CAD tool plugin's __init__.py
+    def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
+        return [
+            # Default set of steps can be found in the CAD tool plugin's __init__.py
 
-                # make_pre_insertion_hook will execute the custom hook before the specified step
-                # HammerTool.make_pre_insertion_hook("route_design", example_add_fillers),
+            # make_pre_insertion_hook will execute the custom hook before the specified step
+            # HammerTool.make_pre_insertion_hook("route_design", example_add_fillers),
 
-                # make_post_insertion_hook will execute the custom hook after the specified step
-                # HammerTool.make_post_insertion_hook("init_design", example_tool_settings),
+            # make_post_insertion_hook will execute the custom hook after the specified step
+            # HammerTool.make_post_insertion_hook("init_design", example_tool_settings),
 
-                # make_replacement_hook will replace the specified step with a custom hook
-                # HammerTool.make_replacement_hook("place_tap_cells", example_place_tap_cells),
+            # make_replacement_hook will replace the specified step with a custom hook
+            # HammerTool.make_replacement_hook("place_tap_cells", example_place_tap_cells),
 
-                # make_removal_hook will remove the specified step from the flow
+            # make_removal_hook will remove the specified step from the flow
 
-                HammerTool.make_post_insertion_hook("floorplan_design", efabless_ring_io),
-                HammerTool.make_removal_hook("place_bumps"),
-            ],
-        }
+            HammerTool.make_post_insertion_hook("floorplan_design", efabless_ring_io),
+            HammerTool.make_removal_hook("place_bumps"),
+        ]
 
 if __name__ == '__main__':
     Driver().main()
