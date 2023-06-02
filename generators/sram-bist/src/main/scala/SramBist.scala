@@ -118,7 +118,7 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
     val sramBist = Module(new SramBist())
 
     io <> sramBist.io.top
-    val ex = Wire(new DecoupledIO(UInt(params.width.W)))
+    val ex = Wire(new DecoupledIO(Bool()))
     sramBist.io.ex.valid := ex.valid
     sramBist.io.ex.bits := ex.bits
     ex.ready := sramBist.io.ex.ready
@@ -244,7 +244,7 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
           REG_WIDTH(BIST_SIGNATURE),
           sramBist.io.mmio.bistSignatureMmio
         )
-      )
+      ),
       REGMAP_OFFSET(EX) -> Seq(
         RegField.w(
           1,
