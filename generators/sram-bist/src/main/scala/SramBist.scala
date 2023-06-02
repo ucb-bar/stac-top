@@ -96,7 +96,7 @@ class SramBist(params: SramBistParams)(implicit p: Parameters) extends Module {
     scanChainIntf.io.bistSignature := bistTop.io.bistSignature
 
     io.top.bistDone := bistTop.io.bistDone
-    io.mmio := scanChainIntf.io.mmio
+    io.mmio <> scanChainIntf.io.mmio
 }
 
 abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implicit

@@ -42,4 +42,7 @@ object SramBistCtrlRegs extends Enumeration {
 
   val SCAN_CHAIN_OFFSET =
     REG_WIDTH.keys.zip(REG_WIDTH.values.scanLeft(0)(_ + _).dropRight(1)).toMap
+
+  val REGMAP_OFFSET =
+    REG_WIDTH.keys.zip(REG_WIDTH.values.scanLeft(0)((acc, n) => acc + ((n - 1)/64 + 1) * 8).dropRight(1)).toMap
 }

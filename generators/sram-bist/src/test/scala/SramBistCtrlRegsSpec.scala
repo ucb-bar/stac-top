@@ -8,9 +8,10 @@ import org.scalatest.flatspec.AnyFlatSpec
 
 import srambist.SramBistCtrlRegs._
 
-class SramBistCtrlRegSpec extends AnyFlatSpec with ChiselScalatestTester {
+class SramBistCtrlRegsSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "SramBistCtrlReg"
   it should "correctly compute offsets" in {
-    println(SCAN_CHAIN_OFFSET)
+    println(s"Scan chain offsets: ${REG_WIDTH.keys.map(key => (key, SCAN_CHAIN_OFFSET(key)))}")
+    println(s"Reg map offsets: ${REG_WIDTH.keys.map(key => (key, REGMAP_OFFSET(key)))}")
   }
 }
