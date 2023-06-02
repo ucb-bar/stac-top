@@ -6,7 +6,10 @@ import chipyard.sky130.util.analog.ConvertAnalog
 import chisel3._
 import chisel3.experimental.{Analog, BaseModule, attach}
 import freechips.rocketchip.diplomacy.{InModuleBody, LazyModule}
+import freechips.rocketchip.util.ElaborationArtefacts
 import org.chipsalliance.cde.config.Config
+
+import scala.collection.mutable
 
 class Sky130EFGPIOV2IO extends Bundle {
   // VCCHIB domain
@@ -66,12 +69,12 @@ class Sky130EFIOCellCommonIO extends Bundle {
   val porb_h = Input(Bool())
 }
 
-trait HasSky130EFIOCellCommonIO {
+trait Sky130EFIOCellLike extends IOCell {
   this: BaseModule =>
   val commonIO = IO(new Sky130EFIOCellCommonIO)
 }
 
-abstract class Sky130EFGPIOV2CellIOCellBase(cellName: String) extends RawModule with HasSky130EFIOCellCommonIO {
+abstract class Sky130EFGPIOV2CellIOCellBase(cellName: String) extends RawModule with Sky130EFIOCellLike {
   val iocell = Module(new Sky130EFGPIOV2Cell(cellName = cellName))
 
   // special nets
@@ -196,17 +199,31 @@ class WithSky130EFIOCells(cellName: String = consts.defaultCellName) extends Con
 trait HasSky130EFIOCells {
   this: LazyModule with HasSky130EFCaravelPOR =>
 
-  def registerSky130EFIOCell(cell: HasSky130EFIOCellCommonIO): Unit = {
+  val sky130EFIOCellInsts: mutable.Buffer[Sky130EFIOCellLike] = mutable.Buffer[Sky130EFIOCellLike]()
+
+  def registerSky130EFIOCell(cell: Sky130EFIOCellLike): Unit = {
     cell.commonIO.porb_h := porb_h.getWrappedValue
+
+    sky130EFIOCellInsts.append(cell)
   }
 
   InModuleBody {
     this match {
       case top: HasIOBinders =>
         top.iocells.getWrappedValue.foreach {
-          case cell: HasSky130EFIOCellCommonIO => registerSky130EFIOCell(cell)
+          case cell: Sky130EFIOCellLike => registerSky130EFIOCell(cell)
           case _ =>
         }
     }
   }
+
+  ElaborationArtefacts.add("sky130io.json", {
+    "[\n" + sky130EFIOCellInsts.map { cell =>
+        s"""
+         |  {
+         |    "name": ${cell.signalName.map(n => s"\"$n\"").getOrElse("null")}
+         |  }
+         |""".stripMargin.stripTrailing().substring(1)
+    }.mkString(",\n") + "\n]"
+  })
 }

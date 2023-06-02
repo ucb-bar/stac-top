@@ -94,8 +94,8 @@ endif
 IO_FILE_CONF = $(OBJ_DIR)/io_map-input.yml
 IO_FILE = $(OBJ_DIR)/io_map.io
 
-$(IO_FILE): scripts/gen-io-file.py $(PIN_MAP)
-	$^ -o $@
+$(IO_FILE): scripts/gen-io-file.py $(PIN_MAP) $(build_dir)/$(long_name).sky130io.json
+	$< $(PIN_MAP) -d $(build_dir)/$(long_name).sky130io.json -o $@
 
 $(IO_FILE_CONF): $(IO_FILE)
 	mkdir -p $(dir $@)

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import Callable, TextIO, cast
 from dataclasses import dataclass
-from itertools import groupby
+from itertools import groupby, chain
 import sys
+import json
 
 import yaml
 from pydantic import BaseModel
@@ -15,6 +16,12 @@ PinData = str
 
 class IOMap(BaseModel):
     pins: dict[str, PinData]
+
+class DesignInfoInst(BaseModel):
+    name: str
+
+class DesignInfo(BaseModel):
+    __root__: list[DesignInfoInst]
 
 
 cell_locations: dict[str, int | float] = {
@@ -230,7 +237,7 @@ def get_inst_path_for_nc(idx: int) -> str:
     return get_inst_path_for_signal(f"nc_{idx}")
 
 
-def generate_iofile(mapping: dict[str, str]) -> IOFileModel:
+def generate_iofile(mapping: dict[str, str], design_info: DesignInfo | None) -> IOFileModel:
     root = {**skeleton}
     nc_idx = 0
     n_clamps = 0
@@ -282,6 +289,29 @@ def generate_iofile(mapping: dict[str, str]) -> IOFileModel:
     n_total = sum(1 for r in cells.values() for x in r if isinstance(x, E) and x.name == "inst")
     assert n_signals + nc_idx + n_clamps == n_total
     assert n_signals == len(mapping)
+
+    if design_info is not None:
+        logic_insts = [
+            e.contents
+            for e in chain(*cells.values())
+            if e.name == "inst" and isinstance(e.contents, dict) and "cell" not in e.contents
+        ]
+        has_dupe_insts = False
+        for name, insts_iter in groupby(sorted(logic_insts, key=lambda x: cast(str, x["name"])), lambda x: x["name"]):
+            insts = list(insts_iter)
+            if len(insts) != 1:
+                # this shouldn't happen - it should get caught earlier
+                print(f"Found duplicate instance {name}: {insts}", file=sys.stderr)
+                has_dupe_insts = True
+        if has_dupe_insts:
+            raise RuntimeError("Duplicate instances generated")
+        logic_insts_set = {cast(str, e["name"]) for e in logic_insts}
+        design_insts_set = {get_inst_path_for_signal(e.name) for e in design_info.__root__}
+        if logic_insts_set != design_insts_set:
+            print(f"Insts in design but not pin-map: {design_insts_set - logic_insts_set}", file=sys.stderr)
+            print(f"Insts in pin-map but not design: {logic_insts_set - design_insts_set}", file=sys.stderr)
+            raise ValueError("Instances do not match between design and pin config")
+
     print(f"Generated IO file for {n_signals} signals, {n_clamps} clamps, {nc_idx} NC")
     print(f"  ({n_signals + nc_idx} non-power, {n_total} total)")
 
@@ -300,14 +330,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("config", type=Path)
     parser.add_argument("--output", "-o", type=Path, required=True)
+    parser.add_argument("--design-info", "-d", type=Path)
 
     args = parser.parse_args()
 
     with args.config.open("r") as f:
         config = yaml.safe_load(f)
 
-    config = IOMap(**config)
+    config = IOMap.parse_obj(config)
 
-    iof = generate_iofile(config.pins)
+    design_info = None
+    if args.design_info is not None:
+        with args.design_info.open("r") as f:
+            design_info = json.load(f)
+        design_info = DesignInfo.parse_obj(design_info)
+
+    iof = generate_iofile(config.pins, design_info)
     with args.output.open("w") as f:
         write_iofile(iof, f)
