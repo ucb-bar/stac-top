@@ -13,11 +13,11 @@ pins:
   W18: serial_tl_bits_out_bits
   W17: serial_tl_bits_in_bits
   W16: serial_tl_bits_in_ready
-  W15: serial_tl_bits_in_valid
+  W15: serial_tl_bits_out_valid
   W14: serial_tl_bits_out_ready
-  E19: spi0_clk
-  E18: spi0_csn0
-  E17: spi0_dq3
-  E16: spi0_dq2
-  E15: spi0_dq1
-  E14: spi0_dq0
+  E19: spi_0_sck
+  E18: spi_0_cs_0
+  E17: spi_0_dq_3
+  E16: spi_0_dq_2
+  E15: spi_0_dq_1
+  E14: spi_0_dq_0

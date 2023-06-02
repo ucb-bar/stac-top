@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Callable, TextIO, cast
 from dataclasses import dataclass
+from itertools import groupby
+import sys
 
 import yaml
 from pydantic import BaseModel
@@ -237,6 +239,15 @@ def generate_iofile(mapping: dict[str, str]) -> IOFileModel:
         side: [E("locals", {"ring_number": 1})] for side in ALL_SIDES
     }
 
+    has_dupe_signals = False
+    for signal, maps_iter in groupby(sorted(mapping.items(), key=lambda x: x[1]), lambda x: x[1]):
+        maps = list(maps_iter)
+        if len(maps) != 1:
+            print(f"Found duplicate signal {signal}: {maps}", file=sys.stderr)
+            has_dupe_signals = True
+    if has_dupe_signals:
+        raise ValueError("Duplicate signals found!")
+
     for site_name, location in cell_locations.items():
         side = get_side_for_name(site_name)
         def add(attrs: dict[str, IOFileAttr]):
@@ -270,6 +281,7 @@ def generate_iofile(mapping: dict[str, str]) -> IOFileModel:
 
     n_total = sum(1 for r in cells.values() for x in r if isinstance(x, E) and x.name == "inst")
     assert n_signals + nc_idx + n_clamps == n_total
+    assert n_signals == len(mapping)
     print(f"Generated IO file for {n_signals} signals, {n_clamps} clamps, {nc_idx} NC")
     print(f"  ({n_signals + nc_idx} non-power, {n_total} total)")
 
