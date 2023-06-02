@@ -38,6 +38,8 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
           d.io.sramScanIn.poke(false.B)
           d.io.sramScanEn.poke(false.B)
 
+          d.io.dout.poke(60.U)
+          d.clock.step()
           d.io.mmio.doutMmio.d.poke(50.U)
           d.io.mmio.doutMmio.en.poke(true.B)
           d.clock.step()
@@ -49,10 +51,15 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new ScanChainIntf)
       .withAnnotations(Seq(WriteVcdAnnotation, PrintFullStackTraceAnnotation)) {
         d =>
-          d.io.sramScanMode.poke(true.B)
+          d.io.sramScanMode.poke(false.B)
           d.io.sramScanIn.poke(false.B)
           d.io.sramScanEn.poke(false.B)
 
+          d.io.mmio.addr.d.poke(20.U)
+          d.io.mmio.addr.en.poke(true.B)
+          d.clock.step()
+
+          d.io.sramScanMode.poke(true.B)
           d.io.mmio.addr.d.poke(21.U)
           d.io.mmio.addr.en.poke(true.B)
           d.clock.step()
