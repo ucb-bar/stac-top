@@ -116,6 +116,8 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
     val sramBist = Module(new SramBist())
 
     io <> sramBist.io.top
+    sramBist.io.ex.valid := true.B
+    sramBist.io.ex.bits := false.B
 
     regmap(
       REGMAP_OFFSET(ADDR) -> Seq(
