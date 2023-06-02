@@ -18,17 +18,16 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
           d.io.sramScanIn.poke(false.B)
           d.io.sramScanEn.poke(false.B)
 
-          // Test updating output registers from control logic and reading over MMIO interface.
           d.io.dout.poke(60.U)
           d.io.tdc.poke(
             "h123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".U
           )
           d.clock.step()
-          d.io.doutMmio.q.expect(60.U)
-          d.io.tdcMmio(0).q.expect("h0123456789abcdef".U)
-          d.io.tdcMmio(1).q.expect("h0123456789abcdef".U)
-          d.io.tdcMmio(2).q.expect("h0123456789abcdef".U)
-          d.io.tdcMmio(3).q.expect("h123456789abcdef".U)
+          d.io.mmio.doutMmio.q.expect(60.U)
+          d.io.mmio.tdcMmio(0).q.expect("h0123456789abcdef".U)
+          d.io.mmio.tdcMmio(1).q.expect("h0123456789abcdef".U)
+          d.io.mmio.tdcMmio(2).q.expect("h0123456789abcdef".U)
+          d.io.mmio.tdcMmio(3).q.expect("h123456789abcdef".U)
       }
   }
   it should "ignore writes to read-only MMIO registers" in {
@@ -39,40 +38,36 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
           d.io.sramScanIn.poke(false.B)
           d.io.sramScanEn.poke(false.B)
 
-          // Test writing to read-only MMIO register.
-          d.io.doutMmio.d.poke(50.U)
-          d.io.doutMmio.en.poke(true.B)
+          d.io.mmio.doutMmio.d.poke(50.U)
+          d.io.mmio.doutMmio.en.poke(true.B)
           d.clock.step()
-          d.io.doutMmio.q.expect(60.U)
-          d.io.doutMmio.en.poke(false.B)
+          d.io.mmio.doutMmio.q.expect(60.U)
+          d.io.mmio.doutMmio.en.poke(false.B)
       }
   }
   it should "ignore writes via MMIO while in scan chain mode" in {
     test(new ScanChainIntf)
       .withAnnotations(Seq(WriteVcdAnnotation, PrintFullStackTraceAnnotation)) {
         d =>
-          d.io.sramScanMode.poke(false.B)
+          d.io.sramScanMode.poke(true.B)
           d.io.sramScanIn.poke(false.B)
           d.io.sramScanEn.poke(false.B)
 
-          // Test writing via MMIO while in scan chain mode.
-          d.io.sramScanMode.poke(true.B)
-          d.io.addr.d.poke(21.U)
-          d.io.addr.en.poke(true.B)
+          d.io.mmio.addr.d.poke(21.U)
+          d.io.mmio.addr.en.poke(true.B)
           d.clock.step()
-          d.io.addr.q.expect(20.U)
-          d.io.addr.en.poke(false.B)
+          d.io.mmio.addr.q.expect(20.U)
+          d.io.mmio.addr.en.poke(false.B)
       }
   }
   it should "allow for scan out of control logic output" in {
     test(new ScanChainIntf)
       .withAnnotations(Seq(WriteVcdAnnotation, PrintFullStackTraceAnnotation)) {
         d =>
-          d.io.sramScanMode.poke(false.B)
+          d.io.sramScanMode.poke(true.B)
           d.io.sramScanIn.poke(false.B)
           d.io.sramScanEn.poke(false.B)
 
-          // Test reading output registers via scan out.
           d.io.bistFail.poke(true.B)
           d.io.bistFailCycle.poke(50.U)
           d.io.bistExpected.poke(60.U)
@@ -105,11 +100,9 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new ScanChainIntf)
       .withAnnotations(Seq(WriteVcdAnnotation, PrintFullStackTraceAnnotation)) {
         d =>
-          d.io.sramScanMode.poke(false.B)
-          d.io.sramScanIn.poke(false.B)
-          d.io.sramScanEn.poke(false.B)
-
-          // Test updating registers via scan in.
+          d.io.sramScanMode.poke(true.B)
+          d.io.sramScanIn.poke(true.B)
+          d.io.sramScanEn.poke(true.B)
 
           val scanIn = (width: Int, value: Int) => {
             var bitSeq = Seq[Int]()
@@ -130,16 +123,16 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
           scanIn(REG_WIDTH(ADDR), 25)
 
           d.io.sramScanEn.poke(false.B)
-          d.io.addr.q.expect(25.U)
-          d.io.din.q.expect(20.U)
-          d.io.mask.q.expect(15.U)
-          d.io.we.q.expect(0.U)
+          d.io.mmio.addr.q.expect(25.U)
+          d.io.mmio.din.q.expect(20.U)
+          d.io.mmio.mask.q.expect(15.U)
+          d.io.mmio.we.q.expect(0.U)
 
           d.clock.step()
-          d.io.addr.q.expect(25.U)
-          d.io.din.q.expect(20.U)
-          d.io.mask.q.expect(15.U)
-          d.io.we.q.expect(0.U)
+          d.io.mmio.addr.q.expect(25.U)
+          d.io.mmio.din.q.expect(20.U)
+          d.io.mmio.mask.q.expect(15.U)
+          d.io.mmio.we.q.expect(0.U)
       }
   }
   it should "allow writes to MMIO registers" in {
@@ -151,17 +144,17 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
           d.io.sramScanEn.poke(false.B)
 
           // Test writing to writable MMIO register.
-          d.io.addr.d.poke(15.U)
-          d.io.addr.en.poke(true.B)
+          d.io.mmio.addr.d.poke(15.U)
+          d.io.mmio.addr.en.poke(true.B)
           d.clock.step()
-          d.io.addr.q.expect(15.U)
-          d.io.addr.d.poke(20.U)
+          d.io.mmio.addr.q.expect(15.U)
+          d.io.mmio.addr.d.poke(20.U)
           d.clock.step()
-          d.io.addr.q.expect(20.U)
-          d.io.addr.d.poke(21.U)
-          d.io.addr.en.poke(false.B)
+          d.io.mmio.addr.q.expect(20.U)
+          d.io.mmio.addr.d.poke(21.U)
+          d.io.mmio.addr.en.poke(false.B)
           d.clock.step()
-          d.io.addr.q.expect(20.U)
+          d.io.mmio.addr.q.expect(20.U)
       }
   }
 }
