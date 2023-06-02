@@ -26,7 +26,6 @@ class SramBistTopIO extends Bundle {
   val bistEn = Input(Bool())
   val sramScanOut = Output(Bool())
   val bistDone = Output(Bool())
-  val mmio = new MmioRegIO
 }
 
 class SramBistIO extends Bundle {
@@ -35,7 +34,7 @@ class SramBistIO extends Bundle {
   val mmio = new MmioRegIO
 }
 
-class SramBist(params: SramBistParams)(implicit p: Parameters) extends Module {
+class SramBist()(implicit p: Parameters) extends Module {
   val io = IO(new SramBistIO)
     val scanChainIntf = Module(new ScanChainIntf)
     val bistTopParams = new BistTopParams
@@ -114,7 +113,7 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
   lazy val module = new LazyModuleImp(this) {
     val io = ioNode.bundle
 
-    val sramBist = Module(new SramBist(params))
+    val sramBist = Module(new SramBist())
 
     io := sramBist.io.top
 
