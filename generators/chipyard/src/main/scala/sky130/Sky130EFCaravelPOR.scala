@@ -1,6 +1,7 @@
 package chipyard.sky130
 
 import chisel3._
+import chisel3.experimental.BaseModule
 import freechips.rocketchip.diplomacy.{InModuleBody, LazyModule}
 import org.chipsalliance.cde.config.{Config, Field}
 
@@ -13,7 +14,7 @@ class Sky130EFCaravelPORIO extends Bundle {
   val por_l = Output(Bool())
 }
 
-trait HasSky130EFCaravelPORIO {
+trait HasSky130EFCaravelPORIO extends BaseModule {
   val io = IO(new Sky130EFCaravelPORIO)
 }
 
