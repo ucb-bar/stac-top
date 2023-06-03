@@ -19,7 +19,6 @@ def fix_io_fillers(x: HammerTool) -> bool:
     x.append('''
 set io_filler_insts [get_db insts -if {.base_cell.name == sky130_ef_io__com_bus_slice_*}]
 set_db $io_filler_insts .place_status fixed
-set_dont_touch $io_filler_insts true
 ''')
     return True
 
