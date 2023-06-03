@@ -219,11 +219,13 @@ trait HasSky130EFIOCells {
 
   ElaborationArtefacts.add("sky130io.json", {
     "[\n" + sky130EFIOCellInsts.map { cell =>
+      val s =
         s"""
-         |  {
-         |    "name": ${cell.signalName.map(n => s"\"$n\"").getOrElse("null")}
-         |  }
-         |""".stripMargin.stripTrailing().substring(1)
+           |  {
+           |    "name": ${cell.signalName.map(n => s"\"$n\"").getOrElse("null")}
+           |  }
+           |""".stripMargin
+      s.substring(1, s.length - 1)
     }.mkString(",\n") + "\n]"
   })
 }
