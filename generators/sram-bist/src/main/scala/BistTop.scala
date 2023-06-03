@@ -193,7 +193,9 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
           )
         )
       )
+
       val sram = withClock(harness.io.sramClk) { Module(new Sram(sramParams)) }
+
       sram.io.wmask := harness.io.mask
       sram.io.addr := harness.io.addr
       sram.io.din := harness.io.data

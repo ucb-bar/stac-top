@@ -13,7 +13,7 @@ case object SramBistKey extends Field[Option[SramBistParams]](None)
 
 trait CanHavePeripherySramBist { this: BaseSubsystem =>
   val sramBist = p(SramBistKey).map { params =>
-    SramBistAttachParams(params).attachTo(this).ioNode.makeSink
+    SramBistAttachParams(params).attachTo(this).ioNode.makeSink()
   }
 }
 
