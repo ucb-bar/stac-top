@@ -29,8 +29,8 @@ class MaxPeriodFibonacciXORMISRModel(
 }
 
 class MaxPeriodFibonacciXORMISRModelSpec extends AnyFlatSpec {
-  behavior of "BistTop"
-  it should "work with hardmacro SRAMs" in {
+  behavior of "MaxPeriodFibonacciXORMISRModel"
+  it should "work with width 5 and seed 5" in {
     var c = new MaxPeriodFibonacciXORMISRModel(5, Some(5))
     assert(c.state == 5)
     c.add(20)

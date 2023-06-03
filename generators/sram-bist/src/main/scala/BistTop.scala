@@ -97,6 +97,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val bistEnPrev = RegNext(bist.io.en)
   val bistCheckEnPrev = RegNext(bist.io.checkEn)
   val bistCyclePrev = RegNext(bist.io.cycle)
+  val bistDonePrev = RegNext(bist.io.done)
   val bistFail = RegInit(false.B)
   val bistFailCycle = Reg(UInt(32.W))
   val bistExpected = Reg(UInt(32.W))
@@ -178,7 +179,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   bist.io.maxElementIdx := io.bistMaxElementIdx
   bist.io.cycleLimit := io.bistCycleLimit
 
-  io.bistDone := bist.io.done | bistFail
+  io.bistDone := bistDonePrev | bistFail
 
   var (srams, harnesses) = params.srams.zipWithIndex.map {
     case (sramParams, i) => {
