@@ -102,6 +102,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val bistReceived = Reg(UInt(32.W))
   val sramMasks = RegInit(Vec(params.srams.length, UInt(32.W)).Lit(params.srams.zipWithIndex.map { case (p, i) => i -> ((1L << p.dataWidth) - 1).U(32.W) }: _*))
   val sramMask = Wire(UInt(32.W))
+  val maskedIOOut = Wire(chiselTypeOf(io.dout))
 
   io.bistFail := bistFail
   io.bistFailCycle := bistFailCycle
@@ -158,14 +159,8 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
 
   // TODO: does not stop on first failure for scan chain -> BIST mode, does for MMIO.
   sramMask := sramMasks(io.sramId)
-  /* 
-  when(bistEnPrev & bistCheckEnPrev & (bistDataPrev =/= 0.U) & (io.dout =/= 0.U) & (io.sramId < params.srams.length.U)) {
-    printf(cf"bist data prev and sram mask ${bistDataPrev & sramMask}, io out and mask ${io.dout & sramMask}\n")
-    printf(cf"bist data prev ${bistDataPrev}, io out ${io.dout}, sram mask ${sramMask}\n")
-    printf(cf"sram masks ${sramMasks}, io.sramId ${io.sramId}")
-  }
-  */
-  when(bistEnPrev & bistCheckEnPrev & ((bistDataPrev & sramMask) =/= (io.dout & sramMask))) {
+  maskedIOOut := (io.dout & sramMask)
+  when(bistEnPrev & bistCheckEnPrev & ((bistDataPrev & sramMask) =/= maskedIOOut)) {
     when(~(bistFail & io.bistStopOnFailure)) {
       bistFail := true.B
       bistFailCycle := bistCyclePrev
@@ -263,7 +258,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   )
 
-  misr.io.in := io.dout.asBools
+  misr.io.in := (maskedIOOut).asBools
 
   io.tdc := MuxCase(
     0.U,
