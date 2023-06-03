@@ -182,218 +182,218 @@ class BistTopTestHelpers(val c: BistTop) {
     c.io.bistEn.poke(false.B)
   }
 
-      def testSramMethodFull(executeFn: () => Unit): Unit = {
-        // Test write.
-        populateSramRegisters(
-          0.U,
-          "habcdabcd".U,
-          "hf".U,
-          true.B,
-          0.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
+  def testSramMethodFull(executeFn: () => Unit): Unit = {
+    // Test write.
+    populateSramRegisters(
+      0.U,
+      "habcdabcd".U,
+      "hf".U,
+      true.B,
+      0.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
 
-        populateSramRegisters(
-          0.U,
-          0.U,
-          0.U,
-          false.B,
-          0.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
-        c.io.dout.expect("habcdabcd".U)
+    populateSramRegisters(
+      0.U,
+      0.U,
+      0.U,
+      false.B,
+      0.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
+    c.io.dout.expect("habcdabcd".U)
 
-        // Test write with mask.
-        populateSramRegisters(
-          0.U,
-          0.U,
-          5.U,
-          true.B,
-          0.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        c.io.dout.expect(
-          "habcdabcd".U
-        ) // Dout should retain its value while registers are being set up.
-        executeFn()
+    // Test write with mask.
+    populateSramRegisters(
+      0.U,
+      0.U,
+      5.U,
+      true.B,
+      0.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    c.io.dout.expect(
+      "habcdabcd".U
+    ) // Dout should retain its value while registers are being set up.
+    executeFn()
 
-        populateSramRegisters(
-          0.U,
-          0.U,
-          0.U,
-          false.B,
-          0.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
-        c.io.dout.expect("hab00ab00".U)
+    populateSramRegisters(
+      0.U,
+      0.U,
+      0.U,
+      false.B,
+      0.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
+    c.io.dout.expect("hab00ab00".U)
 
-        // Test write to second SRAM.
-        populateSramRegisters(
-          0.U,
-          "h12345678".U,
-          "hf".U,
-          true.B,
-          1.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
+    // Test write to second SRAM.
+    populateSramRegisters(
+      0.U,
+      "h12345678".U,
+      "hf".U,
+      true.B,
+      1.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
 
-        populateSramRegisters(
-          0.U,
-          0.U,
-          0.U,
-          false.B,
-          1.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
-        c.io.dout.expect("h12345678".U)
+    populateSramRegisters(
+      0.U,
+      0.U,
+      0.U,
+      false.B,
+      1.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
+    c.io.dout.expect("h12345678".U)
 
-        // Test that first SRAM retains original value.
-        populateSramRegisters(
-          0.U,
-          0.U,
-          0.U,
-          false.B,
-          0.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
-        c.io.dout.expect("hab00ab00".U)
+    // Test that first SRAM retains original value.
+    populateSramRegisters(
+      0.U,
+      0.U,
+      0.U,
+      false.B,
+      0.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
+    c.io.dout.expect("hab00ab00".U)
 
-        // Test writing to extreme addresses of both SRAMs. Verify that original data doesn't change.
-        populateSramRegisters(
-          63.U,
-          "h87654321".U,
-          "hf".U,
-          true.B,
-          0.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
+    // Test writing to extreme addresses of both SRAMs. Verify that original data doesn't change.
+    populateSramRegisters(
+      63.U,
+      "h87654321".U,
+      "hf".U,
+      true.B,
+      0.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
 
-        populateSramRegisters(
-          63.U,
-          0.U,
-          0.U,
-          false.B,
-          0.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
-        c.io.dout.expect("h87654321".U)
+    populateSramRegisters(
+      63.U,
+      0.U,
+      0.U,
+      false.B,
+      0.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
+    c.io.dout.expect("h87654321".U)
 
-        populateSramRegisters(
-          0.U,
-          0.U,
-          0.U,
-          false.B,
-          0.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
-        c.io.dout.expect("hab00ab00".U)
+    populateSramRegisters(
+      0.U,
+      0.U,
+      0.U,
+      false.B,
+      0.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
+    c.io.dout.expect("hab00ab00".U)
 
-        populateSramRegisters(
-          1023.U,
-          "hdeadbeef".U,
-          "hf".U,
-          true.B,
-          1.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
+    populateSramRegisters(
+      1023.U,
+      "hdeadbeef".U,
+      "hf".U,
+      true.B,
+      1.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
 
-        populateSramRegisters(
-          1023.U,
-          0.U,
-          0.U,
-          false.B,
-          1.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
-        c.io.dout.expect("hdeadbeef".U)
+    populateSramRegisters(
+      1023.U,
+      0.U,
+      0.U,
+      false.B,
+      1.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
+    c.io.dout.expect("hdeadbeef".U)
 
-        populateSramRegisters(
-          0.U,
-          0.U,
-          0.U,
-          false.B,
-          1.U,
-          SramSrc.mmio,
-          SaeSrc.int
-        )
-        executeFn()
-        c.io.dout.expect("h12345678".U)
+    populateSramRegisters(
+      0.U,
+      0.U,
+      0.U,
+      false.B,
+      1.U,
+      SramSrc.mmio,
+      SaeSrc.int
+    )
+    executeFn()
+    c.io.dout.expect("h12345678".U)
+  }
+
+  def testBistMethodFull(scanChain: Boolean): Unit = {
+
+    val maybeReset = () => {
+      if (scanChain) {
+        c.io.bistStart.poke(true.B)
+        c.clock.step()
+        c.io.bistStart.poke(false.B)
+        c.clock.step()
       }
-
-      def testBistMethodFull(scanChain: Boolean): Unit = {
-
-        val maybeReset = () => {
-          if (scanChain) {
-            c.reset.poke(true.B)
-            c.clock.step()
-            c.reset.poke(false.B)
-            c.clock.step()
-          }
-        }
-        val executeOp = () => {
-          if (scanChain) {
-            executeScanChainBistOp()
-          } else {
-            executeMmioOp()
-          }
-        }
-
-        maybeReset()
-        // TODO: Use correct cycle limit.
-        populateBistRegisters(
-          1.U,
-          1.U,
-          maxRows.U,
-          maxCols.U,
-          c.bist.Dimension.col,
-          Vec.Lit(
-            ones,
-            ones,
-            zeros,
-            zeros
-          ),
-          Vec(4, new c.bist.Element())
-            .Lit(
-              0 -> march,
-              1 -> march,
-              2 -> march,
-              3 -> march
-            ),
-          0.U,
-          0.U,
-          true.B,
-          0.U,
-          SramSrc.bist,
-          SaeSrc.int
-        )
-        executeOp()
-        c.io.bistDone.expect(true.B)
-        c.io.bistFail.expect(false.B)
-
+    }
+    val executeOp = () => {
+      if (scanChain) {
+        executeScanChainBistOp()
+      } else {
+        executeMmioOp()
       }
+    }
+
+    // TODO: Use correct cycle limit.
+    populateBistRegisters(
+      1.U,
+      1.U,
+      maxRows.U,
+      maxCols.U,
+      c.bist.Dimension.col,
+      Vec.Lit(
+        ones,
+        ones,
+        zeros,
+        zeros
+      ),
+      Vec(4, new c.bist.Element())
+        .Lit(
+          0 -> march,
+          1 -> march,
+          2 -> march,
+          3 -> march
+        ),
+      0.U,
+      0.U,
+      true.B,
+      0.U,
+      SramSrc.bist,
+      SaeSrc.int
+    )
+    maybeReset()
+    executeOp()
+    c.io.bistDone.expect(true.B)
+    c.io.bistFail.expect(false.B)
+
+  }
 }
 
 class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
@@ -412,7 +412,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new freechips.rocketchip.subsystem.WithClockGateModel
       )
-    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { c => 
+    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { c =>
       val testhelpers = new BistTopTestHelpers(c)
       c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
@@ -616,37 +616,15 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       testhelpers.c.io.sramExtEn.poke(false.B)
       testhelpers.c.io.sramScanMode.poke(false.B)
 
-        // TODO: Use correct cycle limit.
-        testhelprs.populateBistRegisters(
-          1.U,
-          1.U,
-          maxRows.U,
-          maxCols.U,
-          c.bist.Dimension.col,
-          Vec.Lit(
-            ones,
-            ones,
-            zeros,
-            zeros
-          ),
-          Vec(4, new c.bist.Element())
-            .Lit(
-              0 -> march,
-              1 -> march,
-              2 -> march,
-              3 -> march
-            ),
-          3.U,
-          0.U,
-          true.B,
-          0.U,
-          SramSrc.bist,
-          SaeSrc.int
-        )
-        executeOp()
-        c.io.bistDone.expect(true.B)
-        c.io.bistFail.expect(false.B)
+      testhelpers.testBistMethodFull(false)
 
+      val misrModel = new MaxPeriodFibonacciXORMISRModel(32)
+      for (i <- 1 to (testhelpers.maxRows + 1) * (testhelpers.maxCols + 1)) {
+        misrModel.add(0)
+        misrModel.add(0xffffffffL)
+      }
+
+      testhelpers.c.io.bistSignature.expect(misrModel.state.U)
     }
   }
 
@@ -711,9 +689,9 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
 
         val maybeReset = () => {
           if (scanChain) {
-            c.reset.poke(true.B)
+            c.io.bistStart.poke(true.B)
             c.clock.step()
-            c.reset.poke(false.B)
+            c.io.bistStart.poke(false.B)
             c.clock.step()
           }
         }
@@ -725,7 +703,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           }
         }
 
-        maybeReset()
         // TODO: Use correct cycle limit.
         testhelpers.populateBistRegisters(
           1.U,
@@ -753,6 +730,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SramSrc.bist,
           SaeSrc.int
         )
+        maybeReset()
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
@@ -862,9 +840,9 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
 
         val maybeReset = () => {
           if (scanChain) {
-            c.reset.poke(true.B)
+            c.io.bistStart.poke(true.B)
             c.clock.step()
-            c.reset.poke(false.B)
+            c.io.bistStart.poke(false.B)
             c.clock.step()
           }
         }
@@ -876,7 +854,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           }
         }
 
-        maybeReset()
         // TODO: Use correct cycle limit.
         testhelpers.populateBistRegisters(
           1.U,
@@ -904,6 +881,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SramSrc.bist,
           SaeSrc.int
         )
+        maybeReset()
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)

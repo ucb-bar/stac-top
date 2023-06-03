@@ -3,24 +3,28 @@ package srambist
 import srambist.misr.MISR
 import org.scalatest.flatspec.AnyFlatSpec
 
-class MaxPeriodFibonacciXORMISRModel(width: Int, seed: Option[BigInt] = Some(1)) {
+class MaxPeriodFibonacciXORMISRModel(
+    width: Int,
+    seed: Option[BigInt] = Some(1)
+) {
   val taps = MISR.tapsMaxPeriod(width).head
   var state: BigInt = seed.get
 
+  def forcePositive(in: BigInt): BigInt = {
+    BigInt(Array[Byte](0) ++ in.toByteArray)
+  }
+
   def add(data: BigInt): Unit = {
-    val newBit = taps.map(tap => data.testBit(tap - 1)).reduce(_ ^ _)
-    for (i <- width - 1 to 1 by -1) {
-      state = if (state.testBit(i-1)) { state.setBit(i) } else { state.clearBit(i) }
-    }
-    state = if (newBit) {
-      state.setBit(0)
-    } else {
-      state.clearBit(0)
+    var pdata = forcePositive(data)
+
+    val newBit = taps.toList.map(tap => state.testBit(tap - 1)).reduce(_ ^ _)
+    state = state << 1
+    if (newBit) {
+      state += 1
     }
 
-    println(state.toInt.toBinaryString)
-    println(newBit)
-    state = state ^ data
+    state = state ^ pdata
+    state = forcePositive(state.clearBit(width))
   }
 }
 
