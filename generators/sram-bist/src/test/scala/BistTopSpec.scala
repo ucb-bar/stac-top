@@ -462,7 +462,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32), new SramParams(16, 8, 64, 16)),
           new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
@@ -554,6 +554,30 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         )
         executeFn()
         testhelpers.c.io.dout.expect("h12345678".U)
+        
+        // Test write to third SRAM.
+        testhelpers.populateSramRegisters(
+          0.U,
+          "hab6f6bbd".U,
+          "hf".U,
+          true.B,
+          2.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          2.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("h00006bbd".U)
 
         // Test that first SRAM retains original value.
         testhelpers.populateSramRegisters(
@@ -568,7 +592,21 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         executeFn()
         testhelpers.c.io.dout.expect("hab00ab00".U)
 
-        // Test writing to extreme addresses of both SRAMs. Verify that original data doesn't change.
+
+        // Test that first SRAM retains original value.
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          0.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("hab00ab00".U)
+
+        // Test writing to extreme addresses of all three SRAMs. Verify that original data doesn't change.
         testhelpers.populateSramRegisters(
           63.U,
           "h87654321".U,
@@ -638,6 +676,42 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         )
         executeFn()
         testhelpers.c.io.dout.expect("h12345678".U)
+
+        testhelpers.populateSramRegisters(
+          63.U,
+          "h87654321".U,
+          "hf".U,
+          true.B,
+          2.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+
+        testhelpers.populateSramRegisters(
+          63.U,
+          0.U,
+          0.U,
+          false.B,
+          2.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("h00004321".U)
+
+        testhelpers.populateSramRegisters(
+          0.U,
+          0.U,
+          0.U,
+          false.B,
+          2.U,
+          SramSrc.mmio,
+          SaeSrc.int
+        )
+        executeFn()
+        testhelpers.c.io.dout.expect("h00006bbd".U)
+
       }
 
       val testBistMethod = (scanChain: Boolean) => {
@@ -690,6 +764,37 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(false.B)
 
+        testhelpers.populateBistRegisters(
+          1.U,
+          1.U,
+          testhelpers.maxRows.U,
+          testhelpers.maxCols.U,
+          testhelpers.c.bist.Dimension.row,
+          Vec.Lit(
+            testhelpers.ones,
+            testhelpers.ones,
+            testhelpers.zeros,
+            testhelpers.zeros
+          ),
+          Vec(4, new testhelpers.c.bist.Element())
+            .Lit(
+              0 -> testhelpers.march,
+              1 -> testhelpers.march,
+              2 -> testhelpers.march,
+              3 -> testhelpers.march
+            ),
+          3.U,
+          0.U,
+          true.B,
+          2.U,
+          SramSrc.bist,
+          SaeSrc.int
+        )
+        executeOp()
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(false.B)
+
+
       }
 
       // ******************
@@ -733,7 +838,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
 
     }
   }
-
+  
   it should "detect stuck at faults in chiseltest SRAMs" in {
     test(
       new BistTop(
