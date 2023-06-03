@@ -1,4 +1,11 @@
+// See LICENSE for license details.
+
+//**************************************************************************
+// SRAM BIST (c version)
+//--------------------------------------------------------------------------
+
 #include "mmio.h"
+#include <stdio.h>
 
 #define SRAMBIST_ADDR 0x1000
 #define SRAMBIST_DIN 0x1008
@@ -26,40 +33,42 @@
 #define SRAMBIST_BIST_EXPECTED 0x1130
 #define SRAMBIST_BIST_RECEIVED 0x1138
 #define SRAMBIST_BIST_SIGNATURE 0x1140
-#define SRAMBIST_BIST_EX 0x1148
+#define SRAMBIST_EX 0x1148
 
 #define SRAM_BIST_SRAM_SEL_BIST 0
 #define SRAM_BIST_SRAM_SEL_MMIO 1
 
-// DOC include start: SRAM BIST test
-int main(void)
+void srambist_write(uint32_t addr, uint32_t din, uint32_t mask, uint8_t sram_id) {
+  reg_write32(SRAMBIST_ADDR, addr);
+  reg_write32(SRAMBIST_DIN, din);
+  reg_write32(SRAMBIST_MASK, mask);
+  reg_write8(SRAMBIST_WE, 1);
+  reg_write8(SRAMBIST_SRAM_ID, sram_id);
+  reg_write8(SRAMBIST_SRAM_SEL, SRAM_BIST_SRAM_SEL_MMIO);
+  reg_write8(SRAMBIST_EX, 1);
+
+  while ((reg_read8(SRAMBIST_DONE) & 0x1) == 0);
+}
+
+uint32_t srambist_read(uint32_t addr, uint8_t sram_id) {
+  reg_write32(SRAMBIST_ADDR, addr);
+  reg_write8(SRAMBIST_SRAM_ID, sram_id);
+  reg_write8(SRAMBIST_WE, 0);
+  reg_write8(SRAMBIST_SRAM_SEL, SRAM_BIST_SRAM_SEL_MMIO);
+  reg_write8(SRAMBIST_EX, 1);
+
+  while ((reg_read8(SRAMBIST_DONE) & 0x1) == 0);
+
+  return reg_read32(SRAMBIST_DOUT);
+}
+
+int srambist()
 {
   uint32_t result, ref;
+  ref = 2147483647;
 
-  reg_write32(SRAMBIST_ADDR, 0);
-  reg_write32(SRAMBIS_DIN, 25);
-  reg_write32(SRAMBIST_MASK, 0xffffffff);
-  reg_write8(SRAMBIST_WE, 0xff);
-  reg_write8(SRAMBIST_SRAM_ID, 0);
-  reg_write8(SRAMBIST_SRAM_SEL, 0xff);
-  reg_write8(SRAMBIST_EX, 0xff);
-
-  // wait for peripheral to complete
-  while ((reg_read8(SRAMBIST_DONE) & 0x1) == 0) ;
-
-  reg_write32(SRAMBIST_ADDR, 0);
-  reg_write32(SRAMBIST_DIN, 0);
-  reg_write32(SRAMBIST_MASK, 0);
-  reg_write8(SRAMBIST_WE, 0);
-  reg_write8(SRAMBIST_SRAM_ID, 0);
-  reg_write8(SRAMBIST_SRAM_SEL, 0xff);
-  reg_write8(SRAMBIST_EX, 0xff);
-
-  // wait for peripheral to complete
-  while ((reg_read8(SRAMBIST_DONE) & 0x1) == 0) ;
-
-  result = reg_read32(SRAMBIST_DOUT);
-  ref = 25;
+  srambist_write(0, ref, 0xffffffff, 0);
+  result = srambist_read(0, 0);
 
   if (result != ref) {
     printf("Hardware result %d does not match reference value %d\n", result, ref);
@@ -68,4 +77,3 @@ int main(void)
   printf("Hardware result %d is correct for SRAM read\n", result);
   return 0;
 }
-// DOC include end: SRAM BIST test
