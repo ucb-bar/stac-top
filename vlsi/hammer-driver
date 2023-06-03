@@ -11,8 +11,16 @@ def check_timing_intent(x: HammerTool) -> bool:
     x.append('check_timing_intent')
     return True
 
-def syn_donttouch_iocells(x: HammerTool) -> bool:
+def donttouch_iocells(x: HammerTool) -> bool:
     x.append('set_dont_touch [get_db insts -if {.base_cell.name == sky130_ef_io__*}] true')
+    return True
+
+def fix_io_fillers(x: HammerTool) -> bool:
+    x.append('''
+set $io_filler_insts [get_db insts -if {.base_cell.name == sky130_ef_io__com_bus_slice_*}]
+set_db $io_filler_insts .place_status fixed
+set_dont_touch $io_filler_insts true
+''')
     return True
 
 
@@ -20,7 +28,7 @@ class Driver(CLIDriver):
     def get_extra_synthesis_hooks(self) -> List[HammerToolHookAction]:
         return [
             HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
-            HammerTool.make_post_insertion_hook("init_environment", syn_donttouch_iocells),
+            HammerTool.make_post_insertion_hook("init_environment", donttouch_iocells),
         ]
 
     def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
@@ -39,6 +47,7 @@ class Driver(CLIDriver):
             # make_removal_hook will remove the specified step from the flow
 
             HammerTool.make_post_insertion_hook("floorplan_design", efabless_ring_io),
+            HammerTool.make_post_insertion_hook("efabless_ring_io", fix_io_fillers),
             HammerTool.make_removal_hook("place_bumps"),
         ]
 
