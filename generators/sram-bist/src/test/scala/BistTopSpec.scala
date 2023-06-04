@@ -780,7 +780,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        testhelpers.c.io.dout(15, 0).expect("h6bbd".U)
+        assert((testhelpers.c.io.dout.peek().litValue & 0xFFFF) == 0x6BBD)
 
         // Test writing to extreme addresses of the small SRAM.
         testhelpers.populateSramRegisters(
@@ -804,7 +804,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        testhelpers.c.io.dout(15, 0).expect("h4321".U)
+        // testhelpers.c.io.dout(15, 0).expect("h4321".U)
+        assert((testhelpers.c.io.dout.peek().litValue & 0xFFFF) == 0x4321)
         // Verify that original write didn't change.
         testhelpers.populateSramRegisters(
           0.U,
@@ -816,18 +817,20 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        testhelpers.c.io.dout(15, 0).expect("h6bbd".U)
+        // testhelpers.c.io.dout(15, 0).expect("h6bbd".U)
+        assert((testhelpers.c.io.dout.peek().litValue & 0xFFFF) == 0x6BBD)
 
       }
 
       val testBistMethod = (scanChain: Boolean) => {
-
         val maybeReset = () => {
           if (scanChain) {
-            c.reset.poke(true.B)
+            c.io.bistStart.poke(true.B)
             c.clock.step()
-            c.reset.poke(false.B)
+            c.io.bistStart.poke(false.B)
             c.clock.step()
+            c.io.bistDone.expect(false.B)
+            c.io.bistFail.expect(false.B)
           }
         }
         val executeOp = () => {
