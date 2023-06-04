@@ -16,7 +16,8 @@ case class BistTopParams(
 )
 
 object SramSrc extends ChiselEnum {
-  val mmio, bist = Value
+  val mmio = Value(0.U(1.W))
+  val bist = Value(1.U(1.W))
 }
 
 class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
@@ -166,6 +167,10 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     when(io.bistStopOnFailure & ~io.sramScanMode) {
       state := State.idle
     }
+  }
+
+  when(bist.io.start) {
+    bistFail := false.B
   }
 
   bist.io.en := Mux(io.sramScanMode, io.bistEn & ~bistFail, fsmBistEn)

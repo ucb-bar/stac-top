@@ -131,7 +131,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   val lfsr = Module(new MaxPeriodFibonacciLFSR(params.seedWidth))
   lfsr.io.seed.bits := io.seed.asBools
   lfsr.io.seed.valid := io.start
-  lfsr.io.increment := true.B
+  lfsr.io.increment := io.en
   val rand = lfsr.io.out.asUInt
   randData := rand(params.dataWidth - 1, 0)
   randMask := rand(2 * params.dataWidth - 1, params.dataWidth)

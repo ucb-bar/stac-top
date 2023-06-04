@@ -16,7 +16,9 @@ case class SramHarnessParams(
 )
 
 object SaeSrc extends ChiselEnum {
-  val int, clk, ext = Value
+  val int = Value(0.U(2.W))
+  val clk = Value(1.U(2.W))
+  val ext = Value(2.U(2.W))
 }
 
 class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
