@@ -24,7 +24,7 @@
 #define SRAMBIST_BIST_CYCLE_LIMIT 0x1148
 #define SRAMBIST_BIST_STOP_ON_FAILURE 0x1150
 #define SRAMBIST_BIST_FAIL 0x1158
-#define SRAMBIST_BIST_FAIL_CYCLE 0x160
+#define SRAMBIST_BIST_FAIL_CYCLE 0x1160
 #define SRAMBIST_BIST_EXPECTED 0x1168
 #define SRAMBIST_BIST_RECEIVED 0x1170
 #define SRAMBIST_BIST_SIGNATURE 0x1178
@@ -107,7 +107,7 @@ typedef struct {
 } packed_element_t;
 
 typedef struct {
-  uint8_t inner[122];
+  uint64_t inner[16];
 } packed_element_vec_t;
 
 typedef struct {
@@ -166,7 +166,21 @@ bist_result_t srambist_run_bist(
     dimension_t inner_dim,
     element_t** elems,
     uint8_t max_elem_idx,
-    pattern_table_t pattern_table, 
+    pattern_table_t* pattern_table, 
+    uint32_t cycle_limit,
+    int stop_on_failure
+);
+
+bist_result_t srambist_run_bist_with_packed_elements(
+    uint8_t sram_id,
+    uint64_t rand_seed,
+    uint32_t sig_seed,
+    uint16_t max_row_addr,
+    uint8_t max_col_addr,
+    dimension_t inner_dim,
+    packed_element_vec_t* elems,
+    uint8_t max_elem_idx,
+    pattern_table_t* pattern_table, 
     uint32_t cycle_limit,
     int stop_on_failure
 );

@@ -13,6 +13,7 @@ bmarks = \
 	rw-masked \
 	rw-multi-sram \
 	bist-simple \
+	bist-fail \
 
 #--------------------------------------------------------------------
 # Build rules
