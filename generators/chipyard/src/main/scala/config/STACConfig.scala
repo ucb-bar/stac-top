@@ -64,6 +64,6 @@ class STACConfig extends Config(
   new freechips.rocketchip.subsystem.WithCoherentBusTopology ++    // use coherent bus topology
   new srambist.WithSramBist(new srambist.SramBistParams()) ++    // add SRAM BIST peripheral
   new freechips.rocketchip.subsystem.WithNBitPeripheryBus(64) ++
-  new chisel.iobinders.WithSramBistIOCells ++
+  new chipyard.iobinders.WithSramBistIOCells ++
 
   new chipyard.config.AbstractConfig)
