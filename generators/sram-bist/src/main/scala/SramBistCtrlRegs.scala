@@ -22,12 +22,12 @@ object SramBistCtrlRegs extends Enumeration {
     DOUT -> 32,
     TDC -> 252,
     DONE -> 1,
-    BIST_RAND_SEED -> 77,
+    BIST_RAND_SEED -> 78,
     BIST_SIG_SEED -> 32,
     BIST_MAX_ROW_ADDR -> 10,
     BIST_MAX_COL_ADDR -> 3,
     BIST_INNER_DIM -> 1,
-    BIST_ELEMENT_SEQUENCE -> 552,
+    BIST_ELEMENT_SEQUENCE -> 976,
     BIST_PATTERN_TABLE -> 256,
     BIST_MAX_ELEMENT_IDX -> 6,
     BIST_CYCLE_LIMIT -> 32,
@@ -42,6 +42,9 @@ object SramBistCtrlRegs extends Enumeration {
 
   val SCAN_CHAIN_OFFSET =
     REG_WIDTH.keys.zip(REG_WIDTH.values.scanLeft(0)(_ + _).dropRight(1)).toMap
+
+  val SCAN_OUT_OFFSET =
+    REG_WIDTH.keys.zip(REG_WIDTH.values.scanRight(0)(_ + _).drop(1)).toMap
 
   val REGMAP_OFFSET =
     (REG_WIDTH.keys ++ Iterator(EX))

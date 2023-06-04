@@ -545,7 +545,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // TODO: Test on SRAMs with smaller than 32 data width to make sure we aren't checking too many bits.
       val testhelpers = new BistTopTestHelpers(c)
       testhelpers.c.clock.setTimeout(
-        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 8 
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 8
       )
 
       // ******************
