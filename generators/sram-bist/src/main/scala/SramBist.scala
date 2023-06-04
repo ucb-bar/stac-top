@@ -189,7 +189,7 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(
           sramBist.io.mmio.bistInnerDim
         )
       ),
-      REGMAP_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 9).map { i =>
+      REGMAP_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 16).map { i =>
         RegField.rwReg(
           64,
           sramBist.io.mmio.bistElementSequenceMmio(i)

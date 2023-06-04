@@ -16,7 +16,8 @@ case class BistTopParams(
 )
 
 object SramSrc extends ChiselEnum {
-  val bist, mmio = Value
+  val bist = Value(0.U(1.W))
+  val mmio = Value(1.U(1.W))
 }
 
 class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
