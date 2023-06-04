@@ -712,30 +712,23 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
 
       testBistMethod(false)
 
-      val misrModelA = new MaxPeriodFibonacciXORMISRModel(32, Some(55))
+      val misrModel = new MaxPeriodFibonacciXORMISRModel(32, Some(55))
       for (
         i <- 1 to (testhelpers.maxRows + 1) * (testhelpers.maxCols + 1) * 2
       ) {
-        misrModelA.add(0xffffffffL)
-        misrModelA.add(0)
+        misrModel.add(0xffffffffL)
+        misrModel.add(0)
       }
 
-      testhelpers.c.io.bistSignature.expect(misrModelA.state.U)
+      println(misrModel.state)
+      testhelpers.c.io.bistSignature.expect(misrModel.state.U)
 
       testhelpers.c.io.sramScanMode.poke(true.B)
       testhelpers.c.io.bistEn.poke(false.B)
 
       testBistMethod(true)
 
-      val misrModelB = new MaxPeriodFibonacciXORMISRModel(32, Some(55))
-      for (
-        i <- 1 to (testhelpers.maxRows + 1) * (testhelpers.maxCols + 1) * 2
-      ) {
-        misrModelB.add(0xffffffffL)
-        misrModelB.add(0)
-      }
-
-      testhelpers.c.io.bistSignature.expect(misrModelB.state.U)
+      testhelpers.c.io.bistSignature.expect(misrModel.state.U)
     }
   }
 

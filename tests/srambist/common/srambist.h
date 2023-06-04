@@ -111,7 +111,7 @@ typedef struct {
 } packed_element_vec_t;
 
 typedef struct {
-  uint8_t patterns[16];
+  uint32_t patterns[8];
 } pattern_table_t;
 
 typedef struct {
