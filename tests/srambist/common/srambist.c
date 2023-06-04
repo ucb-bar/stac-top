@@ -30,7 +30,8 @@ void srambist_execute() {
   while ((reg_read8(SRAMBIST_DONE) & 0x1) == 0);
 }
 
-operation_t srambist_operation_init(
+void srambist_operation_init(
+    operation_t* op,
     operation_type_t operation_type,
     int rand_data,
     int rand_mask,
@@ -38,94 +39,80 @@ operation_t srambist_operation_init(
     uint32_t mask_pattern_idx,
     flip_type_t flipped
   ) {
-  operation_t op;
-  op.operation_type = operation_type;
-  op.rand_data = rand_data;
-  op.rand_mask = rand_mask;
-  op.data_pattern_idx = data_pattern_idx;
-  op.mask_pattern_idx = mask_pattern_idx;
-  op.flipped = flipped;
-
-  return op;
+  op->operation_type = operation_type;
+  op->rand_data = rand_data;
+  op->rand_mask = rand_mask;
+  op->data_pattern_idx = data_pattern_idx;
+  op->mask_pattern_idx = mask_pattern_idx;
+  op->flipped = flipped;
 }
 
-element_t srambist_operation_element_init(
-  operation_t* operations,
+void srambist_operation_element_init(
+  element_t* elem,
+  operation_element_t* op_elem,
+  operation_t** operations,
   uint32_t max_idx,
   direction_t dir,
   uint32_t num_addrs
 ) {
-  element_t elem;
-  operation_element_t op_elem;
-  for (int i = 0; i <= max_idx; i++) {
-    op_elem.operations[i] = operations[i];
-  }
-  op_elem.max_idx = max_idx;
-  op_elem.dir = dir;
-  op_elem.num_addrs = num_addrs;
-
-  elem.operation_element = op_elem;
-  elem.element_type = ELEMENT_TYPE_RW;
-
-  return elem;
+  op_elem->operations = operations;
+  op_elem->max_idx = max_idx;
+  op_elem->dir = dir;
+  op_elem->num_addrs = num_addrs;
+  elem->operation_element = op_elem;
+  elem->element_type = ELEMENT_TYPE_RW;
 }
 
-element_t srambist_wait_element_init(
+void srambist_wait_element_init(
+  element_t* elem,
   uint32_t rand_addr
 ) {
-  element_t elem;
-  elem.wait_element.rand_addr = rand_addr;
-  elem.element_type = ELEMENT_TYPE_WAIT;
-  return elem;
+  elem->wait_element.rand_addr = rand_addr;
+  elem->element_type = ELEMENT_TYPE_WAIT;
 }
 
-packed_operation_t pack_operation(operation_t* op) {
+void pack_operation(packed_operation_t* packed_op, operation_t* op) {
+  write_at_bit_offset(packed_op, 0, &op->operation_type, 2);
+  write_at_bit_offset(packed_op, 2, &op->rand_data, 1);
+  write_at_bit_offset(packed_op, 3, &op->rand_mask, 1);
+  write_at_bit_offset(packed_op, 4, &op->data_pattern_idx, 3);
+  write_at_bit_offset(packed_op, 7, &op->mask_pattern_idx, 3);
+  write_at_bit_offset(packed_op, 10, &op->flipped, 1);
+}
+
+void pack_operation_element(packed_operation_element_t* packed_op_elem, operation_element_t* op_elem) {
   packed_operation_t packed_op;
-  write_at_bit_offset(&packed_op, 0, &op->operation_type, 2);
-  write_at_bit_offset(&packed_op, 2, &op->rand_data, 1);
-  write_at_bit_offset(&packed_op, 3, &op->rand_mask, 1);
-  write_at_bit_offset(&packed_op, 4, &op->data_pattern_idx, 3);
-  write_at_bit_offset(&packed_op, 7, &op->mask_pattern_idx, 3);
-  write_at_bit_offset(&packed_op, 10, &op->flipped, 1);
-  return packed_op;
-}
-
-packed_operation_element_t pack_operation_element(operation_element_t* op_elem) {
-  packed_operation_element_t packed_op_elem;
-  for (int i = 0; i < SRAMBIST_OPERATIONS_PER_ELEMENT; i++) {
-    packed_operation_t packed_op = pack_operation(&op_elem->operations[i]);
-    write_at_bit_offset(&packed_op_elem, 11 * i, &packed_op, 11);
+  for (int i = 0; i <= op_elem->max_idx; i++) {
+    pack_operation(&packed_op, op_elem->operations[i]);
+    write_at_bit_offset(packed_op_elem, 11 * i, &packed_op, 11);
   }
-  write_at_bit_offset(&packed_op_elem, 88, &op_elem->max_idx, 3);
-  write_at_bit_offset(&packed_op_elem, 91, &op_elem->dir, 2);
-  write_at_bit_offset(&packed_op_elem, 93, &op_elem->num_addrs, 14);
-  return packed_op_elem;
+  write_at_bit_offset(packed_op_elem, 88, &op_elem->max_idx, 3);
+  write_at_bit_offset(packed_op_elem, 91, &op_elem->dir, 2);
+  write_at_bit_offset(packed_op_elem, 93, &op_elem->num_addrs, 14);
 }
 
-packed_element_t pack_element(element_t* elem) {
-  packed_element_t packed_elem;
-  packed_operation_element_t packed_op_elem = pack_operation_element(&elem->operation_element);
-  *(packed_operation_element_t*) &packed_elem = packed_op_elem;
-  write_at_bit_offset(&packed_elem, 107, &elem->wait_element, 14);
-  write_at_bit_offset(&packed_elem, 121, &elem->element_type, 1);
-  return packed_elem;
+void pack_element(packed_element_t* packed_elem, element_t* elem) {
+  if (elem->element_type == ELEMENT_TYPE_RW) {
+    pack_operation_element((packed_operation_element_t*) packed_elem, elem->operation_element);
+  }
+  write_at_bit_offset(packed_elem, 107, &elem->wait_element, 14);
+  write_at_bit_offset(packed_elem, 121, &elem->element_type, 1);
 }
 
-packed_element_vec_t pack_element_vec(element_t* elems, uint8_t max_idx) {
-  packed_element_vec_t packed_elem_vec;
+void pack_element_vec(packed_element_vec_t* packed_elem_vec, element_t** elems, uint8_t max_idx) {
   int bit_offset = 0;
+  packed_element_t packed_elem;
   for (int i = 0; i <= max_idx; i++) {
-    packed_element_t packed_elem = pack_element(&elems[i]);
+    pack_element(&packed_elem, elems[i]);
     while (bit_offset < 122 * (i + 1)) {
       printf("%d\n", bit_offset);
       int to_write = 122 * (i + 1) - bit_offset;
       to_write = to_write > 16 ? 16 : to_write;
       uint32_t val_to_write = read_at_bit_offset(&packed_elem, bit_offset - 122 * i, to_write);
-      write_at_bit_offset(&packed_elem_vec, bit_offset, &val_to_write, to_write);
+      write_at_bit_offset(packed_elem_vec, bit_offset, &val_to_write, to_write);
       bit_offset += to_write;
     }
   }
-  return packed_elem_vec;
 }
 
 void srambist_write(uint32_t addr, uint32_t din, uint32_t mask, uint8_t sram_id) {
@@ -157,7 +144,7 @@ bist_result_t srambist_run_bist(
     uint16_t max_row_addr,
     uint8_t max_col_addr,
     dimension_t inner_dim,
-    element_t* elems,
+    element_t** elems,
     uint8_t max_elem_idx,
     pattern_table_t pattern_table, 
     uint32_t cycle_limit,
@@ -172,7 +159,8 @@ bist_result_t srambist_run_bist(
   reg_write8(SRAMBIST_BIST_MAX_COL_ADDR, max_col_addr);
   reg_write8(SRAMBIST_BIST_INNER_DIM, inner_dim);
 
-  packed_element_vec_t packed_elem_vec = pack_element_vec(elems, max_elem_idx);
+  packed_element_vec_t packed_elem_vec;
+  pack_element_vec(&packed_elem_vec, elems, max_elem_idx);
   for (int i = 0; i < 16; i++) {
     reg_write64(SRAMBIST_BIST_ELEMENT_SEQUENCE + 8 * i, *(((uint64_t*) &packed_elem_vec) + i));
   }

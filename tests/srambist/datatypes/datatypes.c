@@ -36,7 +36,8 @@ int main( int argc, char* argv[] )
   }
 
   // Validate initialization functions.
-  operation_t op = srambist_operation_init(OP_TYPE_WRITE, 0, 0, 7, 3, FLIP_TYPE_UNFLIPPED);
+  operation_t op;
+  srambist_operation_init(&op, OP_TYPE_WRITE, 0, 0, 7, 3, FLIP_TYPE_UNFLIPPED);
 
   if (op.operation_type != OP_TYPE_WRITE) {
     printf("Failed to initialize operation. Expected OP_TYPE_WRITE, got %d\n", op.operation_type);
@@ -63,41 +64,45 @@ int main( int argc, char* argv[] )
     return 1;
   }
 
-  operation_t ops[3] = {op, op, op};
+  operation_t* ops[3] = {&op, &op, &op};
 
-  element_t op_elem = srambist_operation_element_init(ops, 2, DIRECTION_DOWN, 50);
+  element_t op_elem;
+  operation_element_t op_elem_elem;
+  srambist_operation_element_init(&op_elem, &op_elem_elem, ops, 2, DIRECTION_DOWN, 50);
 
   for (int i = 0; i < 3; i++) {
-    if (op_elem.operation_element.operations[i].operation_type != op.operation_type) {
-      printf("Failed to initialize operation element. Expected %d, got %d\n", op_elem.operation_element.operations[i].operation_type, op.operation_type);
+    if (op_elem.operation_element->operations[i]->operation_type != op.operation_type) {
+      printf("Failed to initialize operation element. Expected %d, got %d\n", op_elem.operation_element->operations[i]->operation_type, op.operation_type);
       return 1;
     }
-    if (op_elem.operation_element.operations[i].data_pattern_idx != op.data_pattern_idx) {
-      printf("Failed to initialize operation element. Expected %d, got %d\n", op_elem.operation_element.operations[i].data_pattern_idx, op.data_pattern_idx);
+    if (op_elem.operation_element->operations[i]->data_pattern_idx != op.data_pattern_idx) {
+      printf("Failed to initialize operation element. Expected %d, got %d\n", op_elem.operation_element->operations[i]->data_pattern_idx, op.data_pattern_idx);
       return 1;
     }
   }
-  if (op_elem.operation_element.max_idx != 2) {
-    printf("Failed to initialize operation element. Expected 2, got %d\n", op_elem.operation_element.max_idx);
+  if (op_elem.operation_element->max_idx != 2) {
+    printf("Failed to initialize operation element. Expected 2, got %d\n", op_elem.operation_element->max_idx);
     return 1;
   }
-  if (op_elem.operation_element.dir != DIRECTION_DOWN) {
-    printf("Failed to initialize operation element. Expected DIRECTION_DOWN, got %d\n", op_elem.operation_element.dir);
+  if (op_elem.operation_element->dir != DIRECTION_DOWN) {
+    printf("Failed to initialize operation element. Expected DIRECTION_DOWN, got %d\n", op_elem.operation_element->dir);
     return 1;
   }
-  if (op_elem.operation_element.num_addrs != 50) {
-    printf("Failed to initialize operation element. Expected 50, got %d\n", op_elem.operation_element.num_addrs);
+  if (op_elem.operation_element->num_addrs != 50) {
+    printf("Failed to initialize operation element. Expected 50, got %d\n", op_elem.operation_element->num_addrs);
     return 1;
   }
 
-  element_t wait_elem = srambist_wait_element_init(123);
+  element_t wait_elem;
+  srambist_wait_element_init(&wait_elem, 123);
 
   if (wait_elem.wait_element.rand_addr != 123) {
     printf("Failed to initialize wait element. Expected 123, got %d\n", wait_elem.wait_element.rand_addr);
     return 1;
   }
 
-  packed_operation_t packed_op = pack_operation(&op);
+  packed_operation_t packed_op;
+  pack_operation(&packed_op, &op);
 
   // Validate bit positions.
   if (read_at_bit_offset(&packed_op, 0, 2) != OP_TYPE_WRITE) {
@@ -125,7 +130,8 @@ int main( int argc, char* argv[] )
     return 1;
   }
 
-  packed_element_t packed_op_elem = pack_element(&op_elem);
+  packed_element_t packed_op_elem;
+  pack_element(&packed_op_elem, &op_elem);
 
   for (int i = 0; i < 3; i++) {
     if (read_at_bit_offset(&packed_op_elem, 11 * i, 11) != read_at_bit_offset(&packed_op, 0, 11)) {
@@ -150,8 +156,9 @@ int main( int argc, char* argv[] )
     return 1;
   }
 
-  element_t elems[2] = {op_elem, wait_elem};
-  packed_element_vec_t packed_elem_vec = pack_element_vec(elems, 1);
+  element_t* elems[2] = {&op_elem, &wait_elem};
+  packed_element_vec_t packed_elem_vec;
+  pack_element_vec(&packed_elem_vec, elems, 1);
   if (read_at_bit_offset(&packed_elem_vec, 93, 14) != 50) {
     printf("Failed to pack element vec. Expected first element to match operation element");
     return 1;

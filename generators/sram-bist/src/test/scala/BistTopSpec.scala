@@ -56,6 +56,53 @@ class BistTopTestHelpers(val c: BistTop) {
     _.maskPatternIdx -> 0.U,
     _.flipped -> c.bist.FlipType.flipped
   )
+
+  // A deterministic operation (R/W) with random data and fixed mask
+  def randDataOp(write: Boolean = false, maskIndex: Int = 0): c.bist.Operation = {
+    val operationType =
+      if (write) c.bist.OperationType.write else c.bist.OperationType.read
+    chiselTypeOf(
+      c.bist.io.elementSequence(0).operationElement.operations(0)
+    ).Lit(
+      _.operationType -> operationType,
+      _.randData -> true.B,
+      _.randMask -> false.B,
+      _.dataPatternIdx -> 0.U,
+      _.maskPatternIdx -> maskIndex.U,
+      _.flipped -> c.bist.FlipType.unflipped
+    )
+  }
+
+  // A deterministic operation (R/W) with random data and mask
+  def randDataMaskOp(write: Boolean = false): c.bist.Operation = {
+    val operationType =
+      if (write) c.bist.OperationType.write else c.bist.OperationType.read
+    chiselTypeOf(
+      c.bist.io.elementSequence(0).operationElement.operations(0)
+    ).Lit(
+      _.operationType -> operationType,
+      _.randData -> true.B,
+      _.randMask -> true.B,
+      _.dataPatternIdx -> 0.U,
+      _.maskPatternIdx -> 0.U,
+      _.flipped -> c.bist.FlipType.unflipped
+    )
+  }
+
+  // A totally random operation (random write enable, data, mask)
+  def randOp(): c.bist.Operation = {
+    chiselTypeOf(
+      c.bist.io.elementSequence(0).operationElement.operations(0)
+    ).Lit(
+      _.operationType -> c.bist.OperationType.rand,
+      _.randData -> true.B,
+      _.randMask -> true.B,
+      _.dataPatternIdx -> 0.U,
+      _.maskPatternIdx -> 0.U,
+      _.flipped -> c.bist.FlipType.unflipped
+    )
+  }
+
   val opElementList = Vec(4, new c.bist.Operation()).Lit(
     0 -> writeOp,
     1 -> readOp,
@@ -69,10 +116,47 @@ class BistTopTestHelpers(val c: BistTop) {
       _.dir -> c.bist.Direction.up,
       _.numAddrs -> 0.U
     )
+  val opElementListFail = Vec(4, new c.bist.Operation()).Lit(
+    0 -> writeOp,
+    1 -> readOp,
+    2 -> writeFlippedOp,
+    3 -> readOp
+  )
+  val opElementFail =
+    chiselTypeOf(c.bist.io.elementSequence(0).operationElement).Lit(
+      _.operations -> opElementListFail,
+      _.maxIdx -> 3.U,
+      _.dir -> c.bist.Direction.up,
+      _.numAddrs -> 0.U
+    )
+
+  val randOpElementList = Vec(4, new c.bist.Operation()).Lit(
+    0 -> writeOp,
+    1 -> randOp(),
+    2 -> randDataOp(true),
+    3 -> randDataMaskOp(),
+  )
+  val randOpElement =
+    chiselTypeOf(c.bist.io.elementSequence(0).operationElement).Lit(
+      _.operations -> randOpElementList,
+      _.maxIdx -> 3.U,
+      _.dir -> c.bist.Direction.up,
+      _.numAddrs -> 0.U
+    )
   val waitElement = chiselTypeOf(c.bist.io.elementSequence(0).waitElement)
     .Lit(_.cyclesToWait -> 0.U)
   val march = chiselTypeOf(c.bist.io.elementSequence(0)).Lit(
     _.operationElement -> opElement,
+    _.waitElement -> waitElement,
+    _.elementType -> c.bist.ElementType.rwOp
+  )
+  val marchFail = chiselTypeOf(c.bist.io.elementSequence(0)).Lit(
+    _.operationElement -> opElementFail,
+    _.waitElement -> waitElement,
+    _.elementType -> c.bist.ElementType.rwOp
+  )
+  val marchRand = chiselTypeOf(c.bist.io.elementSequence(0)).Lit(
+    _.operationElement -> randOpElement,
     _.waitElement -> waitElement,
     _.elementType -> c.bist.ElementType.rwOp
   )
@@ -547,7 +631,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       // TODO: Test on SRAMs with smaller than 32 data width to make sure we aren't checking too many bits.
       val testhelpers = new BistTopTestHelpers(c)
       testhelpers.c.clock.setTimeout(
-        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 8
       )
 
       // ******************
@@ -729,6 +813,179 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       testBistMethod(true)
 
       testhelpers.c.io.bistSignature.expect(misrModel.state.U)
+    }
+  }
+
+  it should "assert BIST fail with the correct cycle, expected, and received values" in {
+    test(
+      new BistTop(
+        new BistTopParams(
+          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          new ProgrammableBistParams(
+            patternTableLength = 4,
+            elementTableLength = 4,
+            operationsPerElement = 4
+          )
+        )
+      )(
+        new WithChiseltestSrams(ChiseltestSramFailureMode.none)
+      )
+    ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+
+      val testhelpers = new BistTopTestHelpers(c)
+      testhelpers.c.clock.setTimeout(
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 2 * 2
+      )
+
+      val testBistMethod = (scanChain: Boolean) => {
+
+        val maybeReset = () => {
+          if (scanChain) {
+            c.io.bistStart.poke(true.B)
+            c.clock.step()
+            c.io.bistStart.poke(false.B)
+            c.clock.step()
+            c.io.bistDone.expect(false.B)
+            c.io.bistFail.expect(false.B)
+          }
+        }
+        val executeOp = () => {
+          if (scanChain) {
+            testhelpers.executeScanChainBistOp()
+          } else {
+            testhelpers.executeMmioOp()
+          }
+        }
+
+        // TODO: Use correct cycle limit.
+        testhelpers.populateBistRegisters(
+          1.U,
+          55.U,
+          testhelpers.maxRows.U,
+          testhelpers.maxCols.U,
+          testhelpers.c.bist.Dimension.col,
+          Vec.Lit(
+            testhelpers.ones,
+            testhelpers.ones,
+            testhelpers.zeros,
+            testhelpers.zeros
+          ),
+          Vec(4, new testhelpers.c.bist.Element())
+            .Lit(
+              0 -> testhelpers.marchFail,
+              1 -> testhelpers.march,
+              2 -> testhelpers.march,
+              3 -> testhelpers.march
+            ),
+          3.U,
+          0.U,
+          true.B,
+          0.U,
+          SramSrc.bist,
+          SaeSrc.int
+        )
+        maybeReset()
+        executeOp()
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(true.B)
+        testhelpers.c.io.bistFailCycle.expect(4.U)
+        testhelpers.c.io.bistExpected.expect(0.U)
+        testhelpers.c.io.bistReceived.expect(0xffffffffL.U)
+      }
+
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
+
+      testBistMethod(false)
+    }
+  }
+
+  it should "return consistent hashes on random BIST runs with the same seed" in {
+    test(
+      new BistTop(
+        new BistTopParams(
+          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          new ProgrammableBistParams(
+            patternTableLength = 4,
+            elementTableLength = 4,
+            operationsPerElement = 4
+          )
+        )
+      )(
+        new WithChiseltestSrams(ChiseltestSramFailureMode.none)
+      )
+    ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+
+      val testhelpers = new BistTopTestHelpers(c)
+      testhelpers.c.clock.setTimeout(
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 2 * 2
+      )
+
+      val testBistMethod = (scanChain: Boolean) => {
+
+        val maybeReset = () => {
+          if (scanChain) {
+            c.io.bistStart.poke(true.B)
+            c.clock.step()
+            c.io.bistStart.poke(false.B)
+            c.clock.step()
+            c.io.bistDone.expect(false.B)
+            c.io.bistFail.expect(false.B)
+          }
+        }
+        val executeOp = () => {
+          if (scanChain) {
+            testhelpers.executeScanChainBistOp()
+          } else {
+            testhelpers.executeMmioOp()
+          }
+        }
+
+        // TODO: Use correct cycle limit.
+        testhelpers.populateBistRegisters(
+          1.U,
+          1.U,
+          testhelpers.maxRows.U,
+          testhelpers.maxCols.U,
+          testhelpers.c.bist.Dimension.col,
+          Vec.Lit(
+            testhelpers.ones,
+            testhelpers.ones,
+            testhelpers.zeros,
+            testhelpers.zeros
+          ),
+          Vec(4, new testhelpers.c.bist.Element())
+            .Lit(
+              0 -> testhelpers.marchRand,
+              1 -> testhelpers.march,
+              2 -> testhelpers.march,
+              3 -> testhelpers.march
+            ),
+          1.U,
+          0.U,
+          true.B,
+          0.U,
+          SramSrc.bist,
+          SaeSrc.int
+        )
+        maybeReset()
+        executeOp()
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(false.B)
+      }
+
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(false.B)
+
+      testBistMethod(false)
+
+      val signature = testhelpers.c.io.bistSignature.peek();
+
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.bistEn.poke(false.B)
+      testBistMethod(true)
+
+      testhelpers.c.io.bistSignature.expect(signature);
     }
   }
 

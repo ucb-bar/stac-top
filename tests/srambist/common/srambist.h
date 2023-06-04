@@ -37,8 +37,8 @@
 #define SRAMBIST_ELEMENT_TABLE_LENGTH 14
 
 typedef enum {
-  SRAM_SEL_BIST = 0,
-  SRAM_SEL_MMIO = 1,
+  SRAM_SEL_MMIO = 0,
+  SRAM_SEL_BIST = 1,
 } sram_sel_t;
 
 typedef enum {
@@ -82,7 +82,7 @@ typedef struct {
 } packed_operation_t;
 
 typedef struct {
-  operation_t operations[SRAMBIST_OPERATIONS_PER_ELEMENT];
+  operation_t** operations;
   uint8_t max_idx;
   direction_t dir;
   uint16_t num_addrs;
@@ -97,7 +97,7 @@ typedef struct {
 } wait_element_t;
 
 typedef struct {
-  operation_element_t operation_element;
+  operation_element_t* operation_element;
   wait_element_t wait_element;
   element_type_t element_type;
 } element_t;
@@ -125,30 +125,34 @@ typedef struct {
 uint32_t read_at_bit_offset(void* x, int bit_offset, uint8_t num_bits);
 void write_at_bit_offset(void* x, int bit_offset, void* val, uint8_t num_bits);
 
-operation_t srambist_operation_init(
-  operation_type_t operation_type,
-  int rand_data,
-  int rand_mask,
-  uint32_t data_pattern_idx,
-  uint32_t mask_pattern_idx,
-  flip_type_t flipped
-);
+void srambist_operation_init(
+    operation_t* op,
+    operation_type_t operation_type,
+    int rand_data,
+    int rand_mask,
+    uint32_t data_pattern_idx,
+    uint32_t mask_pattern_idx,
+    flip_type_t flipped
+  );
 
-element_t srambist_operation_element_init(
-  operation_t* operations,
+void srambist_operation_element_init(
+  element_t* elem,
+  operation_element_t* op_elem,
+  operation_t** operations,
   uint32_t max_idx,
   direction_t dir,
   uint32_t num_addrs
 );
 
-element_t srambist_wait_element_init(
+void srambist_wait_element_init(
+  element_t* elem,
   uint32_t rand_addr
 );
 
-packed_operation_t pack_operation(operation_t* op);
-packed_operation_element_t pack_operation_element(operation_element_t* op_elem);
-packed_element_t pack_element(element_t* elem);
-packed_element_vec_t pack_element_vec(element_t* elems, uint8_t max_idx);
+void pack_operation(packed_operation_t* packed_op, operation_t* op);
+void pack_operation_element(packed_operation_element_t* packed_op_elem, operation_element_t* op_elem);
+void pack_element(packed_element_t* packed_elem, element_t* elem);
+void pack_element_vec(packed_element_vec_t* packed_elem_vec, element_t** elems, uint8_t max_idx);
 
 void srambist_write(uint32_t addr, uint32_t din, uint32_t mask, uint8_t sram_id);
 uint32_t srambist_read(uint32_t addr, uint8_t sram_id);
@@ -160,7 +164,7 @@ bist_result_t srambist_run_bist(
     uint16_t max_row_addr,
     uint8_t max_col_addr,
     dimension_t inner_dim,
-    element_t* elems,
+    element_t** elems,
     uint8_t max_elem_idx,
     pattern_table_t pattern_table, 
     uint32_t cycle_limit,
