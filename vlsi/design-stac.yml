@@ -29,6 +29,9 @@ vlsi.inputs:
       height: 5188
       margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
 
+design.def.hv_routing_meta: prependlocal
+design.def.hv_routing: stac-hv-routing.def
+
 
 # Library stuff
 
