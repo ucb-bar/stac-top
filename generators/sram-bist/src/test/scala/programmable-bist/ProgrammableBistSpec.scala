@@ -311,15 +311,14 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         new ProgrammableBistParams(
         )
       )
-    ).withAnnotations(Seq(PrintFullStackTraceAnnotation)) {
-      d =>
+    ).withAnnotations(Seq(PrintFullStackTraceAnnotation)) { d =>
 
-        val h = new ProgrammableBistHelpers(d)
-        println(s"Pattern Table Width: ${d.io.patternTable.getWidth}")
-        println(s"Element Sequence Width: ${d.io.elementSequence.getWidth}")
-        println(s"Operation Width: ${h.writeOp(2, 3).getWidth}")
-        println(s"Element Width: ${h.march.getWidth}")
-        println(s"Operation Element Width: ${h.march.operationElement.getWidth}")
+      val h = new ProgrammableBistHelpers(d)
+      println(s"Pattern Table Width: ${d.io.patternTable.getWidth}")
+      println(s"Element Sequence Width: ${d.io.elementSequence.getWidth}")
+      println(s"Operation Width: ${h.writeOp(2, 3).getWidth}")
+      println(s"Element Width: ${h.march.getWidth}")
+      println(s"Operation Element Width: ${h.march.operationElement.getWidth}")
     }
   }
   it should "work for deterministic March test with cols in inner loop" in {

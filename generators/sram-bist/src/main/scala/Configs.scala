@@ -32,7 +32,7 @@ class WithSramBist(params: SramBistParams)
 object ChiseltestSramFailureMode extends Enumeration {
   type Type = Value
   val stuckAt, transition, none =
-    Value // TODO: Add relevant failure modes
+    Value
 }
 
 case object WithChiseltestSramsKey

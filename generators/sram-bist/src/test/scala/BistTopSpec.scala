@@ -58,7 +58,10 @@ class BistTopTestHelpers(val c: BistTop) {
   )
 
   // A deterministic operation (R/W) with random data and fixed mask
-  def randDataOp(write: Boolean = false, maskIndex: Int = 0): c.bist.Operation = {
+  def randDataOp(
+      write: Boolean = false,
+      maskIndex: Int = 0
+  ): c.bist.Operation = {
     val operationType =
       if (write) c.bist.OperationType.write else c.bist.OperationType.read
     chiselTypeOf(
@@ -134,7 +137,7 @@ class BistTopTestHelpers(val c: BistTop) {
     0 -> writeOp,
     1 -> randOp(),
     2 -> randDataOp(true),
-    3 -> randDataMaskOp(),
+    3 -> randDataMaskOp()
   )
   val randOpElement =
     chiselTypeOf(c.bist.io.elementSequence(0).operationElement).Lit(
@@ -259,9 +262,7 @@ class BistTopTestHelpers(val c: BistTop) {
     // Once all registers are set up, enable the BIST until the test completes.
     c.io.bistEn.poke(true.B)
     c.clock.step()
-    while (
-      !c.io.bistDone.peek().litToBoolean && !c.io.bistFail.peek().litToBoolean
-    ) {
+    while (!c.io.bistDone.peek().litToBoolean) {
       c.clock.step()
     }
     c.io.bistEn.poke(false.B)
@@ -448,7 +449,6 @@ class BistTopTestHelpers(val c: BistTop) {
       }
     }
 
-    // TODO: Use correct cycle limit.
     populateBistRegisters(
       1.U,
       1.U,
@@ -558,7 +558,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           )
         )
       )(
-        new WithChiseltestSrams(ChiseltestSramFailureMode.none) 
+        new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
       val testhelpers = new BistTopTestHelpers(c)
@@ -594,7 +594,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       )
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
 
-      // TODO: Test on SRAMs with smaller than 32 data width to make sure we aren't checking too many bits.
       val testhelpers = new BistTopTestHelpers(c)
       testhelpers.c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4
@@ -626,7 +625,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       )
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
 
-      // TODO: Test on SRAMs with smaller than 32 data width to make sure we aren't checking too many bits.
       val testhelpers = new BistTopTestHelpers(c)
       testhelpers.c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 8
@@ -659,7 +657,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       )
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
 
-      // TODO: Test on SRAMs with smaller than 32 data width to make sure we aren't checking too many bits.
       val testhelpers = new BistTopTestHelpers(c)
       testhelpers.c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
@@ -756,7 +753,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           }
         }
 
-        // TODO: Use correct cycle limit.
         testhelpers.populateBistRegisters(
           1.U,
           55.U,
@@ -855,7 +851,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           }
         }
 
-        // TODO: Use correct cycle limit.
         testhelpers.populateBistRegisters(
           1.U,
           55.U,
@@ -939,7 +934,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           }
         }
 
-        // TODO: Use correct cycle limit.
         testhelpers.populateBistRegisters(
           1.U,
           1.U,
@@ -1002,7 +996,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       )
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
 
-      // TODO: Test on SRAMs with smaller than 32 data width to make sure we aren't checking too many bits.
       val testhelpers = new BistTopTestHelpers(c)
       c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
@@ -1030,7 +1023,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        assert((testhelpers.c.io.dout.peek().litValue & 0xFFFF) == 0x6BBD)
+        assert((testhelpers.c.io.dout.peek().litValue & 0xffff) == 0x6bbd)
 
         // Test writing to extreme addresses of the small SRAM.
         testhelpers.populateSramRegisters(
@@ -1055,7 +1048,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         )
         executeFn()
         // testhelpers.c.io.dout(15, 0).expect("h4321".U)
-        assert((testhelpers.c.io.dout.peek().litValue & 0xFFFF) == 0x4321)
+        assert((testhelpers.c.io.dout.peek().litValue & 0xffff) == 0x4321)
         // Verify that original write didn't change.
         testhelpers.populateSramRegisters(
           0.U,
@@ -1068,7 +1061,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         )
         executeFn()
         // testhelpers.c.io.dout(15, 0).expect("h6bbd".U)
-        assert((testhelpers.c.io.dout.peek().litValue & 0xFFFF) == 0x6BBD)
+        assert((testhelpers.c.io.dout.peek().litValue & 0xffff) == 0x6bbd)
 
       }
 
@@ -1092,7 +1085,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         }
 
         maybeReset()
-        // TODO: Use correct cycle limit.
         testhelpers.populateBistRegisters(
           1.U,
           1.U,
@@ -1165,7 +1157,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
 
     }
   }
-  
+
   it should "detect stuck at faults in chiseltest SRAMs" in {
     test(
       new BistTop(
@@ -1243,7 +1235,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           }
         }
 
-        // TODO: Use correct cycle limit.
         testhelpers.populateBistRegisters(
           1.U,
           1.U,
@@ -1396,7 +1387,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           }
         }
 
-        // TODO: Use correct cycle limit.
         testhelpers.populateBistRegisters(
           1.U,
           1.U,
@@ -1470,6 +1460,127 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
 
       testBistMethod(false)
 
+    }
+  }
+
+  it should "detect faults after first failure using a cycle limit" in {
+    test(
+      new BistTop(
+        new BistTopParams(
+          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          new ProgrammableBistParams(
+            patternTableLength = 4,
+            elementTableLength = 4,
+            operationsPerElement = 4
+          )
+        )
+      )(
+        new WithChiseltestSrams(ChiseltestSramFailureMode.stuckAt)
+      )
+    ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+
+      val testhelpers = new BistTopTestHelpers(c)
+      c.clock.setTimeout(
+        (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
+      )
+      val testBistMethod = (scanChain: Boolean) => {
+
+        val maybeReset = () => {
+          if (scanChain) {
+            c.io.bistStart.poke(true.B)
+            c.clock.step()
+            c.io.bistStart.poke(false.B)
+            c.clock.step()
+            c.io.bistDone.expect(false.B)
+            c.io.bistFail.expect(false.B)
+          }
+        }
+        val executeOp = () => {
+          if (scanChain) {
+            testhelpers.executeScanChainBistOp()
+          } else {
+            testhelpers.executeMmioOp()
+          }
+        }
+
+        testhelpers.populateBistRegisters(
+          1.U,
+          1.U,
+          testhelpers.maxRows.U,
+          3.U,
+          testhelpers.c.bist.Dimension.col,
+          Vec.Lit(
+            testhelpers.ones,
+            testhelpers.ones,
+            testhelpers.zeros,
+            testhelpers.zeros
+          ),
+          Vec(4, new testhelpers.c.bist.Element())
+            .Lit(
+              0 -> testhelpers.march,
+              1 -> testhelpers.march,
+              2 -> testhelpers.march,
+              3 -> testhelpers.march
+            ),
+          3.U,
+          0.U,
+          true.B,
+          0.U,
+          SramSrc.bist,
+          SaeSrc.int
+        )
+        maybeReset()
+        executeOp()
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(true.B)
+        testhelpers.c.io.bistFailCycle.expect(120.U)
+        testhelpers.c.io.bistExpected.expect("hffffffff".U)
+        testhelpers.c.io.bistReceived.expect("hffffffdf".U)
+
+        testhelpers.populateBistRegisters(
+          1.U,
+          1.U,
+          testhelpers.maxRows.U,
+          3.U,
+          testhelpers.c.bist.Dimension.col,
+          Vec.Lit(
+            testhelpers.ones,
+            testhelpers.ones,
+            testhelpers.zeros,
+            testhelpers.zeros
+          ),
+          Vec(4, new testhelpers.c.bist.Element())
+            .Lit(
+              0 -> testhelpers.march,
+              1 -> testhelpers.march,
+              2 -> testhelpers.march,
+              3 -> testhelpers.march
+            ),
+          3.U,
+          376.U,
+          false.B,
+          0.U,
+          SramSrc.bist,
+          SaeSrc.int
+        )
+        maybeReset()
+        executeOp()
+        testhelpers.c.io.bistDone.expect(true.B)
+        testhelpers.c.io.bistFail.expect(true.B)
+        testhelpers.c.io.bistFailCycle.expect(376.U)
+        testhelpers.c.io.bistExpected.expect("hffffffff".U)
+        testhelpers.c.io.bistReceived.expect("hffffffdf".U)
+      }
+
+      // ******************
+      // SCAN CHAIN -> BIST
+      // ******************
+
+      testhelpers.c.io.sramExtEn.poke(false.B)
+      testhelpers.c.io.sramScanMode.poke(true.B)
+      testhelpers.c.io.bistEn.poke(false.B)
+
+      testBistMethod(true)
     }
   }
 }

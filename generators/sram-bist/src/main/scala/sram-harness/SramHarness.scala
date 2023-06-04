@@ -5,7 +5,7 @@ import chisel3.util._
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.util.ClockGate
 
-import srambist.analog.{Tdc, DelayLine}
+import srambist.analog.{Tdc, DelayLine, BufferTree}
 import srambist.WithChiseltestSramsKey
 
 case class SramHarnessParams(
@@ -32,7 +32,7 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
     val inMask = Input(UInt(64.W))
     val saeInt = Input(Bool())
     val saeSel = Input(SaeSrc())
-    val saeClk = Input(Bool()) // TODO: should this be a Clock?
+    val saeClk = Input(Bool())
     val saeCtl = Input(UInt(7.W))
 
     val sramClk = Output(Clock())
@@ -62,7 +62,7 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   val saeCtlOH = UIntToOH(io.saeCtl)
   delay_line.io.ctl := saeCtlOH
   delay_line.io.ctl_b := ~saeCtlOH
-  io.saeMuxed := io.saeInt; // TODO: verify default
+  io.saeMuxed := io.saeInt;
   switch(io.saeSel) {
     is(SaeSrc.clk) {
       io.saeMuxed := io.saeClk
@@ -73,10 +73,20 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   }
 
   val tdc = Module(new Tdc)
+
+  val aBuffered = Wire(chiselTypeOf(tdc.io.a))
+  val bBuffered = Wire(chiselTypeOf(tdc.io.b))
+
+  val bufA = Module(new BufferTree)
+  val bufB = Module(new BufferTree)
+  bufA.io.A := clock.asBool
+  aBuffered := bufA.io.X
+  bufB.io.A := io.saeMuxed
+  bBuffered := bufB.io.X
+
   tdc.io.a := clock.asBool
-  // TODO: insert large buffer before tdc.io.b
   tdc.io.b := io.saeMuxed
-  tdc.io.reset_b := ~reset.asBool // TODO: is this the right way to do this?
+  tdc.io.reset_b := ~reset.asBool
   io.saeOut := tdc.io.dout
 
 }
