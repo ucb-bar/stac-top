@@ -27,7 +27,7 @@ vlsi.inputs:
       y: 0
       width: 3588
       height: 5188
-      margins: {left: 250, right: 250, top: 250, bottom: 250}
+      margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
 
 
 # Library stuff
