@@ -65,11 +65,11 @@ vlsi.technology.extra_libraries:
       <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
       nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__tt_025C_3v30_lv1v80.lib
       corner:
-        nmos: "fast"
-        pmos: "fast"
-        temperature: "-40 C"
+        nmos: "typical"
+        pmos: "typical"
+        temperature: "025 C"
       supplies:
-        VDD: "1.95 V"
+        VDD: "1.80 V"
         GND: "0 V"
 
 vlsi.inputs.dont_use_mode: append
