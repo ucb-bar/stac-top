@@ -11,6 +11,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import srambist.analog.SramParams
 import srambist.sramharness.SaeSrc
 import srambist.programmablebist.ProgrammableBistParams
+import srambist.SramBistCtrlRegs._
 
 class SramBistTestHelpers(val c: SramBist) {
   // val maxRows = 15;
@@ -197,6 +198,46 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
-    ).withAnnotations(Seq(WriteVcdAnnotation)) { c => }
+    ).withAnnotations(Seq(WriteVcdAnnotation)) { d =>
+      val scanIn = (width: Int, value: Int) => {
+        var bitSeq = Seq[Int]()
+        var v = value
+        for (i <- 1 to width) {
+          bitSeq = (v % 2) +: bitSeq
+          v /= 2
+        }
+        for (bit <- bitSeq) {
+          d.io.top.sramScanIn.poke((bit == 1).B)
+          d.clock.step()
+          println("step")
+        }
+      }
+
+      d.io.top.sramExtEn.poke(true.B)
+      d.io.top.sramScanMode.poke(true.B)
+      d.io.top.sramEn.poke(false.B)
+      d.io.top.bistEn.poke(false.B)
+      d.io.top.bistStart.poke(false.B)
+
+      d.io.top.sramScanEn.poke(true.B)
+      scanIn(REG_WIDTH(WE), 1)
+      scanIn(REG_WIDTH(MASK), 15)
+      scanIn(REG_WIDTH(DIN), 20)
+      scanIn(REG_WIDTH(ADDR), 25)
+      d.io.top.sramScanEn.poke(false.B)
+
+      d.io.top.sramEn.poke(true.B)
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+    }
   }
 }
