@@ -198,7 +198,6 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
 
   sramEn := !done && io.en && currElement.elementType === ElementType.rwOp
 
-  // TODO wrong for random ops
   sramWen := !done && io.en && (currOperation.operationType === OperationType.write || (currOperation.operationType === OperationType.rand && randWen))
 
   when(!done) {
