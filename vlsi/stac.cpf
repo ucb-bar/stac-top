@@ -11,12 +11,17 @@ create_power_domain -name AO -default
 update_power_domain -name AO -primary_power_net VDD -primary_ground_net VSS
 
 create_power_domain -name HV -instances [list \
-    {*}[find_design_objects sky130_fd_sc_hvl__lsbuf* -object inst -pattern_type cell] \
-    {*}[find_design_objects simple_por -object inst -pattern_type cell] \
+    {*}[find_design_objects iocell_*/levelShifter -hierarchical -object inst -pattern_type cell] \
+    {*}[find_design_objects por -object inst -pattern_type cell] \
     ]
 update_power_domain -name HV -primary_power_net VDDIO -primary_ground_net VSSIO
 
-create_power_domain -name IO -instances [find_design_objects */iocell_*/iocell -object inst -pattern_type name]
+create_power_domain -name IO -instances [list \
+    {*}[find_design_objects iocell_*/iocell -hierarchical -object inst -pattern_type cell] \
+    {*}[find_design_objects clamp_* -object inst -pattern_type cell] \
+    {*}[find_design_objects corner_* -object inst -pattern_type cell] \
+    {*}[find_design_objects IO_FILLER_* -object inst -pattern_type cell] \
+    ]
 
 create_nominal_condition -name ao_nominal -voltage 1.8
 create_nominal_condition -name hv_nom -voltage 3.3
