@@ -44,7 +44,6 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   val gatedClock = if (p(WithChiseltestSramsKey).isDefined) {
     (clock.asBool & io.sramEn).asClock
   } else {
-    // (clock.asBool & io.sramEn).asClock
     ClockGate(clock, io.sramEn)
   }
   io.sramClk := gatedClock
