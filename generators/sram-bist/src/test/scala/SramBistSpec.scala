@@ -198,8 +198,9 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
-    ).withAnnotations(Seq(WriteVcdAnnotation)) { d =>
+    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { d =>
       val scanIn = (width: Int, value: Int) => {
+        d.io.top.sramScanEn.poke(true.B)
         var bitSeq = Seq[Int]()
         var v = value
         for (i <- 1 to width) {
@@ -209,9 +210,40 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         for (bit <- bitSeq) {
           d.io.top.sramScanIn.poke((bit == 1).B)
           d.clock.step()
-          println("step")
         }
+        d.io.top.sramScanEn.poke(false.B)
       }
+
+      val scanOutAndAssert = (width: Int, value: Int) => {
+        d.io.top.sramScanEn.poke(true.B)
+        var num = 0
+        for (i <- 1 to width) {
+          var bit = d.io.top.sramScanOut.peek().litToBoolean
+          var digit = if (bit) 1 else 0
+          num = num * 2 + digit
+          d.clock.step()
+        }
+        assert(num == value)
+        d.io.top.sramScanEn.poke(false.B)
+      }
+      val scanOut = (width: Int) => {
+        d.io.top.sramScanEn.poke(true.B)
+        for (i <- 1 to width) {
+          d.clock.step()
+        }
+        d.io.top.sramScanEn.poke(false.B)
+      }
+
+      val scanClear = () => {
+        d.io.top.sramScanIn.poke(false.B)
+        d.io.top.sramScanEn.poke(true.B)
+        for (i <- 1 to (TOTAL_REG_WIDTH + 2)) {
+          d.clock.step()
+        }
+        d.io.top.sramScanEn.poke(false.B)
+      }
+
+      d.clock.setTimeout(0)
 
       d.io.top.sramExtEn.poke(true.B)
       d.io.top.sramScanMode.poke(true.B)
@@ -219,25 +251,42 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.top.bistEn.poke(false.B)
       d.io.top.bistStart.poke(false.B)
 
-      d.io.top.sramScanEn.poke(true.B)
+      scanClear()
       scanIn(REG_WIDTH(WE), 1)
       scanIn(REG_WIDTH(MASK), 15)
       scanIn(REG_WIDTH(DIN), 20)
       scanIn(REG_WIDTH(ADDR), 25)
-      d.io.top.sramScanEn.poke(false.B)
 
       d.io.top.sramEn.poke(true.B)
       d.clock.step()
+      d.io.top.sramEn.poke(false.B)
+
+      scanClear()
+      scanIn(REG_WIDTH(WE), 1)
+      scanIn(REG_WIDTH(MASK), 15)
+      scanIn(REG_WIDTH(DIN), 17)
+      scanIn(REG_WIDTH(ADDR), 30)
+
+      d.io.top.sramEn.poke(true.B)
       d.clock.step()
+      d.io.top.sramEn.poke(false.B)
+
+      scanClear()
+      scanIn(REG_WIDTH(WE), 0)
+      scanIn(REG_WIDTH(MASK), 15)
+      scanIn(REG_WIDTH(DIN), 0)
+      scanIn(REG_WIDTH(ADDR), 25)
+      d.io.top.sramScanIn.poke(false.B)
+
+      d.io.top.sramEn.poke(true.B)
       d.clock.step()
+      d.io.top.sramEn.poke(false.B)
       d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
+
+      d.io.top.sramScanEn.poke(true.B)
+      scanOut(SCAN_OUT_OFFSET(DOUT))
+      scanOutAndAssert(REG_WIDTH(DOUT), 20)
+      d.io.top.sramScanEn.poke(false.B)
     }
   }
 }
