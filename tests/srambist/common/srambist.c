@@ -117,7 +117,7 @@ packed_element_vec_t pack_element_vec(element_t* elems, uint8_t max_idx) {
   for (int i = 0; i <= max_idx; i++) {
     packed_element_t packed_elem = pack_element(&elems[i]);
     while (bit_offset < 122 * (i + 1)) {
-      print("%d\n", bit_offset);
+      printf("%d\n", bit_offset);
       int to_write = 122 * (i + 1) - bit_offset;
       to_write = to_write > 16 ? 16 : to_write;
       uint32_t val_to_write = read_at_bit_offset(&packed_elem, bit_offset - 122 * i, to_write);
