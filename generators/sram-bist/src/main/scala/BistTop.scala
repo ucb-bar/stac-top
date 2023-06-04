@@ -8,6 +8,7 @@ import srambist.analog.{Tdc, DelayLine, Sram, SramParams}
 import srambist.sramharness.{SramHarness, SramHarnessParams, SaeSrc}
 import srambist.programmablebist.{ProgrammableBist, ProgrammableBistParams}
 import srambist.misr.MaxPeriodFibonacciMISR
+import chisel3.experimental.VecLiterals._
 
 case class BistTopParams(
     srams: Seq[SramParams] =
@@ -103,6 +104,9 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val bistFailCycle = Reg(UInt(32.W))
   val bistExpected = Reg(UInt(32.W))
   val bistReceived = Reg(UInt(32.W))
+  val sramMasks = RegInit(Vec(params.srams.length, UInt(32.W)).Lit(params.srams.zipWithIndex.map { case (p, i) => i -> ((1L << p.dataWidth) - 1).U(32.W) }: _*))
+  val sramMask = Wire(UInt(32.W))
+  val maskedIOOut = Wire(chiselTypeOf(io.dout))
 
   io.bistFail := bistFail
   io.bistFailCycle := bistFailCycle
@@ -157,7 +161,10 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   }
 
-  when(bistEnPrev & bistCheckEnPrev & bistDataPrev =/= io.dout) {
+  // TODO: does not stop on first failure for scan chain -> BIST mode, does for MMIO.
+  sramMask := sramMasks(io.sramId)
+  maskedIOOut := io.dout & sramMask
+  when(bistEnPrev & bistCheckEnPrev & ((bistDataPrev & sramMask) =/= maskedIOOut)) {
     when(~(bistFail & io.bistStopOnFailure)) {
       bistFail := true.B
       bistFailCycle := bistCyclePrev
@@ -260,7 +267,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   )
 
-  misr.io.in := io.dout.asBools
+  misr.io.in := maskedIOOut.asBools
 
   io.tdc := MuxCase(
     0.U,
