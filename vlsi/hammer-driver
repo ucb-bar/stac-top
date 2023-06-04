@@ -15,6 +15,12 @@ def donttouch_iocells(x: HammerTool) -> bool:
     x.append('set_dont_touch [get_db insts -if {.base_cell.name == sky130_ef_io__*}] true')
     return True
 
+def flatten_analog_driver(x: HammerTool) -> bool:
+    # AnalogDriver is a kludge to get FIRRTL to understand how to connect nets
+    # together, they should get dissolved
+    x.append('ungroup [get_db hinsts -if {.module.name == AnalogDriver*}]')
+    return True
+
 def efabless_ring_io(ht: HammerTool) -> bool:
     # Copied from Harrison's version in hammer to make some adjustments:
     # - global connections removed - now handled by CPF
@@ -67,6 +73,7 @@ class Driver(CLIDriver):
         return [
             HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
             HammerTool.make_post_insertion_hook("init_environment", donttouch_iocells),
+            HammerTool.make_pre_insertion_hook("syn_generic", flatten_analog_driver),
         ]
 
     def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
