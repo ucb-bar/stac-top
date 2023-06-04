@@ -110,6 +110,18 @@ typedef struct {
   uint8_t inner[122];
 } packed_element_vec_t;
 
+typedef struct {
+  uint8_t patterns[16];
+} pattern_table_t;
+
+typedef struct {
+  int fail;
+  uint32_t fail_cycle;
+  uint32_t expected;
+  uint32_t received;
+  uint32_t signature;
+} bist_result_t;
+
 uint32_t read_at_bit_offset(void* x, int bit_offset, uint8_t num_bits);
 void write_at_bit_offset(void* x, int bit_offset, void* val, uint8_t num_bits);
 
@@ -140,5 +152,19 @@ packed_element_vec_t pack_element_vec(element_t* elems, uint8_t max_idx);
 
 void srambist_write(uint32_t addr, uint32_t din, uint32_t mask, uint8_t sram_id);
 uint32_t srambist_read(uint32_t addr, uint8_t sram_id);
+
+bist_result_t srambist_run_bist(
+    uint8_t sram_id,
+    uint64_t rand_seed,
+    uint32_t sig_seed,
+    uint16_t max_row_addr,
+    uint8_t max_col_addr,
+    dimension_t inner_dim,
+    element_t* elems,
+    uint8_t max_elem_idx,
+    pattern_table_t pattern_table, 
+    uint32_t cycle_limit,
+    int stop_on_failure
+);
 
 #endif

@@ -148,3 +148,49 @@ uint32_t srambist_read(uint32_t addr, uint8_t sram_id) {
 
   return reg_read32(SRAMBIST_DOUT);
 }
+
+bist_result_t srambist_run_bist(
+    uint8_t sram_id,
+    uint64_t rand_seed,
+    uint32_t sig_seed,
+    uint16_t max_row_addr,
+    uint8_t max_col_addr,
+    dimension_t inner_dim,
+    element_t* elems,
+    uint8_t max_elem_idx,
+    pattern_table_t pattern_table, 
+    uint32_t cycle_limit,
+    int stop_on_failure
+) {
+  reg_write8(SRAMBIST_SRAM_ID, sram_id);
+  reg_write8(SRAMBIST_SRAM_SEL, SRAM_SEL_BIST);
+  reg_write64(SRAMBIST_BIST_RAND_SEED, rand_seed);
+  reg_write16(SRAMBIST_BIST_RAND_SEED + 8, 0);
+  reg_write32(SRAMBIST_BIST_SIG_SEED, sig_seed);
+  reg_write16(SRAMBIST_BIST_MAX_ROW_ADDR, max_row_addr);
+  reg_write8(SRAMBIST_BIST_MAX_COL_ADDR, max_col_addr);
+  reg_write8(SRAMBIST_BIST_INNER_DIM, inner_dim);
+
+  packed_element_vec_t packed_elem_vec = pack_element_vec(elems, max_elem_idx);
+  for (int i = 0; i < 16; i++) {
+    reg_write_64(SRAMBIST_BIST_ELEMENT_SEQUENCE + 8 * i, *(((uint64_t*) &packed_elem_vec) + i));
+  }
+  for (int i = 0; i < 4; i++) {
+    reg_write_64(SRAMBIST_BIST_PATTERN_TABLE + 8 * i, *(((uint64_t*) &pattern_table) + i));
+  }
+  reg_write8(SRAMBIST_BIST_MAX_ELEMENT_IDX, max_elem_idx);
+
+  reg_write32(SRAMBIST_BIST_CYCLE_LIMIT, cycle_limit);
+  reg_write32(SRAMBIST_BIST_STOP_ON_FAILURE, stop_on_failure);
+
+  srambist_execute();
+
+  bist_result_t result;
+  result.fail = reg_read8(SRAMBIST_BIST_FAIL) & 0x1;
+  result.fail_cycle = reg_read32(SRAMBIST_BIST_FAIL_CYCLE);
+  result.expected = reg_read32(SRAMBIST_BIST_EXPECTED);
+  result.received = reg_read32(SRAMBIST_BIST_RECEIVED);
+  result.signature = reg_read32(SRAMBIST_BIST_SIGNATURE);
+
+  return result;
+}
