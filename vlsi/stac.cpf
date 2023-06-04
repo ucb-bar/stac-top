@@ -1,0 +1,38 @@
+set_cpf_version 1.1
+set_hierarchy_separator /
+set_design ChipTop
+
+create_power_nets -nets { VDD } -voltage 1.8
+create_ground_nets -nets { VSS }
+create_power_nets -nets { VDDIO } -voltage 3.3
+create_ground_nets -nets { VSSIO }
+
+create_power_domain -name AO -default
+update_power_domain -name AO -primary_power_net VDD -primary_ground_net VSS
+
+create_power_domain -name HV -instances [list \
+    {*}[find_design_objects -object inst -pattern_type cell sky130_fd_sc_hvl__lsbuf*] \
+    {*}[find_design_objects -object inst -pattern_type cell simple_por] \
+    ]
+update_power_domain -name HV -primary_power_net VDDIO -primary_ground_net VSSIO
+
+create_power_domain -name IO -instances [find_design_objects -object inst -pattern_type name */iocell_*/iocell]
+
+create_nominal_condition -name ao_nominal -voltage 1.8
+create_nominal_condition -name hv_nom -voltage 3.3
+create_power_mode -name PM1 -default -domain_conditions {AO@ao_nominal HV@hv_nom IO@hv_nom}
+
+create_global_connection -domain AO -net VDD -pins { VDD VPWR vdd }
+create_global_connection -domain AO -net VSS -pins { VSS VGND vss }
+
+create_global_connection -domain HV -net VDDIO -pins { VPWR vdd3v3 }
+create_global_connection -domain HV -net VSSIO -pins { VGND vss3v3 }
+create_global_connection -domain HV -net VDD -pins { LVPWR vdd1v8 }
+create_global_connection -domain HV -net VSS -pins { LVGND vss1v8 }
+
+create_global_connection -domain IO -net VDDIO -pins { VDDIO VDDIO_Q VDDA VSWITCH }
+create_global_connection -domain IO -net VSSIO -pins { VSSIO VSSIO_Q VSSA }
+create_global_connection -domain IO -net VDD -pins { VCCD VCCHIB VCCD1 }
+create_global_connection -domain IO -net VSS -pins { VSSD VSSD1 }
+
+end_design
