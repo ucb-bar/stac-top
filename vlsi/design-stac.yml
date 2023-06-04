@@ -30,6 +30,8 @@ vlsi.inputs:
       margins: {left: 250, right: 250, top: 250, bottom: 250}
 
 
+# Library stuff
+
 .local.library.sky130_fd_sc_hvl__lsbufhv2lv: &lib__sky130_fd_sc_hvl__lsbufhv2lv
   gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/gds/sky130_fd_sc_hvl.gds
   lef_file: cache/fd_sc_hvl__lef/sky130_fd_sc_hvl__lsbufhv2lv_1.lef
@@ -71,6 +73,14 @@ vlsi.technology.extra_libraries:
       supplies:
         VDD: "1.80 V"
         GND: "0 V"
+  - library:
+      gds_file: ${technology.sky130.caravel}/gds/simple_por.gds
+      lef_file: ${technology.sky130.caravel}/lef/simple_por.lef
+      spice_file: ${technology.sky130.caravel}/spi/lvs/simple_por.spice # TODO: which netlist to actually use?
+      verilog_sim: ${technology.sky130.caravel}/verilog/rtl/simple_por.v
+      provides:
+        - lib_type: por
+          vt: RVT
 
 vlsi.inputs.dont_use_mode: append
 vlsi.inputs.dont_use_list_meta: append

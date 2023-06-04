@@ -38,7 +38,7 @@ trait HasSky130EFCaravelPOR {
   this: LazyModule =>
 
   val por = InModuleBody {
-    val por = Module(p(Sky130EFCaravelPORKey)())
+    val por = Module(p(Sky130EFCaravelPORKey)()).suggestName("por")
     por
   }
   val porb_h = InModuleBody {

@@ -13,7 +13,6 @@ class STACConfig extends Config(
   //==================================
   // Set up Sky130 IO
   //==================================
-  new chipyard.sky130.WithDummySky130EFCaravelPOR ++ // FIXME: remove once collateral is imported
   new chipyard.sky130.WithSky130EFIOCells ++
   new chipyard.sky130.WithSky130EFIOTotalCells(45) ++
   new chipyard.sky130.WithSky130ChipTop ++
