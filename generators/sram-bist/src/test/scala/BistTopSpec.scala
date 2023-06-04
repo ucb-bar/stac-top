@@ -415,7 +415,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new freechips.rocketchip.subsystem.WithClockGateModel
       )
-    ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { c =>
       val testhelpers = new BistTopTestHelpers(c)
       c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
@@ -788,7 +788,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           "h87654321".U,
           "hf".U,
           true.B,
-          2.U,
+          0.U,
           SramSrc.mmio,
           SaeSrc.int
         )
@@ -799,7 +799,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           0.U,
           0.U,
           false.B,
-          2.U,
+          0.U,
           SramSrc.mmio,
           SaeSrc.int
         )
@@ -812,7 +812,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           0.U,
           0.U,
           false.B,
-          2.U,
+          0.U,
           SramSrc.mmio,
           SaeSrc.int
         )
@@ -865,7 +865,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           3.U,
           0.U,
           true.B,
-          2.U,
+          0.U,
           SramSrc.bist,
           SaeSrc.int
         )

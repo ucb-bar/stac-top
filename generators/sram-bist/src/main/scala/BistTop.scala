@@ -162,7 +162,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
 
   // TODO: does not stop on first failure for scan chain -> BIST mode, does for MMIO.
   sramMask := sramMasks(io.sramId)
-  maskedIOOut := (io.dout & sramMask)
+  maskedIOOut := io.dout & sramMask
   when(bistEnPrev & bistCheckEnPrev & ((bistDataPrev & sramMask) =/= maskedIOOut)) {
     when(~(bistFail & io.bistStopOnFailure)) {
       bistFail := true.B
@@ -262,7 +262,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   )
 
-  misr.io.in := (maskedIOOut).asBools
+  misr.io.in := maskedIOOut.asBools
 
   io.tdc := MuxCase(
     0.U,
