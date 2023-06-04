@@ -196,8 +196,8 @@ class WithUARTIOCells extends OverrideIOBinder({
 
 class WithSramBistIOCells extends OverrideIOBinder({
   (system: HasPeripherySramBistModuleImp) => {
-    val (ports: Seq[SramBistTopIO], cells2d: Seq[IOCell]) = system.io.map({ io =>
-      val (port, ios) = IOCell.generateIOFromSignal(io, s"sram_bist", system.p(IOCellKey), abstractResetAsAsync = true)
+    val (ports: Seq[SramBistTopIO], cells2d: Seq[IOCell]) = system.sramBistIO.map({ sramBistIO =>
+      val (port, ios) = IOCell.generateIOFromSignal(sramBistIO, s"sram_bist", system.p(IOCellKey), abstractResetAsAsync = true)
       (Seq(port), ios)
     }).getOrElse((Nil, Nil))
     (ports, cells2d)
