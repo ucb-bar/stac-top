@@ -71,3 +71,8 @@ vlsi.technology.extra_libraries:
       supplies:
         VDD: "1.95 V"
         GND: "0 V"
+
+vlsi.inputs.dont_use_mode: append
+vlsi.inputs.dont_use_list_meta: append
+vlsi.inputs.dont_use_list:
+  - sky130_fd_sc_hvl__*

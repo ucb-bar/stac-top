@@ -55,11 +55,6 @@ deselect_net *
 
     # Treat HVL cells as if they were hard macros to avoid needing to set them
     # up "properly" with multiple power domains
-def dont_use_hvl_cells(x: HammerTool) -> bool:
-    x.append('''
-set_dont_use [get_db base_cells sky130_fd_sc_hvl__*] true
-''')
-    return True
 def force_block_hvl_cells(x: HammerTool) -> bool:
     x.append('''
 set_db [get_db base_cells sky130_fd_sc_hvl__*] .class block
@@ -72,7 +67,6 @@ class Driver(CLIDriver):
         return [
             HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
             HammerTool.make_post_insertion_hook("init_environment", donttouch_iocells),
-            HammerTool.make_post_insertion_hook("init_environment", dont_use_hvl_cells),
         ]
 
     def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
