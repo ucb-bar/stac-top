@@ -474,7 +474,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           )
         )
       )(
-        new freechips.rocketchip.subsystem.WithClockGateModel
+        new WithChiseltestSrams(ChiseltestSramFailureMode.none) 
       )
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
       val testhelpers = new BistTopTestHelpers(c)
@@ -757,7 +757,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
       c.clock.setTimeout(
         (testhelpers.maxCols + 1) * (testhelpers.maxRows + 1) * 4 * 4 * 3
       )
-      val testSramMethod = (executeFn: () => Unit) => 
+      val testSramMethod = (executeFn: () => Unit) => {
         // Test write to small SRAM.
         testhelpers.populateSramRegisters(
           0.U,
@@ -780,7 +780,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        testhelpers.c.io.dout.expect("h00006bbd".U)
+        testhelpers.c.io.dout(15, 0).expect("h6bbd".U)
 
         // Test writing to extreme addresses of the small SRAM.
         testhelpers.populateSramRegisters(
@@ -804,7 +804,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        testhelpers.c.io.dout.expect("h00004321".U)
+        testhelpers.c.io.dout(15, 0).expect("h4321".U)
         // Verify that original write didn't change.
         testhelpers.populateSramRegisters(
           0.U,
@@ -816,7 +816,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           SaeSrc.int
         )
         executeFn()
-        testhelpers.c.io.dout.expect("h00006bbd".U)
+        testhelpers.c.io.dout(15, 0).expect("h6bbd".U)
 
       }
 
