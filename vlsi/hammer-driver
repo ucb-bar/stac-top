@@ -13,6 +13,13 @@ def check_timing_intent(x: HammerTool) -> bool:
     x.append('check_timing_intent')
     return True
 
+def dont_touch(x: HammerTool) -> bool:
+    # TODO: add more modules here as needed!!
+    modules = ['tdc_64']
+    for module in modules:
+        x.append(f'set_dont_touch [get_db insts -if {{.base_cell.name == {module}}}]')
+    return True
+
 def set_routing_layers(x: HammerTool) -> bool:
     if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
        x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
@@ -73,6 +80,8 @@ class Driver(CLIDriver):
     def get_extra_synthesis_hooks(self) -> List[HammerToolHookAction]:
         return [
             HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
+
+            HammerTool.make_post_insertion_hook("init_environment", dont_touch),
         ]
 
     def get_extra_par_hooks(self) -> List[HammerToolHookAction]:

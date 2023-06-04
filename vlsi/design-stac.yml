@@ -64,11 +64,11 @@ vlsi.inputs:
     # TODO: place icache now that the sram exists again
     # icache
     - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 2630, y: 20, orientation: r270}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_1_0_ext/mem_0_0, type: hardmacro, 
+      x: 2643, y: 20, orientation: r270}
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_1_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
       x: 2630, y: 750, orientation: r270}
     - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 810, y: 20, orientation: my90}
+      x: 809, y: 20, orientation: my90}
     
     # test srams
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_0/inner, type: hardmacro, 
@@ -77,6 +77,11 @@ vlsi.inputs:
       x: 20, y: 900, orientation: my90}
 
     # TODO: place TDC?
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_0/tdc, type: hardmacro, 
+      x: 500, y: 570, orientation: mx}
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_1/tdc, type: hardmacro, 
+      x: 500, y: 900, orientation: mx}
+    
  
 # Power Straps
 par.power_straps_mode: generate
