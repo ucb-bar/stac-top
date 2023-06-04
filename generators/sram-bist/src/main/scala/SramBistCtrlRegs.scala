@@ -27,7 +27,7 @@ object SramBistCtrlRegs extends Enumeration {
     BIST_MAX_ROW_ADDR -> 10,
     BIST_MAX_COL_ADDR -> 3,
     BIST_INNER_DIM -> 1,
-    BIST_ELEMENT_SEQUENCE -> 552,
+    BIST_ELEMENT_SEQUENCE -> 976,
     BIST_PATTERN_TABLE -> 256,
     BIST_MAX_ELEMENT_IDX -> 6,
     BIST_CYCLE_LIMIT -> 32,
