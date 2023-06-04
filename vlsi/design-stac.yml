@@ -1,4 +1,25 @@
+# Generate Make include to aid in flow
+vlsi.core.build_system: make
+
+technology.sky130.drc_blackbox_srams: true
+
+# SRAMs for BIST module (since these aren't seen by macrocompiler)
+# NOTE: this doesn't work so we add it directly to Makefile
+# vlsi.inputs.sram_parameters: "stac-srams.json"
+# vlsi.inputs.sram_parameters_meta: ["transclude", "json2list", "prependlocal"]
+
+# TDC
+vlsi.technology.extra_libraries_meta: ["append", "deepsubst"]
+vlsi.technology.extra_libraries:
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+
 vlsi.inputs:
+  power_spec_type: cpf
   power_spec_mode: auto
   supplies:
     power:
@@ -8,63 +29,81 @@ vlsi.inputs:
     VDD: "1.8 V"
     GND: "0 V"
 
-vlsi.inputs.hierarchical:
-  mode: hierarchical
   top_module: ChipTop
-  config_source: manual
-  manual_modules:
-    - ChipTop:
-      - RocketTile
 
-  constraints:
-    - ChipTop:
-      - vlsi.inputs.clocks:
-          - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
-      - vlsi.inputs.supplies:
-          power:
-            - {name: "VDD", pin: "VDD"}
-          ground:
-            - {name: "VDD", pin: "VDD"}
-      - vlsi.inputs.pin.assignments:
-          # FIXME: actually place all the pins lol (following are copied from propel2)
-          - {pins: uart_0_rxd, side: right, layers: [met3], location: [3377.035, 1420.815]}
-          - {pins: uart_0_txd, side: right, layers: [met3], location: [3377.035, 1702.005]}
-    - RocketTile:
-      - vlsi.inputs.clocks:
-          - {name: "clock", period: "10ns", uncertainty: "0.1ns"} # temporary
-      - vlsi.inputs.pin.assignments:
-          - {pins: "*", layers: [met2, met4], side: top}
-          # TODO: more intelligent pin placement
+  clocks:
+    - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
 
-  manual_placement_constraints:
-    - ChipTop:
-        - path: ChipTop
-          type: toplevel
-          # FIXME: fix x/y/width/height
-          #x: 210.965
-          #y: 197.965
-          x: 0
-          y: 0
-          width: 3166.07
-          height: 4779.07
-          margins: {left: 0, right: 0, top: 0, bottom: 0}
-        - path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile
-          type: hardmacro
-          # temp, copied from propel2
-          x: 132.5
-          y: 132.5
+  pin_mode: none
 
-    - RocketTile:
-        - path: RocketTile
-          type: toplevel
-          x: 0
-          y: 0
-          # FIXME: width/height
-          width: 2700
-          height: 1000
-          margins: {left: 0, right: 0, top: 0, bottom: 0}
-        # TODO: improve sram placements
-        - {path: RocketTile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, x: 0.0, y: 0.0, orientation: my90}
-        - {path: RocketTile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, x: 1176.68, y: 0.0, orientation: r270}
-        - {path: RocketTile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, x: 2334.855, y: 0.0, orientation: r270}
-        - {path: RocketTile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, x: 1324.8, y: 0.0, orientation: my90}
+  placement_constraints:
+    - path: ChipTop
+      type: toplevel
+      x: 0
+      y: 0
+      width: 3588
+      height: 5188
+      margins: {left: 20, bottom: 20,
+                right: 0, # must be 0 so that power pins (to power straps) are created
+                top: 3500} # block off as much as possible for test SRAMs/analog
+
+    # Place SRAM memory instances
+
+    # TODO: improve sram placements
+
+    # backing scratchpad
+    - {path: ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0, type: hardmacro, 
+      x: 3000, y: 20, orientation: my90}
+    
+    # dcache
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, 
+      x: 20, y: 20, orientation: my90}
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, 
+      x: 600, y: 20, orientation: r270}
+
+    # TODO: place icache now that the sram exists again
+    # icache
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
+      x: 2630, y: 20, orientation: r270}
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_1_0_ext/mem_0_0, type: hardmacro, 
+      x: 2630, y: 750, orientation: r270}
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, 
+      x: 810, y: 20, orientation: my90}
+    
+    # test srams
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_0/inner, type: hardmacro, 
+      x: 20, y: 570, orientation: my90}
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_1/inner, type: hardmacro, 
+      x: 20, y: 900, orientation: my90}
+
+    # TODO: place TDC?
+ 
+# Power Straps
+par.power_straps_mode: generate
+par.generate_power_straps_method: by_tracks
+par.blockage_spacing: 2.0
+par.blockage_spacing_top_layer: met3
+par.generate_power_straps_options:
+  by_tracks:
+    strap_layers:
+      - met4
+      - met5
+    pin_layers:
+      - met5
+    blockage_spacing_met2: 4.0
+    blockage_spacing_met4: 2.0
+    track_width: 3
+    track_width_met5: 1
+    track_spacing: 5
+    track_start: 10
+    track_start_met5: 1
+    power_utilization: 0.1
+    power_utilization_met4: 0.1
+    power_utilization_met5: 0.1
+
+# Pin placement constraints
+vlsi.inputs.pin_mode: generated
+vlsi.inputs.pin.generate_mode: semi_auto
+vlsi.inputs.pin.assignments: [
+  {pins: "*", layers: ["met2", "met4"], side: "bottom"}
+]

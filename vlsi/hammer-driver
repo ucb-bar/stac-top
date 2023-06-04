@@ -6,41 +6,95 @@ from typing import Dict, Callable, Optional, List
 
 from hammer.technology.sky130 import SKY130Tech
 
+import json
+
 
 def check_timing_intent(x: HammerTool) -> bool:
     x.append('check_timing_intent')
     return True
 
+def set_routing_layers(x: HammerTool) -> bool:
+    if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
+       x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
+        x.append("""
+set_db design_bottom_routing_layer 2
+set_db design_top_routing_layer 6
+# deprected syntax, but this used to always work
+set_db route_design_bottom_routing_layer 2
+        """)
+    return True      
+
+def derate_srams(x: HammerTool) -> bool:
+    if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
+       x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :        
+        # this is very hacky, TCL soln would be cleaner but harder to debug code
+        # NOTE: this doesn't check whether it's an SRAM!!!
+        floorplan_constraints = x.get_placement_constraints()
+        for constraint in floorplan_constraints:
+            macro_path = "/".join(constraint.path.split("/")[1:])
+            # TODO: only do this if we're using .schematic.lib files
+            if macro_path != "":
+                x.append(f'''
+set_timing_derate -cell_delay -delay_corner setup -late 3.0 [get_cells {{{macro_path}}}] 
+set_timing_derate -cell_delay -delay_corner hold  -early 0.95 [get_cells {{{macro_path}}}] 
+'''.strip())
+    return True
+
+def add_fillers(x: HammerTool) -> bool:
+    if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
+       x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
+        x.add_fillers()  # call Innovus's add_fillers step
+        # x.append("opt_design -post_route -setup -hold")
+        # x.append("opt_design -post_route -hold")
+    return True
+
+def signoff_timing(x: HammerTool) -> bool:
+    if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
+       x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
+        x.append('''
+# setup timing
+time_design -sign_off
+# hold timing
+time_design -sign_off -hold
+''')
+    return True
+
+# def write_top_files(x: HammerTool) -> bool:
+#     if x.get_setting("vlsi.core.technology") == "sky130" and \
+#        x.get_setting("vlsi.core.par_tool")   == "innovus" :
+#         handoff_dir = f"{x.run_dir}/handoff"
+#         x.append(f'''
+# mkdir -p {handoff_dir}
+# # LEF file
+# write_lef_abstract -stripe_pins -pg_pin_layers met5 {handoff_dir}/{x.top_module}.lef
+
 
 class Driver(CLIDriver):
-    def get_extra_hierarchical_synthesis_hooks(self, driver: HammerDriver) -> Dict[str, List[HammerToolHookAction]]:
-        return {
-            "ChipTop": [
-                HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
-            ],
-            "RocketTile": [
-                HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
-            ],
-        }
+    def get_extra_synthesis_hooks(self) -> List[HammerToolHookAction]:
+        return [
+            HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
+        ]
 
-    def get_extra_hierarchical_par_hooks(self, driver: HammerDriver) -> Dict[str, List[HammerToolHookAction]]:
-        return {
-            "ChipTop": [
-                # Default set of steps can be found in the CAD tool plugin's __init__.py
+    def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
+        return [
+            # make_removal_hook will remove the specified step from the flow
+            HammerTool.make_removal_hook("place_bumps"),
 
-                # make_pre_insertion_hook will execute the custom hook before the specified step
-                # HammerTool.make_pre_insertion_hook("route_design", example_add_fillers),
+            HammerTool.make_pre_insertion_hook("place_opt_design", derate_srams),
 
-                # make_post_insertion_hook will execute the custom hook after the specified step
-                # HammerTool.make_post_insertion_hook("init_design", example_tool_settings),
+            HammerTool.make_pre_insertion_hook("route_design", set_routing_layers),
 
-                # make_replacement_hook will replace the specified step with a custom hook
-                # HammerTool.make_replacement_hook("place_tap_cells", example_place_tap_cells),
+            # move fillers step to after opt_design
+            HammerTool.make_removal_hook("add_fillers"),
+            HammerTool.make_post_insertion_hook("opt_design", add_fillers),
 
-                # make_removal_hook will remove the specified step from the flow
-                HammerTool.make_removal_hook("place_bumps"),
-            ],
-        }
+            # add final signoff timing
+            # TODO: re-add once we care about timing (DRC/LVS sane)
+            # HammerTool.make_pre_insertion_hook("write_design", signoff_timing),
+
+            # # write final files
+            # HammerTool.make_post_insertion_hook("write_design", write_top_files),
+        ]
 
 if __name__ == '__main__':
     Driver().main()
