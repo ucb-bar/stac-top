@@ -4,12 +4,17 @@ import barstools.iocell.chisel.{AnalogIOCell, AnalogIOCellBundle, DigitalGPIOCel
 import chipyard.iobinders.{HasIOBinders, IOCellKey}
 import chipyard.sky130.util.analog.ConvertAnalog
 import chisel3._
-import chisel3.experimental.{Analog, BaseModule, attach}
+import chisel3.experimental.{Analog, BaseModule, DataMirror, attach}
 import freechips.rocketchip.diplomacy.{InModuleBody, LazyModule}
 import freechips.rocketchip.util.ElaborationArtefacts
 import org.chipsalliance.cde.config.Config
 
 import scala.collection.mutable
+
+object consts {
+  val defaultGPIOCellName = "sky130_ef_io__gpiov2_pad_wrapped"
+  val defaultXRes4V2CellName = "sky130_fd_io__top_xres4v2"
+}
 
 class Sky130EFGPIOV2IO extends Bundle {
   // VCCHIB domain
@@ -54,12 +59,41 @@ class Sky130EFGPIOV2IO extends Bundle {
   val TIE_LO_ESD = Output(Bool())
 }
 
-object consts {
-  val defaultCellName = "sky130_ef_io__gpiov2_pad_wrapped"
+class Sky130EFGPIOV2Cell(cellName: String = consts.defaultGPIOCellName) extends BlackBox {
+  val io = IO(new Sky130EFGPIOV2IO)
+
+  override val desiredName = cellName
 }
 
-class Sky130EFGPIOV2Cell(cellName: String = consts.defaultCellName) extends BlackBox {
-  val io = IO(new Sky130EFGPIOV2IO)
+class Sky130FDXRes4V2IO extends Bundle {
+  val PAD = Analog(1.W)
+
+  // VDDIO domain?
+  val XRES_H_N = Output(Bool())
+  val DISABLE_PULLUP_H = Input(Bool())
+  val ENABLE_H = Input(Bool())
+  val EN_VDDIO_SIG_H = Input(Bool())
+  val INP_SEL_H = Input(Bool())
+  val FILT_IN_H = Input(Bool())
+  val PULLUP_H = Analog(1.W)
+
+  // VCCD domain?
+  val ENABLE_VDDIO = Input(Bool())
+
+  // Direct pad connections - VDDIO domain
+  val PAD_A_ESD_H = Analog(1.W)
+  val AMUXBUS_A = Analog(1.W)
+  val AMUXBUS_B = Analog(1.W)
+
+  // special nets used to tie off certain pins (ENABLE_INP_H)
+  // VDDIO domain
+  val TIE_HI_ESD = Output(Bool())
+  val TIE_LO_ESD = Output(Bool())
+  val TIE_WEAK_HI_H = Analog(1.W)
+}
+
+class Sky130FDXRes4V2Cell(cellName: String = consts.defaultXRes4V2CellName) extends BlackBox {
+  val io = IO(new Sky130FDXRes4V2IO)
 
   override val desiredName = cellName
 }
@@ -71,11 +105,13 @@ class Sky130EFIOCellCommonIO extends Bundle {
 
 trait Sky130EFIOCellLike extends IOCell {
   this: BaseModule =>
+  val iocell: BaseModule
+
   val commonIO = IO(new Sky130EFIOCellCommonIO)
 }
 
 abstract class Sky130EFGPIOV2CellIOCellBase(cellName: String) extends RawModule with Sky130EFIOCellLike {
-  val iocell = Module(new Sky130EFGPIOV2Cell(cellName = cellName))
+  override val iocell = Module(new Sky130EFGPIOV2Cell(cellName = cellName))
 
   // special nets
   iocell.io.ENABLE_INP_H := iocell.io.TIE_LO_ESD // tie - disable input when enable_h low
@@ -107,7 +143,7 @@ abstract class Sky130EFGPIOV2CellIOCellBase(cellName: String) extends RawModule 
   iocell.io.ENABLE_H := commonIO.porb_h
 }
 
-class Sky130EFGPIOV2CellAnalog(cellName: String = consts.defaultCellName)
+class Sky130EFGPIOV2CellAnalog(cellName: String = consts.defaultGPIOCellName)
   extends Sky130EFGPIOV2CellIOCellBase(cellName) with AnalogIOCell {
   val io = IO(new AnalogIOCellBundle)
 
@@ -122,7 +158,7 @@ class Sky130EFGPIOV2CellAnalog(cellName: String = consts.defaultCellName)
   iocell.io.INP_DIS := true.B
 }
 
-class Sky130EFGPIOV2CellIO(cellName: String = consts.defaultCellName)
+class Sky130EFGPIOV2CellIO(cellName: String = consts.defaultGPIOCellName)
   extends Sky130EFGPIOV2CellIOCellBase(cellName) with DigitalGPIOCell {
   val io = IO(new DigitalGPIOCellBundle)
 
@@ -135,7 +171,7 @@ class Sky130EFGPIOV2CellIO(cellName: String = consts.defaultCellName)
   iocell.io.INP_DIS := !io.ie
 }
 
-class Sky130EFGPIOV2CellIn(cellName: String = consts.defaultCellName)
+class Sky130EFGPIOV2CellIn(cellName: String = consts.defaultGPIOCellName)
   extends Sky130EFGPIOV2CellIOCellBase(cellName) with DigitalInIOCell {
   val io = IO(new DigitalInIOCellBundle)
 
@@ -148,7 +184,7 @@ class Sky130EFGPIOV2CellIn(cellName: String = consts.defaultCellName)
   iocell.io.INP_DIS := !io.ie
 }
 
-class Sky130EFGPIOV2CellOut(cellName: String = consts.defaultCellName)
+class Sky130EFGPIOV2CellOut(cellName: String = consts.defaultGPIOCellName)
   extends Sky130EFGPIOV2CellIOCellBase(cellName) with DigitalOutIOCell {
   val io = IO(new DigitalOutIOCellBundle)
 
@@ -160,7 +196,7 @@ class Sky130EFGPIOV2CellOut(cellName: String = consts.defaultCellName)
   iocell.io.INP_DIS := true.B
 }
 
-class Sky130EFGPIOV2CellNoConn(cellName: String = consts.defaultCellName)
+class Sky130EFGPIOV2CellNoConn(cellName: String = consts.defaultGPIOCellName)
   extends Sky130EFGPIOV2CellIOCellBase(cellName) with IOCell {
   val io = IO(new Bundle {
     val pad = Analog(1.W)
@@ -174,17 +210,60 @@ class Sky130EFGPIOV2CellNoConn(cellName: String = consts.defaultCellName)
   iocell.io.INP_DIS := true.B
 }
 
-case class Sky130EFIOCellTypeParams(cellName: String = consts.defaultCellName)
-  extends IOCellTypeParams {
-  def analog() = Module(new Sky130EFGPIOV2CellAnalog(cellName = cellName))
+class Sky130FDXRes4V2IOCell(cellName: String = consts.defaultXRes4V2CellName)
+  extends RawModule with Sky130EFIOCellLike {
+  override val iocell = Module(new Sky130FDXRes4V2Cell(cellName = cellName))
 
-  def gpio() = Module(new Sky130EFGPIOV2CellIO(cellName = cellName))
+  val io = IO(new Bundle {
+    val pad = Input(AsyncReset())
+    val reset = Output(AsyncReset())
+  })
 
-  def input() = Module(new Sky130EFGPIOV2CellIn(cellName = cellName))
+  ConvertAnalog.drive(iocell.io.PAD, from = io.pad.asBool)
 
-  def output() = Module(new Sky130EFGPIOV2CellOut(cellName = cellName))
+  // reference: https://github.com/efabless/caravel/blob/5f4a5b7b46f05d476622ab9d9c24eb5721ef495a/verilog/rtl/chip_io.v#L306
 
-  // TODO: reset pad
+  // VDDIO domain
+  iocell.io.ENABLE_H := commonIO.porb_h
+  attach(iocell.io.PAD_A_ESD_H, iocell.io.TIE_WEAK_HI_H) // weak pull-up connection
+
+  iocell.io.DISABLE_PULLUP_H := iocell.io.TIE_LO_ESD // enable pull-up on reset pad
+  iocell.io.EN_VDDIO_SIG_H := iocell.io.TIE_LO_ESD // "No idea."
+  iocell.io.INP_SEL_H := iocell.io.TIE_LO_ESD // use pad input not filt_in_h
+  iocell.io.FILT_IN_H := iocell.io.TIE_LO_ESD // alternate glitch filter input
+  ConvertAnalog.drive(iocell.io.PULLUP_H, from = iocell.io.TIE_LO_ESD) // pullup connection for alternate glitch filter input
+
+  // VCCD domain
+  iocell.io.ENABLE_VDDIO := true.B // enable HV circuits?
+
+  val levelShifter = Module(new Sky130FDLevelShifter(Sky130FDLevelShifters.defaults.hv2lv))
+  levelShifter.in := iocell.io.XRES_H_N
+  val xres_n = levelShifter.out
+  io.reset := (!xres_n).asAsyncReset
+}
+
+case class Sky130EFIOCellTypeParams(
+  gpioCellName: String = consts.defaultGPIOCellName,
+  resetCellName: String = consts.defaultXRes4V2CellName,
+) extends IOCellTypeParams {
+  override def analog() = Module(new Sky130EFGPIOV2CellAnalog(cellName = gpioCellName))
+
+  override def gpio() = Module(new Sky130EFGPIOV2CellIO(cellName = gpioCellName))
+
+  override def input() = Module(new Sky130EFGPIOV2CellIn(cellName = gpioCellName))
+
+  override def output() = Module(new Sky130EFGPIOV2CellOut(cellName = gpioCellName))
+
+  def reset() = Module(new Sky130FDXRes4V2IOCell(cellName = resetCellName))
+
+  override val custom = {
+    case (name, coreSignal: AsyncReset, padSignal: AsyncReset)
+      if DataMirror.directionOf(coreSignal) == ActualDirection.Input =>
+      val iocell = reset().named(name)
+      iocell.io.pad := padSignal
+      coreSignal := iocell.io.reset
+      Seq(iocell)
+  }
 }
 
 /**
@@ -192,8 +271,8 @@ case class Sky130EFIOCellTypeParams(cellName: String = consts.defaultCellName)
  *
  * @param cellName name of gpiov2 cell to instantiate
  */
-class WithSky130EFIOCells(cellName: String = consts.defaultCellName) extends Config((site, here, up) => {
-  case IOCellKey => Sky130EFIOCellTypeParams(cellName = cellName)
+class WithSky130EFIOCells(cellName: String = consts.defaultGPIOCellName) extends Config((site, here, up) => {
+  case IOCellKey => Sky130EFIOCellTypeParams(gpioCellName = cellName)
 })
 
 trait HasSky130EFIOCells {

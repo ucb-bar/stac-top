@@ -44,6 +44,6 @@ trait HasSky130EFIONoConnCells {
  * @param totalCells total number of cells to generate
  * @param cellName   name of gpiov2 cell to instantiate
  */
-class WithSky130EFIOTotalCells(totalCells: Int, cellName: String = consts.defaultCellName) extends Config((site, here, up) => {
+class WithSky130EFIOTotalCells(totalCells: Int, cellName: String = consts.defaultGPIOCellName) extends Config((site, here, up) => {
   case FillNoConnCellsKey => FillNoConnCellsParams(totalCells = totalCells, cellName = cellName)
 })
