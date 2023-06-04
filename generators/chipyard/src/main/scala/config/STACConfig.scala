@@ -65,5 +65,6 @@ class STACConfig extends Config(
   new srambist.WithSramBist(new srambist.SramBistParams()) ++    // add SRAM BIST peripheral
   new freechips.rocketchip.subsystem.WithNBitPeripheryBus(64) ++
   new chipyard.iobinders.WithSramBistIOCells ++
+  new chipyard.harness.WithSramBistTiedToMMIOMode ++
 
   new chipyard.config.AbstractConfig)
