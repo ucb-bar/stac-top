@@ -22,7 +22,7 @@ object SramBistCtrlRegs extends Enumeration {
     DOUT -> 32,
     TDC -> 252,
     DONE -> 1,
-    BIST_RAND_SEED -> 77,
+    BIST_RAND_SEED -> 78,
     BIST_SIG_SEED -> 32,
     BIST_MAX_ROW_ADDR -> 10,
     BIST_MAX_COL_ADDR -> 3,
