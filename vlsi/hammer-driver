@@ -24,6 +24,7 @@ def flatten_analog_driver(x: HammerTool) -> bool:
 
 def set_die_snap_to_mfg_grid(x: HammerTool) -> bool:
     x.append('set_db floorplan_snap_die_grid manufacturing')
+    return True
 
 def efabless_ring_io(ht: HammerTool) -> bool:
     # Copied from Harrison's version in hammer to make some adjustments:
