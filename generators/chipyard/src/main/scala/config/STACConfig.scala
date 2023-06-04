@@ -2,7 +2,6 @@ package chipyard
 
 import org.chipsalliance.cde.config.Config
 import freechips.rocketchip.diplomacy._
-import freechips.rocketchip.subsystem.WithNBitPeripheryBus
 
 class STACConfig extends Config(
   //==================================
@@ -64,6 +63,8 @@ class STACConfig extends Config(
   new freechips.rocketchip.subsystem.WithBufferlessBroadcastHub ++ // Remove buffers from broadcast manager
   new freechips.rocketchip.subsystem.WithCoherentBusTopology ++    // use coherent bus topology
   new srambist.WithSramBist(new srambist.SramBistParams()) ++    // add SRAM BIST peripheral
-  new WithNBitPeripheryBus(64) ++
+  new freechips.rocketchip.subsystem.WithNBitPeripheryBus(64) ++
+  new chipyard.iobinders.WithSramBistIOCells ++
+  new chipyard.harness.WithSramBistTiedToMMIOMode ++
 
   new chipyard.config.AbstractConfig)
