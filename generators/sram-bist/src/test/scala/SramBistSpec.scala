@@ -405,6 +405,10 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       scanIn(REG_WIDTH(ADDR), 0)
       d.io.top.sramScanIn.poke(false.B)
 
+      for (i <- 0 until 16) {
+        println(d.io.mmio.bistElementSequenceMmio(i).q.peek().litValue);
+      }
+
       d.io.top.bistStart.poke(true.B)
       d.clock.step()
       d.clock.step()
