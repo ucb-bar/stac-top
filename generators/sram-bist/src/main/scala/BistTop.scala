@@ -11,8 +11,17 @@ import srambist.misr.MaxPeriodFibonacciMISR
 import chisel3.experimental.VecLiterals._
 
 case class BistTopParams(
-    srams: Seq[SramParams] =
-      Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+    srams: Seq[SramParams] = Seq(
+      new SramParams(8, 8, 2048, 32),
+      new SramParams(8, 8, 1024, 32),
+      new SramParams(32, 8, 1024, 32),
+      new SramParams(32, 4, 512, 32),
+      new SramParams(8, 4, 512, 32),
+      new SramParams(8, 4, 256, 32),
+      new SramParams(8, 4, 64, 32),
+      new SramParams(24, 4, 64, 24),
+      new SramParams(2, 4, 64, 4)
+    ),
     bistParams: ProgrammableBistParams = new ProgrammableBistParams()
 )
 
