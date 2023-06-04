@@ -27,6 +27,8 @@ import icenet.{CanHavePeripheryIceNIC, SimNetwork, NicLoopback, NICKey, NICIOvon
 import chipyard.{CanHaveMasterTLMemPort}
 import chipyard.clocking.{HasChipyardPRCI, DividerOnlyClockGenerator}
 
+import srambist.{HasPeripherySramBistModuleImp, SramBistTopIO}
+
 import scala.reflect.{ClassTag}
 
 object IOBinderTypes {
@@ -191,6 +193,16 @@ class WithUARTIOCells extends OverrideIOBinder({
   }
 })
 // DOC include end: WithUARTIOCells
+
+class WithSramBistIOCells extends OverrideIOBinder({
+  (system: HasPeripherySramBistModuleImp) => {
+    val (ports: Seq[SramBistTopIO], cells2d) = system.io.map({ io =>
+      val (port, ios) = IOCell.generateIOFromSignal(u, s"sram_bist", system.p(IOCellKey), abstractResetAsAsync = true)
+      (Seq(port), ios)
+    }).getOrElse((Nil, Nil))
+    (ports, cells2d)
+  }
+})
 
 class WithSPIIOCells extends OverrideIOBinder({
   (system: HasPeripherySPIFlashModuleImp) => {
