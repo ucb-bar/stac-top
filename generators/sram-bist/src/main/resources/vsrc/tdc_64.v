@@ -20,7 +20,7 @@ module tdc_64(
   input  reset_b; // active-low reset
   output reg [DATA_WIDTH-1:0] dout; // data out
 
-  wire [DATA_WIDTH-1:0] intermediate;
+  reg [DATA_WIDTH-1:0] intermediate;
 
   genvar i;
 

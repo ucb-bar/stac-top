@@ -14,9 +14,11 @@ class STACConfig extends Config(
   //==================================
   // Set up tiles
   //==================================
-  new freechips.rocketchip.subsystem.WithL1DCacheSets(sets = 64) ++ // 64 sets, 4K cache
-  new chipyard.config.WithNoRocketDCacheScratchPad ++ // disable scratchpad
-  new freechips.rocketchip.subsystem.With1TinyCore ++ // single tiny rocket-core
+  new freechips.rocketchip.subsystem.WithL1ICacheSets(64) ++ // 64 sets, 1 way, 4K cache
+  new freechips.rocketchip.subsystem.WithL1ICacheWays(1) ++
+  new freechips.rocketchip.subsystem.WithL1DCacheSets(64) ++ // 64 sets, 1 way, 4K cache
+  new freechips.rocketchip.subsystem.WithL1DCacheWays(1) ++
+  new freechips.rocketchip.subsystem.WithNSmallCores(1) ++ // single small rocket-core
 
   new testchipip.WithBackingScratchpad(base = 0x08000000, mask = ((4<<10)-1)) ++ // 4 KB
 

@@ -39,6 +39,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val sramScanMode = Input(Bool())
     val sramEn = Input(Bool())
     val bistEn = Input(Bool())
+    val bistStart = Input(Bool())
 
     // MMIO registers
     val addr = Input(UInt(13.W))
@@ -89,6 +90,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
 
   val fsmSramEn = Wire(Bool())
   val fsmBistEn = Wire(Bool())
+  val fsmBistStart = Wire(Bool())
 
   val bistSramEnPrev = RegNext(bist.io.sramEn)
   val bistSramWenPrev = RegNext(bist.io.sramWen)
@@ -96,6 +98,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val bistEnPrev = RegNext(bist.io.en)
   val bistCheckEnPrev = RegNext(bist.io.checkEn)
   val bistCyclePrev = RegNext(bist.io.cycle)
+  val bistDonePrev = RegNext(bist.io.done)
   val bistFail = RegInit(false.B)
   val bistFailCycle = Reg(UInt(32.W))
   val bistExpected = Reg(UInt(32.W))
@@ -116,14 +119,14 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   io.done := false.B
   fsmSramEn := false.B
   fsmBistEn := false.B
-  bist.io.start := false.B
+  fsmBistStart := false.B
   switch(state) {
     is(State.idle) {
       when(io.ex) {
         bistFail := false.B
         switch(io.sramSel) {
           is(SramSrc.bist) {
-            bist.io.start := true.B
+            fsmBistStart := true.B
             state := State.setupBist
           }
           is(SramSrc.mmio) {
@@ -135,7 +138,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
       }
     }
     is(State.setupBist) {
-      bist.io.start := true.B
+      fsmBistStart := true.B
       state := State.executeOp
     }
     is(State.executeOp) {
@@ -173,6 +176,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   }
 
   bist.io.en := Mux(io.sramScanMode, io.bistEn & ~bistFail, fsmBistEn)
+  bist.io.start := Mux(io.sramScanMode, io.bistStart, fsmBistStart)
   bist.io.maxRowAddr := io.bistMaxRowAddr
   bist.io.maxColAddr := io.bistMaxColAddr
   bist.io.innerDim := io.bistInnerDim
@@ -182,7 +186,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   bist.io.maxElementIdx := io.bistMaxElementIdx
   bist.io.cycleLimit := io.bistCycleLimit
 
-  io.bistDone := bist.io.done | bistFail
+  io.bistDone := bistDonePrev | bistFail
 
   var (srams, harnesses) = params.srams.zipWithIndex.map {
     case (sramParams, i) => {

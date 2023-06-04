@@ -186,8 +186,7 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "SramBist"
   it should "work with hardmacro SRAMs" in {
     test(
-      new SramBist()
-      (
+      new SramBist()(
         Parameters.empty
       )
     ) { c => }
@@ -198,8 +197,6 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
-    ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
-
-    }
+    ).withAnnotations(Seq(WriteVcdAnnotation)) { c => }
   }
 }

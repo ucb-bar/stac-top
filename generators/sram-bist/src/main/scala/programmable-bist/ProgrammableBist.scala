@@ -165,7 +165,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   opsDone := opIndex === currOperationElement.maxIdx
   up := currOperationElement.dir === Direction.up
   randAddrOrder := currOperationElement.dir === Direction.rand
-  checkEn := currOperation.operationType === OperationType.read && !currOperation.randData && currElement.elementType === ElementType.rwOp
+  checkEn := currOperation.operationType === OperationType.read && !currOperation.randData && currElement.elementType === ElementType.rwOp && currOperationElement.dir =/= Direction.rand
 
   dataPatternEntry := io.patternTable(currOperation.dataPatternIdx)
   detData := Mux(
@@ -210,11 +210,11 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
     }
   }
 
-  when(io.en && !done && cycle < io.cycleLimit) {
+  when(io.en && !done && (cycle < io.cycleLimit || io.cycleLimit === 0.U)) {
     cycle := cycle + 1.U
   }
 
-  when(cycle === io.cycleLimit) {
+  when(cycle === io.cycleLimit && io.cycleLimit =/= 0.U) {
     done := true.B
   }
 
@@ -298,7 +298,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   io.checkEn := checkEn
   io.cycle := cycle
   io.done := done
-  io.resetHash := false.B
+  io.resetHash := io.start
   io.sramEn := sramEn
   io.sramWen := sramWen
 }
