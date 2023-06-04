@@ -1,4 +1,4 @@
-set_cpf_version 1.1
+set_cpf_version 2.0
 set_hierarchy_separator /
 set_design ChipTop
 
@@ -11,12 +11,12 @@ create_power_domain -name AO -default
 update_power_domain -name AO -primary_power_net VDD -primary_ground_net VSS
 
 create_power_domain -name HV -instances [list \
-    {*}[find_design_objects -object inst -pattern_type cell sky130_fd_sc_hvl__lsbuf*] \
-    {*}[find_design_objects -object inst -pattern_type cell simple_por] \
+    {*}[find_design_objects sky130_fd_sc_hvl__lsbuf* -object inst -pattern_type cell] \
+    {*}[find_design_objects simple_por -object inst -pattern_type cell] \
     ]
 update_power_domain -name HV -primary_power_net VDDIO -primary_ground_net VSSIO
 
-create_power_domain -name IO -instances [find_design_objects -object inst -pattern_type name */iocell_*/iocell]
+create_power_domain -name IO -instances [find_design_objects */iocell_*/iocell -object inst -pattern_type name]
 
 create_nominal_condition -name ao_nominal -voltage 1.8
 create_nominal_condition -name hv_nom -voltage 3.3
