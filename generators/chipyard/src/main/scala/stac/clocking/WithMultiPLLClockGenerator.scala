@@ -101,7 +101,7 @@ class WithMultiPLLClockGenerator extends OverrideLazyIOBinder({
       generateIO(clockSelectorIO.bundle.sel, "clksel")
 
       // PLL IO
-      val pll = Module(new MultiPLL)
+      val pll = Module(new MultiPLL).suggestName("pllInst")
       val pllIO = Wire(new MultiPLLTopIO)
       pll.io.io_scan_in <> pllIO.scan_in
       pll.io.io_scan_clk <> pllIO.scan_clk
