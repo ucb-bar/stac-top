@@ -91,6 +91,15 @@ design.def.hv_routing: stac-hv-routing.def
   provides:
     - lib_type: lvlshift
       vt: RVT
+.local.library.MultiPLLTop: &lib__MultiPLLTop
+  # gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/gds/sky130_fd_sc_hvl.gds
+  gds_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/gds/MutliPLLTop_clean_6_2_0156.gds
+  lef_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/lef/MultiPLLTop.lef
+  spice_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/spice/MultiPLLTop.lvs.sp
+  # TODO: verilog sim
+  provides:
+    - lib_type: block
+      vt: RVT
 
 vlsi.technology.extra_libraries_meta: ["append", "lazydeepsubst"]
 vlsi.technology.extra_libraries:
@@ -186,6 +195,36 @@ vlsi.technology.extra_libraries:
   - library:
       <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
       nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__tt_025C_3v30_lv1v80.lib
+      corner:
+        nmos: "typical"
+        pmos: "typical"
+        temperature: "025 C"
+      supplies:
+        VDD: "1.80 V"
+        GND: "0 V"
+  - library:
+      <<: *lib__MultiPLLTop
+      nldm_liberty_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/lib/MutliPLLTop_ss_100C_1v60.lib
+      corner:
+        nmos: "slow"
+        pmos: "slow"
+        temperature: "100 C"
+      supplies:
+        VDD: "1.60 V"
+        GND: "0 V"
+  - library:
+      <<: *lib__MultiPLLTop
+      nldm_liberty_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/lib/MultiPLLTop_ff_n40C_1v95.lib
+      corner:
+        nmos: "fast"
+        pmos: "fast"
+        temperature: "-40 C"
+      supplies:
+        VDD: "1.95 V"
+        GND: "0 V"
+  - library:
+      <<: *lib__MultiPLLTop
+      nldm_liberty_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/lib/MultiPLLTop_tt_025C_1v80.lib
       corner:
         nmos: "typical"
         pmos: "typical"

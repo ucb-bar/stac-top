@@ -21,27 +21,8 @@ class MultiPLLIO extends Bundle {
   val io_pll_div_out_gr = Analog(1.W) // output
 }
 
-class MultiPLL extends BlackBox with HasBlackBoxInline {
+class MultiPLL extends BlackBox {
   val io = IO(new MultiPLLIO())
 
   override val desiredName: String = "MultiPLLTop"
-
-  setInline("MultiPLLTop.bb.v",
-    """
-      |module MultiPLLTop (
-      |  inout clock,
-      |  input io_scan_in,
-      |  input io_scan_clk,
-      |  input io_scan_en,
-      |  input io_scan_rst,
-      |  input io_pll_sel,
-      |  input io_arstb,
-      |  output io_scan_out,
-      |  output io_pll_clk_out,
-      |  output io_pll_div_out,
-      |  inout io_pll_clk_out_gr,
-      |  inout io_pll_div_out_gr
-      |);
-      |endmodule
-      |""".stripMargin)
 }
