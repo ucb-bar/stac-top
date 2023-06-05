@@ -25,6 +25,8 @@ import chipyard._
 import chipyard.clocking.{HasChipyardPRCI, ClockWithFreq}
 import chipyard.iobinders.{GetSystemParameters, JTAGChipIO}
 
+import srambist.{HasPeripherySramBistModuleImp, SramBistTopIO}
+
 import tracegen.{TraceGenSystemModuleImp}
 import icenet.{CanHavePeripheryIceNIC, SimNetwork, NicLoopback, NICKey, NICIOvonly}
 
@@ -88,6 +90,21 @@ class WithUARTAdapter extends OverrideHarnessBinder({
   }
 })
 // DOC include end: WithUARTAdapter
+
+class WithSramBistTiedToMMIOMode extends OverrideHarnessBinder({
+  (system: HasPeripherySramBistModuleImp, th: HasHarnessSignalReferences, ports: Seq[SramBistTopIO]) => {
+    ports.foreach({ p =>
+      p.sramExtEn := false.B
+      p.sramScanMode := false.B
+      p.sramEn := false.B
+      p.sramScanIn := false.B
+      p.sramScanEn := false.B
+      p.sramSaeClk := false.B
+      p.bistEn := false.B
+      p.bistStart := false.B
+    })
+  }
+})
 
 class WithSimSPIFlashModel(rdOnly: Boolean = true) extends OverrideHarnessBinder({
   (system: HasPeripherySPIFlashModuleImp, th: HasHarnessSignalReferences, ports: Seq[SPIChipIO]) => {

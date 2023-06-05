@@ -3,7 +3,7 @@
 // Word size: 32
 // Write size: 8
 
-module sram22_2048x32m8w8(
+module sram22_2048x32m8w8_test(
 `ifdef USE_POWER_PINS
     vdd,
     vss,
@@ -27,9 +27,11 @@ module sram22_2048x32m8w8(
   input [WMASK_WIDTH-1:0] wmask; // write mask
   input [ADDR_WIDTH-1:0]  addr; // address
   input [DATA_WIDTH-1:0]  din; // data in
-  input sae_muxed; // muxed sense amp enable
   output reg [DATA_WIDTH-1:0] dout; // data out
+  
+  input sae_muxed; // muxed sense amp enable
   output sae_int; // internal sense amp enable
+  
 
   reg [DATA_WIDTH-1:0] mem [0:RAM_DEPTH-1];
 

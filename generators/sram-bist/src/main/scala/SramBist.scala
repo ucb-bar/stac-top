@@ -55,7 +55,7 @@ class SramBist()(implicit p: Parameters) extends Module {
   bistTop.io.bistStart := io.top.bistStart
   bistTop.io.saeClk := io.top.sramSaeClk
   bistTop.io.ex := io.ex.valid & io.ex.bits
-  io.ex.ready := ready // TODO: have someone verify that this is correct.
+  io.ex.ready := ready
 
   bistTop.io.addr := scanChainIntf.io.mmio.addr.q
   bistTop.io.din := scanChainIntf.io.mmio.din.q
