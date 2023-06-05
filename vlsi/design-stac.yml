@@ -20,6 +20,12 @@ vlsi.technology.extra_libraries:
       corner: {nmos: typical, pmos: typical, temperature: "025 C"}
       supplies: {VDD: "1.80 V", GND: "0 V"}
       provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
 
 vlsi.inputs:
   power_spec_type: cpf
