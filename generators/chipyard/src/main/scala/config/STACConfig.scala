@@ -5,17 +5,21 @@ import freechips.rocketchip.diplomacy._
 
 class STACConfig extends Config(
   //==================================
-  // Set up TestHarness
-  //==================================
-  new chipyard.WithAbsoluteFreqHarnessClockInstantiator ++ // use absolute frequencies for simulations in the harness
-                                                           // NOTE: This only simulates properly in VCS
-
-  //==================================
   // Set up Sky130 IO
   //==================================
   new chipyard.sky130.WithSky130EFIOCells ++
   new chipyard.sky130.WithSky130EFIOTotalCells(45) ++
   new chipyard.sky130.WithSky130ChipTop ++
+
+  new STACDigitalConfig())
+
+class STACDigitalConfig extends Config(
+  //==================================
+  // SRAM test payload configuration
+  //==================================
+  new srambist.WithSramBist(srambist.SramBistParams()) ++ // add SRAM BIST peripheral
+  new chipyard.iobinders.WithSramBistIOCells ++
+  new chipyard.harness.WithSramBistTiedToMMIOMode ++
 
   //==================================
   // Set up tiles
@@ -53,6 +57,8 @@ class STACConfig extends Config(
   // Set up clock./reset
   //==================================
   new chipyard.clocking.WithPLLSelectorDividerClockGenerator ++   // Use a PLL-based clock selector/divider generator structure
+  new chipyard.WithAbsoluteFreqHarnessClockInstantiator ++        // use absolute frequencies for simulations in the harness
+                                                                  // NOTE: This only simulates properly in VCS
 
   // Create two clock groups, uncore and fbus, in addition to the tile clock groups
   new chipyard.clocking.WithClockGroupsCombinedByName("uncore", "implicit", "sbus", "mbus", "cbus", "system_bus") ++
@@ -69,9 +75,5 @@ class STACConfig extends Config(
   new chipyard.config.WithBroadcastManager ++                      // Replace L2 with a broadcast hub for coherence
   new freechips.rocketchip.subsystem.WithBufferlessBroadcastHub ++ // Remove buffers from broadcast manager
   new freechips.rocketchip.subsystem.WithCoherentBusTopology ++    // use coherent bus topology
-  new srambist.WithSramBist(new srambist.SramBistParams()) ++    // add SRAM BIST peripheral
-  new freechips.rocketchip.subsystem.WithNBitPeripheryBus(64) ++
-  new chipyard.iobinders.WithSramBistIOCells ++
-  new chipyard.harness.WithSramBistTiedToMMIOMode ++
 
   new chipyard.config.AbstractConfig)
