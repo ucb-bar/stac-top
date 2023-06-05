@@ -16,6 +16,7 @@ def check_timing_intent(x: HammerTool) -> bool:
 
 def dont_touch(x: HammerTool) -> bool:
     x.append('set_dont_touch [get_db insts -if {.base_cell.base_class == block}]')
+    x.append('set_dont_touch [get_db insts -if {.base_cell.name == sky130_fd_sc_hd__bufbuf_16 }] true')
     return True
 
 def print_macros(x: HammerTool) -> bool:
