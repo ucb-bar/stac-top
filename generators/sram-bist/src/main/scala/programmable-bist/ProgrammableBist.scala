@@ -298,7 +298,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   io.checkEn := checkEn
   io.cycle := cycle
   io.done := done
-  io.resetHash := false.B
+  io.resetHash := io.start
   io.sramEn := sramEn
   io.sramWen := sramWen
 }
