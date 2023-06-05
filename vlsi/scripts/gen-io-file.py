@@ -132,7 +132,8 @@ clamp_cells: dict[str, str | Callable[[str], str]] = {
     pg_net:
         f"sky130_ef_io__{pg_net.lower()}_{domain_class.lower()}c_clamped_pad"
         if domain_class != "LV" else
-        lambda side: f"sky130_ef_io__{pg_net.lower()}_{domain_class.lower()}c_clamped{'3' if side in ['left', 'right'] else ''}_pad"
+        (lambda pg_net, domain_class: lambda side: f"sky130_ef_io__{pg_net.lower()}_{domain_class.lower()}c_clamped{'3' if side in ['left', 'right'] else ''}_pad")(pg_net, domain_class)
+        # I hate python scoping.
     for pg_net, domain_class in domain_classes.items()
 } | {
 }
