@@ -88,7 +88,7 @@ ifneq ($(CUSTOM_VLOG), )
 else
 #	cat $(TOP_MODS_FILELIST) | sort -u > $(VLSI_RTL)
 	for x in $$(cat $(TOP_MODS_FILELIST) | sort -u); do \
-		if [[ $$x != *tdc_64.v ]] && [[ $$x != *sram22_* ]] && [[ $$x != *delay_line_128.v ]] ; then \
+		if [[ $$x != *tdc_64.v ]] && [[ $$x != *sram22_* ]] && [[ $$x != *delay_line_128.v ]] && [[ $$x != *bufbuf_16.v ]] ; then \
 			echo $$x >> $@; \
 		fi ; \
 	done
