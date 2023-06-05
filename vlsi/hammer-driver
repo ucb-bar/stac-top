@@ -201,7 +201,6 @@ class Driver(CLIDriver):
 
     def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
         return [
-            # make_removal_hook will remove the specified step from the flow
             HammerTool.make_removal_hook("place_bumps"),
 
             HammerTool.make_pre_insertion_hook("place_opt_design", derate_srams),
@@ -224,7 +223,7 @@ class Driver(CLIDriver):
             HammerTool.make_post_insertion_hook("efabless_ring_io", load_hv_def_routing),
             HammerTool.make_post_insertion_hook("power_straps", connect_core_stripes),
 
-            HammerTool.make_removal_hook("place_bumps"),
+            # Not needed with manual CPF flow
             HammerTool.make_removal_hook("sky130_connect_nets"),
             HammerTool.make_removal_hook("sky130_connect_nets2"),
 
