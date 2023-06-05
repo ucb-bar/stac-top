@@ -85,7 +85,6 @@ class STACDigitalConfig extends Config(
 
   new freechips.rocketchip.subsystem.WithNBanks(1) ++              // one bank
   new chipyard.config.WithBroadcastManager ++                      // Replace L2 with a broadcast hub for coherence
-  new freechips.rocketchip.subsystem.WithBufferlessBroadcastHub ++ // Remove buffers from broadcast manager
   new freechips.rocketchip.subsystem.WithCoherentBusTopology ++    // use coherent bus topology
 
   new chipyard.config.AbstractConfig)
