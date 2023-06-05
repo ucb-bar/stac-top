@@ -1,0 +1,44 @@
+
+// Test srams
+
+     (CELLTYPE "sram22_2048x32m8w8_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_0.inner)
+     (CELLTYPE "sram22_1024x32m8w8_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_1.inner)
+     (CELLTYPE "sram22_1024x32m8w32_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_2.inner)
+     (CELLTYPE "sram22_512x32m4w32_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_3.inner)
+     (CELLTYPE "sram22_512x32m4w8_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_4.inner)
+     (CELLTYPE "sram22_256x32m4w8_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_5.inner)
+     (CELLTYPE "sram22_64x32m4w8_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_6.inner)
+     (CELLTYPE "sram22_64x24m4w24_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_7.inner)
+     (CELLTYPE "sram22_64x4m4w2_test")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.srams_8.inner)
+
+// Delay line (repeat for harnesses_0 to harnesses_8)
+     (CELLTYPE "tristate_inv_delay_line_128")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.harnesses_0.delay_line)
+
+// TDC (repeat for harnesses_0 to harnesses_8)
+     (CELLTYPE "tdc_64")
+     (INSTANCE system.sramBistClockDomainWrapper.sram_bist_0.sramBist.bistTop.harnesses_0.tdc)
+
+// Rocket SRAMs
+
+     (CELLTYPE "sram22_512x64m4w8")
+     (INSTANCE system.subsystem_mbus.spad.backingscratchpad.backingscratchpad_ext.mem_0_0)
+     (CELLTYPE "sram22_512x64m4w8")
+     (INSTANCE system.tile_prci_domain.tile_reset_domain_tile.dcache.data.data_arrays_0.backingscratchpad_ext.mem_0_0)
+     (CELLTYPE "sram22_64x24m4w24")
+     (INSTANCE system.tile_prci_domain.tile_reset_domain_tile.dcache.tag_array_0.tag_array_0_ext.mem_0_0)
+     (CELLTYPE "sram22_512x32m4w32")
+     (INSTANCE system.tile_prci_domain.tile_reset_domain_tile.frontend.icache.data_arrays_0_0.data_arrays_0_0_ext.mem_0_0)
+     (CELLTYPE "sram22_512x32m4w32")
+     (INSTANCE system.tile_prci_domain.tile_reset_domain_tile.frontend.icache.data_arrays_1_0.data_arrays_0_0_ext.mem_0_0)
+     (CELLTYPE "sram22_64x24m4w24")
+     (INSTANCE system.tile_prci_domain.tile_reset_domain_tile.frontend.icache.tag_array_0.tag_array_0_0_ext.mem_0_0)
