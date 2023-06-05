@@ -2,6 +2,7 @@
 
 from hammer.vlsi import CLIDriver, HammerTool, HammerDriver, HammerToolHookAction
 
+from pathlib import Path
 from typing import Dict, Callable, Optional, List
 
 from hammer.technology.sky130 import SKY130Tech
@@ -11,36 +12,145 @@ def check_timing_intent(x: HammerTool) -> bool:
     x.append('check_timing_intent')
     return True
 
+def donttouch_iocells(x: HammerTool) -> bool:
+    x.append('set_dont_touch [get_db insts -if {.base_cell.name == sky130_ef_io__*}] true')
+    return True
+
+def flatten_analog_driver(x: HammerTool) -> bool:
+    # AnalogDriver is a kludge to get FIRRTL to understand how to connect nets
+    # together, they should get dissolved
+    x.append('ungroup [get_db hinsts -if {.module.name == AnalogDriver*}]')
+    return True
+
+def set_die_snap_to_mfg_grid(x: HammerTool) -> bool:
+    x.append('set_db floorplan_snap_die_grid manufacturing')
+    return True
+
+def efabless_ring_io(ht: HammerTool) -> bool:
+    # Copied from Harrison's version in hammer to make some adjustments:
+    # - global connections removed - now handled by CPF
+    # - add fixing of IO fillers
+    io_file = ht.get_setting("technology.sky130.io_file")
+    ht.append(f"read_io_file {io_file} -no_die_size_adjust")
+    p_nets = list(map(lambda s: s.name, ht.get_independent_power_nets()))
+    g_nets = list(map(lambda s: s.name, ht.get_independent_ground_nets()))
+    # TODO: put only a few supply tie cells instead of replacing all 20um?
+    ht.append('''
+# IO fillers
+#set io_fillers {sky130_ef_io__com_bus_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um}
+# Use slices connecting VCCHIB<>VCCD and VSWITCH<>VDDA
+set io_fillers {sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um}
+add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side top -filler_orient r0
+add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side right -filler_orient r270
+add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side bottom -filler_orient r180
+add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side left -filler_orient r90
+# Fix placement
+set io_filler_insts [get_db insts -if {.base_cell.name == sky130_ef_io__com_bus_slice_*}]
+set_db $io_filler_insts .place_status fixed
+''')
+    # FIXME: do something better than hardcoding CPF path
+    ht.append("""
+# Reload CPF to assign domains to just-placed physical-only cells
+read_power_intent -cpf power_spec.cpf
+commit_power_intent
+""")
+    ht.append(f'''
+# Core ring
+add_rings -follow io -layer met5 -nets {{ {p_nets[0]} {g_nets[0]} }} -offset 5 -width 13 -spacing 3
+route_special -connect pad_pin -nets {{ {p_nets[0]} {g_nets[0]} }} -detailed_log
+''')
+    ht.append('''
+# Prevent buffering on TIE_LO_ESD and TIE_HI_ESD
+set_dont_touch [get_db [get_db pins -if {.name == *TIE*ESD}] .net]
+''')
+    return True
+
+def route_ties(x: HammerTool) -> bool:
+    x.append('''
+select_net [get_db [get_db pins -if {.name == */TIE_* && .base_pin.base_cell.name == sky130_*}] .net]
+route_design -selected
+deselect_net *
+''')
+    return True
+
+def patch_hvl_ls_lef(ht: HammerTool) -> bool:
+    # Treat HVL cells as if they were hard macros to avoid needing to set them
+    # up "properly" with multiple power domains
+
+    lef_name = "sky130_fd_sc_hvl__lsbufhv2lv_1.lef"
+
+    sky130A_path = Path(ht.get_setting('technology.sky130.sky130A'))
+    source_path = sky130A_path / 'libs.ref' / 'sky130_fd_sc_hvl' / 'lef' / lef_name
+    cache_path = Path(ht.technology.cache_dir) / "fd_sc_hvl__lef" / lef_name
+    cache_path.parent.mkdir(exist_ok=True)
+
+    with source_path.open("r") as sf, cache_path.open("w") as df:
+        ht.logger.info(f"Patching HVL LS LEF: {source_path} -> {cache_path}")
+        is_in_site_def = False
+        is_in_macro_def = False
+        for line in sf:
+            if is_in_site_def:
+                if 'END unithv' in line:
+                    is_in_site_def = False
+            elif not is_in_macro_def and 'SITE unithv' in line:
+                is_in_site_def = True
+            elif 'MACRO ' in line:
+                is_in_macro_def = True
+                df.write(line)
+            elif 'SITE unithv' in line:
+                pass
+            else:
+                df.write(line.replace("CLASS CORE", "CLASS BLOCK"))
+    return True
+
+def load_hv_def_routing(x: HammerTool) -> bool:
+    def_path = x.get_setting("design.def.hv_routing")
+    x.append(f'read_def {def_path}')
+    return True
+
+def connect_core_stripes(x: HammerTool) -> bool:
+    x.append('''
+route_special -connect floating_stripe -floating_stripe_target ring -nets {VDD VSS} -stripe_layer_range {met4 met5} -detailed_log
+''')
+    return True
+
 
 class Driver(CLIDriver):
-    def get_extra_hierarchical_synthesis_hooks(self, driver: HammerDriver) -> Dict[str, List[HammerToolHookAction]]:
-        return {
-            "ChipTop": [
-                HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
-            ],
-            "RocketTile": [
-                HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
-            ],
-        }
+    def get_extra_synthesis_hooks(self) -> List[HammerToolHookAction]:
+        return [
+            HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
+            HammerTool.make_post_insertion_hook("init_environment", donttouch_iocells),
+            HammerTool.make_pre_insertion_hook("syn_generic", flatten_analog_driver),
 
-    def get_extra_hierarchical_par_hooks(self, driver: HammerDriver) -> Dict[str, List[HammerToolHookAction]]:
-        return {
-            "ChipTop": [
-                # Default set of steps can be found in the CAD tool plugin's __init__.py
+            HammerTool.make_persistent_hook(patch_hvl_ls_lef),  # abuse persistent steps to chuck stuff in cache
+        ]
 
-                # make_pre_insertion_hook will execute the custom hook before the specified step
-                # HammerTool.make_pre_insertion_hook("route_design", example_add_fillers),
+    def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
+        return [
+            # Default set of steps can be found in the CAD tool plugin's __init__.py
 
-                # make_post_insertion_hook will execute the custom hook after the specified step
-                # HammerTool.make_post_insertion_hook("init_design", example_tool_settings),
+            # make_pre_insertion_hook will execute the custom hook before the specified step
+            # HammerTool.make_pre_insertion_hook("route_design", example_add_fillers),
 
-                # make_replacement_hook will replace the specified step with a custom hook
-                # HammerTool.make_replacement_hook("place_tap_cells", example_place_tap_cells),
+            # make_post_insertion_hook will execute the custom hook after the specified step
+            # HammerTool.make_post_insertion_hook("init_design", example_tool_settings),
 
-                # make_removal_hook will remove the specified step from the flow
-                HammerTool.make_removal_hook("place_bumps"),
-            ],
-        }
+            # make_replacement_hook will replace the specified step with a custom hook
+            # HammerTool.make_replacement_hook("place_tap_cells", example_place_tap_cells),
+
+            # make_removal_hook will remove the specified step from the flow
+
+            HammerTool.make_pre_insertion_hook("floorplan_design", set_die_snap_to_mfg_grid),
+            HammerTool.make_post_insertion_hook("floorplan_design", efabless_ring_io),
+            HammerTool.make_post_insertion_hook("efabless_ring_io", load_hv_def_routing),
+            HammerTool.make_post_insertion_hook("power_straps", connect_core_stripes),
+
+            HammerTool.make_removal_hook("place_bumps"),
+            HammerTool.make_removal_hook("sky130_connect_nets"),
+            HammerTool.make_removal_hook("sky130_connect_nets2"),
+
+            HammerTool.make_persistent_hook(patch_hvl_ls_lef),  # abuse persistent steps to chuck stuff in cache
+        ]
 
 if __name__ == '__main__':
     Driver().main()

@@ -43,6 +43,7 @@ TECH_CONF          ?= tech-$(tech_name).yml
 TOOLS_CONF         ?= tools.yml
 CHIP_CONF          ?= design-stac.yml
 INPUT_CONFS        ?= $(TOOLS_CONF) $(TECH_CONF) $(CHIP_CONF)
+PIN_MAP            ?= pin-map-stac.yml
 HAMMER_EXEC        ?= ./hammer-driver
 VLSI_TOP           ?= $(TOP)
 VLSI_MODEL_DUT_NAME ?= chiptop
@@ -88,6 +89,20 @@ else
 endif
 
 #########################################################################################
+# io / pin map
+#########################################################################################
+IO_FILE_CONF = $(OBJ_DIR)/io_map-input.yml
+IO_FILE = $(OBJ_DIR)/io_map.io
+
+$(IO_FILE): scripts/gen-io-file.py $(PIN_MAP) $(build_dir)/$(long_name).sky130io.json
+	$< $(PIN_MAP) -d $(build_dir)/$(long_name).sky130io.json -o $@
+
+$(IO_FILE_CONF): $(IO_FILE)
+	mkdir -p $(dir $@)
+	echo "technology.sky130.io_file: '$(notdir $(IO_FILE))'" >> $@
+	echo "technology.sky130.io_file_meta: \"prependlocal\"">> $@
+
+#########################################################################################
 # srams
 #########################################################################################
 SRAM_GENERATOR_CONF = $(OBJ_DIR)/sram_generator-input.yml
@@ -114,7 +129,7 @@ $(SRAM_CONF): $(SRAM_GENERATOR_CONF)
 # synthesis input configuration
 #########################################################################################
 SYN_CONF = $(OBJ_DIR)/inputs.yml
-GENERATED_CONFS = $(SYN_CONF)
+GENERATED_CONFS = $(SYN_CONF) $(IO_FILE_CONF)
 ifeq ($(CUSTOM_VLOG), )
 	GENERATED_CONFS += $(SRAM_CONF)
 endif

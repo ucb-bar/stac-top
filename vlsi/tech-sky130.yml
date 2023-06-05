@@ -1,6 +1,6 @@
 vlsi.core.technology: "hammer.technology.sky130"
 
-vlsi.core.max_threads: 12
+vlsi.core.max_threads: 32
 
 # Technology paths
 technology.sky130:
@@ -9,6 +9,9 @@ technology.sky130:
 
   # this key is OPTIONAL, no NDA files will be used if it does not point to a valid path
   sky130_nda: "/tools/commercial/skywater/swtech130/skywater-src-nda"
+
+  # for caravel collateral pulled in by this design
+  caravel: /tools/commercial/skywater/local/caravel/v6.0
 
 # General Hammer Inputs
 

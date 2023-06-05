@@ -1,70 +1,99 @@
 vlsi.inputs:
-  power_spec_mode: auto
+  power_spec_type: cpf
+  power_spec_mode: manual
+  power_spec_contents_meta: transclude
+  power_spec_contents: ./stac.cpf
   supplies:
+    # Hammer should only know about the main core power nets
+    # Other pins/nets/domains handled in CPF
     power:
-      - {name: "VDD", pin: "VDD"}
+      - {name: "VDD",  pin: "VDD"}
     ground:
-      - {name: "VSS", pin: "VSS"}
+      - {name: "VSS",  pin: "VSS"}
     VDD: "1.8 V"
     GND: "0 V"
 
-vlsi.inputs.hierarchical:
-  mode: hierarchical
   top_module: ChipTop
-  config_source: manual
-  manual_modules:
-    - ChipTop:
-      - RocketTile
 
-  constraints:
-    - ChipTop:
-      - vlsi.inputs.clocks:
-          - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
-      - vlsi.inputs.supplies:
-          power:
-            - {name: "VDD", pin: "VDD"}
-          ground:
-            - {name: "VDD", pin: "VDD"}
-      - vlsi.inputs.pin.assignments:
-          # FIXME: actually place all the pins lol (following are copied from propel2)
-          - {pins: uart_0_rxd, side: right, layers: [met3], location: [3377.035, 1420.815]}
-          - {pins: uart_0_txd, side: right, layers: [met3], location: [3377.035, 1702.005]}
-    - RocketTile:
-      - vlsi.inputs.clocks:
-          - {name: "clock", period: "10ns", uncertainty: "0.1ns"} # temporary
-      - vlsi.inputs.pin.assignments:
-          - {pins: "*", layers: [met2, met4], side: top}
-          # TODO: more intelligent pin placement
+  clocks:
+    - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
 
-  manual_placement_constraints:
-    - ChipTop:
-        - path: ChipTop
-          type: toplevel
-          # FIXME: fix x/y/width/height
-          #x: 210.965
-          #y: 197.965
-          x: 0
-          y: 0
-          width: 3166.07
-          height: 4779.07
-          margins: {left: 0, right: 0, top: 0, bottom: 0}
-        - path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile
-          type: hardmacro
-          # temp, copied from propel2
-          x: 132.5
-          y: 132.5
+  pin_mode: none
 
-    - RocketTile:
-        - path: RocketTile
-          type: toplevel
-          x: 0
-          y: 0
-          # FIXME: width/height
-          width: 2700
-          height: 1000
-          margins: {left: 0, right: 0, top: 0, bottom: 0}
-        # TODO: improve sram placements
-        - {path: RocketTile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, x: 0.0, y: 0.0, orientation: my90}
-        - {path: RocketTile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, x: 1176.68, y: 0.0, orientation: r270}
-        - {path: RocketTile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, x: 2334.855, y: 0.0, orientation: r270}
-        - {path: RocketTile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, x: 1324.8, y: 0.0, orientation: my90}
+  placement_constraints:
+    - path: ChipTop
+      type: toplevel
+      x: 0
+      y: 0
+      width: 3588
+      height: 5188
+      margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
+
+design.def.hv_routing_meta: prependlocal
+design.def.hv_routing: stac-hv-routing.def
+
+
+# Library stuff
+
+.local.library.sky130_fd_sc_hvl__lsbufhv2lv: &lib__sky130_fd_sc_hvl__lsbufhv2lv
+  # gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/gds/sky130_fd_sc_hvl.gds
+  gds_file: /tools/commercial/skywater/skywater-pdk/libraries/sky130_fd_sc_hvl/latest/cells/lsbufhv2lv/sky130_fd_sc_hvl__lsbufhv2lv_1.gds
+  lef_file: cache/fd_sc_hvl__lef/sky130_fd_sc_hvl__lsbufhv2lv_1.lef
+  spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/cdl/sky130_fd_sc_hvl.cdl
+  verilog_sim: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/verilog/sky130_fd_sc_hvl__lsbufhv2lv.functional.v
+  provides:
+    - lib_type: lvlshift
+      vt: RVT
+
+vlsi.technology.extra_libraries_meta: [append, lazydeepsubst]
+vlsi.technology.extra_libraries:
+  - library:
+      <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
+      nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__ss_100C_1v65_lv1v60.lib
+      corner:
+        nmos: "slow"
+        pmos: "slow"
+        temperature: "100 C"
+      supplies:
+        VDD: "1.60 V"
+        GND: "0 V"
+  - library:
+      <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
+      nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__ff_n40C_5v50_lv1v95_ccsnoise.lib
+      corner:
+        nmos: "fast"
+        pmos: "fast"
+        temperature: "-40 C"
+      supplies:
+        VDD: "1.95 V"
+        GND: "0 V"
+  - library:
+      <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
+      nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__tt_025C_3v30_lv1v80.lib
+      corner:
+        nmos: "typical"
+        pmos: "typical"
+        temperature: "025 C"
+      supplies:
+        VDD: "1.80 V"
+        GND: "0 V"
+  - library:
+      gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.gds
+      lef_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
+      spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/spice/sky130_ef_io.spice
+      provides:
+        - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
+          vt: RVT
+  - library:
+      gds_file: ${technology.sky130.caravel}/gds/simple_por.gds
+      lef_file: ${technology.sky130.caravel}/lef/simple_por.lef
+      spice_file: ${technology.sky130.caravel}/spi/lvs/simple_por.spice # TODO: which netlist to actually use?
+      verilog_sim: ${technology.sky130.caravel}/verilog/rtl/simple_por.v
+      provides:
+        - lib_type: por
+          vt: RVT
+
+vlsi.inputs.dont_use_mode: append
+vlsi.inputs.dont_use_list_meta: append
+vlsi.inputs.dont_use_list:
+  - sky130_fd_sc_hvl__*
