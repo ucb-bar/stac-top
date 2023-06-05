@@ -1,9 +1,9 @@
 // SRAM22 SRAM model
-// Words: 2048
-// Word size: 64
-// Write size: 8
+// Words: 64
+// Word size: 4
+// Write size: 2
 
-module sram22_2048x64m4w8(
+module sram22_64x4m4w2_test(
 `ifdef USE_POWER_PINS
     vdd,
     vss,
@@ -13,9 +13,9 @@ module sram22_2048x64m4w8(
 
   // These parameters should NOT be set to
   // anything other than their defaults.
-  parameter DATA_WIDTH = 64 ;
-  parameter ADDR_WIDTH = 11 ;
-  parameter WMASK_WIDTH = 8 ;
+  parameter DATA_WIDTH = 4 ;
+  parameter ADDR_WIDTH = 6 ;
+  parameter WMASK_WIDTH = 2 ;
   parameter RAM_DEPTH = 1 << ADDR_WIDTH;
 
 `ifdef USE_POWER_PINS
@@ -27,9 +27,11 @@ module sram22_2048x64m4w8(
   input [WMASK_WIDTH-1:0] wmask; // write mask
   input [ADDR_WIDTH-1:0]  addr; // address
   input [DATA_WIDTH-1:0]  din; // data in
-  input sae_muxed; // muxed sense amp enable
   output reg [DATA_WIDTH-1:0] dout; // data out
+  
+  input sae_muxed; // muxed sense amp enable
   output sae_int; // internal sense amp enable
+  
 
   reg [DATA_WIDTH-1:0] mem [0:RAM_DEPTH-1];
 
@@ -49,28 +51,10 @@ module sram22_2048x64m4w8(
     // Write
     if (we) begin
         if (wmask[0]) begin
-          mem[addr][7:0] <= din[7:0];
+          mem[addr][1:0] <= din[1:0];
         end
         if (wmask[1]) begin
-          mem[addr][15:8] <= din[15:8];
-        end
-        if (wmask[2]) begin
-          mem[addr][23:16] <= din[23:16];
-        end
-        if (wmask[3]) begin
-          mem[addr][31:24] <= din[31:24];
-        end
-        if (wmask[4]) begin
-          mem[addr][39:32] <= din[39:32];
-        end
-        if (wmask[5]) begin
-          mem[addr][47:40] <= din[47:40];
-        end
-        if (wmask[6]) begin
-          mem[addr][55:48] <= din[55:48];
-        end
-        if (wmask[7]) begin
-          mem[addr][63:56] <= din[63:56];
+          mem[addr][3:2] <= din[3:2];
         end
 
       // Output is arbitrary when writing to SRAM
