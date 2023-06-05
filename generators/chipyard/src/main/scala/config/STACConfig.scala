@@ -28,6 +28,24 @@ class STACDigitalConfig extends Config(
   new freechips.rocketchip.subsystem.WithL1ICacheWays(1) ++
   new freechips.rocketchip.subsystem.WithL1DCacheSets(64) ++ // 64 sets, 1 way, 4K cache
   new freechips.rocketchip.subsystem.WithL1DCacheWays(1) ++
+  new freechips.rocketchip.subsystem.WithMTE(mteRegions = List(
+    /* Scratchpad */
+    freechips.rocketchip.rocket.MTERegion(
+      base = 0x08000000L,
+      size = ((4<<10)-1),
+    ),
+    /* PSRAM */
+    freechips.rocketchip.rocket.MTERegion(
+      base = 0x20000000L,
+      size = 0x10000000L,
+    ),
+    /* TSI */
+    freechips.rocketchip.rocket.MTERegion(
+      base = 0x80000000L,
+      size = (1 << 30) * 1L,
+    )
+  )) ++
+
   new freechips.rocketchip.subsystem.WithNSmallCores(1) ++ // single small rocket-core
 
   new testchipip.WithBackingScratchpad(base = 0x08000000, mask = ((4<<10)-1)) ++ // 4 KB
