@@ -220,6 +220,12 @@ vlsi.technology.extra_libraries:
         - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
           vt: RVT
   - library:
+      gds_file: /tools/C/sehuang/sky130/ucb_chip_io/gds/sky130_ef_io__analog_pad_esd2.gds
+      lef_file: /tools/C/sehuang/sky130/ucb_chip_io/lef/sky130_ef_io__analog_pad_esd2.lef
+      spice_file: /tools/C/sehuang/sky130/ucb_chip_io/cdl_out/sky130_ef_io__analog_pad_esd2.cdl
+      provides:
+        - lib_type: iocell
+  - library:
       gds_file: ${technology.sky130.caravel}/gds/simple_por.gds
       lef_file: ${technology.sky130.caravel}/lef/simple_por.lef
       spice_file: ${technology.sky130.caravel}/spi/lvs/simple_por.spice # TODO: which netlist to actually use?

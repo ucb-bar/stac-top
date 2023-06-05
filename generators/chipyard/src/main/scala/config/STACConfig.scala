@@ -7,6 +7,8 @@ class STACConfig extends Config(
   //==================================
   // Set up Sky130 IO
   //==================================
+  new chipyard.stac.clocking.WithClockAndResetFromHarnessAndMultiPLLTiedOff ++
+  new chipyard.stac.clocking.WithMultiPLLClockGenerator ++
   new chipyard.sky130.WithSky130EFIOCells ++
   new chipyard.sky130.WithSky130EFIOTotalCells(45) ++
   new chipyard.sky130.WithSky130ChipTop ++
