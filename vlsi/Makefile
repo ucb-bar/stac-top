@@ -5,8 +5,7 @@
 # Default settings
 SUB_PROJECT = chipyard
 CONFIG = STACConfig
-HAMMER_EXTRA_ARGS ?= # default value if it isn't set
-HAMMER_EXTRA_ARGS += -p design-stac.yml  # always use latest hammer IR
+HAMMER_EXTRA_ARGS ?= -p tech-sky130.yml -p design-stac.yml  # always use latest hammer IR
 
 #########################################################################################
 # general path variables
@@ -126,7 +125,9 @@ $(SMEMS_HAMMER): $(TOP_SMEMS_FILE)
 # Nayiri: need to manually specify SRAMs because BIST SRAMs are not emitted by MacroCompiler
 $(SRAM_GENERATOR_CONF): $(SMEMS_HAMMER)
 	mkdir -p $(dir $@)
-	echo "vlsi.inputs.sram_parameters: '$(strip $(SMEMS_CACHE))'" >> $@
+# 	SRAM cache contains all test + normal SRAMs:
+	echo "vlsi.inputs.sram_parameters: '$(vlsi_dir)/srams-all-cache.json'" >> $@
+#	echo "vlsi.inputs.sram_parameters: '$(strip $(SMEMS_CACHE))'" >> $@
 	echo "vlsi.inputs.sram_parameters_meta: [\"transclude\", \"json2list\"]">> $@
 # $(SRAM_GENERATOR_CONF): $(SMEMS_HAMMER)
 # 	mkdir -p $(dir $@)
