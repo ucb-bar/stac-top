@@ -22,7 +22,6 @@ vlsi.inputs:
 
   clocks:
     - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
-<<<<<<< HEAD
 
   pin_mode: none
 
