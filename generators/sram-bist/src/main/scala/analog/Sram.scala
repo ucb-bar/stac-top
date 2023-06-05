@@ -101,7 +101,7 @@ class SramBlackBox(params: SramParams)
   })
 
   override val desiredName =
-    s"sram22_${params.numWords}x${params.dataWidth}m${params.muxRatio}w${params.maskGranularity}"
+    s"sram22_${params.numWords}x${params.dataWidth}m${params.muxRatio}w${params.maskGranularity}_test"
 
   addResource(s"/vsrc/$desiredName.v")
 }

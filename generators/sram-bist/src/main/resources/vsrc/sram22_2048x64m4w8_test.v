@@ -1,9 +1,9 @@
 // SRAM22 SRAM model
-// Words: 512
+// Words: 2048
 // Word size: 64
 // Write size: 8
 
-module sram22_512x64m4w8(
+module sram22_2048x64m4w8_test(
 `ifdef USE_POWER_PINS
     vdd,
     vss,
@@ -14,7 +14,7 @@ module sram22_512x64m4w8(
   // These parameters should NOT be set to
   // anything other than their defaults.
   parameter DATA_WIDTH = 64 ;
-  parameter ADDR_WIDTH = 9 ;
+  parameter ADDR_WIDTH = 11 ;
   parameter WMASK_WIDTH = 8 ;
   parameter RAM_DEPTH = 1 << ADDR_WIDTH;
 
@@ -27,9 +27,11 @@ module sram22_512x64m4w8(
   input [WMASK_WIDTH-1:0] wmask; // write mask
   input [ADDR_WIDTH-1:0]  addr; // address
   input [DATA_WIDTH-1:0]  din; // data in
-  input sae_muxed; // muxed sense amp enable
   output reg [DATA_WIDTH-1:0] dout; // data out
+  
+  input sae_muxed; // muxed sense amp enable
   output sae_int; // internal sense amp enable
+  
 
   reg [DATA_WIDTH-1:0] mem [0:RAM_DEPTH-1];
 
