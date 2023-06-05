@@ -129,7 +129,7 @@ add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side right -fill
 add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side bottom -filler_orient r180
 add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side left -filler_orient r90
 # Fix placement
-set io_filler_insts [get_db insts -if {.base_cell.name == sky130_ef_io__com_bus_slice_*}]
+set io_filler_insts [get_db insts IO_FILLER_*]
 set_db $io_filler_insts .place_status fixed
 ''')
     # FIXME: do something better than hardcoding CPF path
