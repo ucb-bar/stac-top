@@ -5,6 +5,8 @@
 # Default settings
 SUB_PROJECT = chipyard
 CONFIG = STACConfig
+HAMMER_EXTRA_ARGS ?= # default value if it isn't set
+HAMMER_EXTRA_ARGS += -p design-stac.yml  # always use latest hammer IR
 
 #########################################################################################
 # general path variables
@@ -84,7 +86,12 @@ ifneq ($(CUSTOM_VLOG), )
 	> $(VLSI_RTL)
 	$(foreach file,$^,echo $(file) >> $(VLSI_RTL))
 else
-	cat $(TOP_MODS_FILELIST) | sort -u > $(VLSI_RTL)
+#	cat $(TOP_MODS_FILELIST) | sort -u > $(VLSI_RTL)
+	for x in $$(cat $(TOP_MODS_FILELIST) | sort -u); do \
+		if [[ $$x != *tdc_64.v ]] && [[ $$x != *sram22_* ]] && [[ $$x != *delay_line_128.v ]] ; then \
+			echo $$x >> $@; \
+		fi ; \
+	done
 	echo $(TOP_SMEMS_FILE) >> $(VLSI_RTL)
 endif
 
@@ -116,10 +123,15 @@ sram_generator: $(SRAM_CONF)
 # This should be built alongside $(TOP_SMEMS_FILE)
 $(SMEMS_HAMMER): $(TOP_SMEMS_FILE)
 
+# Nayiri: need to manually specify SRAMs because BIST SRAMs are not emitted by MacroCompiler
 $(SRAM_GENERATOR_CONF): $(SMEMS_HAMMER)
 	mkdir -p $(dir $@)
-	echo "vlsi.inputs.sram_parameters: '$(SMEMS_HAMMER)'" >> $@
+	echo "vlsi.inputs.sram_parameters: '$(strip $(SMEMS_CACHE))'" >> $@
 	echo "vlsi.inputs.sram_parameters_meta: [\"transclude\", \"json2list\"]">> $@
+# $(SRAM_GENERATOR_CONF): $(SMEMS_HAMMER)
+# 	mkdir -p $(dir $@)
+# 	echo "vlsi.inputs.sram_parameters: '$(SMEMS_HAMMER)'" >> $@
+# 	echo "vlsi.inputs.sram_parameters_meta: [\"transclude\", \"json2list\"]">> $@
 
 $(SRAM_CONF): $(SRAM_GENERATOR_CONF)
 	cd $(vlsi_dir) && $(HAMMER_EXEC) -e $(ENV_YML) $(foreach x,$(INPUT_CONFS) $(SRAM_GENERATOR_CONF), -p $(x)) --obj_dir $(build_dir) sram_generator

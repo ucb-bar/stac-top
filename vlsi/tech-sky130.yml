@@ -5,7 +5,9 @@ vlsi.core.max_threads: 32
 # Technology paths
 technology.sky130:
   sky130A: "/tools/commercial/skywater/local/sky130A"
-  sram22_sky130_macros: "/tools/commercial/skywater/local/chipyard-tutorial/sram22_sky130_macros"
+  # sram22_sky130_macros: "/tools/commercial/skywater/local/chipyard-tutorial/sram22_sky130_macros"
+  sram22_sky130_macros: "/tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros"
+  # https://github.com/rahulk29/sram22_sky130_macros/tree/dev
 
   # this key is OPTIONAL, no NDA files will be used if it does not point to a valid path
   sky130_nda: "/tools/commercial/skywater/swtech130/skywater-src-nda"
