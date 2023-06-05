@@ -26,6 +26,60 @@ vlsi.technology.extra_libraries:
       corner: {nmos: typical, pmos: typical, temperature: "025 C"}
       supplies: {VDD: "1.80 V", GND: "0 V"}
       provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_2048x32m8w8_test/sram22_2048x32m8w8_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_2048x32m8w8_test/sram22_2048x32m8w8_test_tt_025C_1v80.schematic.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_1024x32m8w8_test/sram22_1024x32m8w8_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_1024x32m8w8_test/sram22_1024x32m8w8_test_tt_025C_1v80.rc.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_1024x32m8w32_test/sram22_1024x32m8w32_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_1024x32m8w32_test/sram22_1024x32m8w32_test_tt_025C_1v80.rc.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_512x32m4w32_test/sram22_512x32m4w32_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_512x32m4w32_test/sram22_512x32m4w32_test_tt_025C_1v80.rc.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_512x32m4w8_test/sram22_512x32m4w8_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_512x32m4w8_test/sram22_512x32m4w8_test_tt_025C_1v80.rc.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_256x32m4w8_test/sram22_256x32m4w8_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_256x32m4w8_test/sram22_256x32m4w8_test_tt_025C_1v80.rc.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x32m4w8_test/sram22_64x32m4w8_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x32m4w8_test/sram22_64x32m4w8_test_tt_025C_1v80.rc.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x24m4w24_test/sram22_64x24m4w24_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x24m4w24_test/sram22_64x24m4w24_test_tt_025C_1v80.rc.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x4m4w2_test/sram22_64x4m4w2_test.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x4m4w2_test/sram22_64x4m4w2_test_tt_025C_1v80.rc.lib
+      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
+      supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
 
 vlsi.inputs:
   power_spec_type: cpf
