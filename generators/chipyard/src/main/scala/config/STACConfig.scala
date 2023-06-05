@@ -11,6 +11,13 @@ class STACConfig extends Config(
                                                            // NOTE: This only simulates properly in VCS
 
   //==================================
+  // Set up Sky130 IO
+  //==================================
+  new chipyard.sky130.WithSky130EFIOCells ++
+  new chipyard.sky130.WithSky130EFIOTotalCells(45) ++
+  new chipyard.sky130.WithSky130ChipTop ++
+
+  //==================================
   // Set up tiles
   //==================================
   new freechips.rocketchip.subsystem.WithL1ICacheSets(64) ++ // 64 sets, 1 way, 4K cache

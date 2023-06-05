@@ -3,13 +3,116 @@ vlsi.core.build_system: make
 
 technology.sky130.drc_blackbox_srams: true
 
-# SRAMs for BIST module (since these aren't seen by macrocompiler)
-# NOTE: this doesn't work so we add it directly to Makefile
-# vlsi.inputs.sram_parameters: "stac-srams.json"
-# vlsi.inputs.sram_parameters_meta: ["transclude", "json2list", "prependlocal"]
+vlsi.inputs:
+  power_spec_type: cpf
+  power_spec_mode: manual
+  power_spec_contents_meta: transclude
+  power_spec_contents: ./stac.cpf
+  supplies:
+    # Hammer should only know about the main core power nets
+    # Other pins/nets/domains handled in CPF
+    power:
+      - {name: "VDD",  pin: "VDD"}
+    ground:
+      - {name: "VSS",  pin: "VSS"}
+    VDD: "1.8 V"
+    GND: "0 V"
 
-# TDC
-vlsi.technology.extra_libraries_meta: ["append", "deepsubst"]
+  top_module: ChipTop
+
+  clocks:
+    - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
+<<<<<<< HEAD
+
+  pin_mode: none
+
+  placement_constraints:
+    - path: ChipTop
+      type: toplevel
+      x: 0
+      y: 0
+      width: 3588
+      height: 5188
+      margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
+
+    # backing scratchpad
+    - {path: ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0, type: hardmacro, 
+      x: 2900, y: 1500, orientation: r270}
+    
+    # dcache
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, 
+      x: 500, y: 255, orientation: my90}
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, 
+      x: 720, y: 800, orientation: my90}
+
+    # TODO: place icache now that the sram exists again
+    # icache
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
+      x: 2525, y: 255, orientation: r270}
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_1_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
+      x: 2880, y: 255, orientation: my90}
+    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, 
+      x: 3100, y: 850, orientation: r270}
+    
+    # test srams
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_0/inner, type: hardmacro, 
+      x: 250, y: 1100, orientation: my90}
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_1/inner, type: hardmacro, 
+      x: 250, y: 1400, orientation: my90}
+
+    # TODO: place TDC?
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_0/tdc, type: hardmacro, 
+      x: 800, y: 1700, orientation: mx}
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_1/tdc, type: hardmacro, 
+      x: 800, y: 1900, orientation: mx}
+    
+ 
+# Power Straps
+par.power_straps_mode: generate
+par.generate_power_straps_method: by_tracks
+par.blockage_spacing: 2.0
+par.blockage_spacing_top_layer: met3
+par.generate_power_straps_options:
+  by_tracks:
+    strap_layers:
+      - met4
+      - met5
+    pin_layers:
+      - met5
+    blockage_spacing_met2: 4.0
+    blockage_spacing_met4: 2.0
+    track_width: 3
+    track_width_met5: 1
+    track_spacing: 5
+    track_start: 10
+    track_start_met5: 1
+    power_utilization: 0.1
+    power_utilization_met4: 0.1
+    power_utilization_met5: 0.1
+
+# Pin placement constraints
+vlsi.inputs.pin_mode: generated
+vlsi.inputs.pin.generate_mode: semi_auto
+vlsi.inputs.pin.assignments: [
+  {pins: "*", layers: ["met2", "met4"], side: "bottom"}
+]
+
+design.def.hv_routing_meta: prependlocal
+design.def.hv_routing: stac-hv-routing.def
+
+
+# Library stuff
+.local.library.sky130_fd_sc_hvl__lsbufhv2lv: &lib__sky130_fd_sc_hvl__lsbufhv2lv
+  # gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/gds/sky130_fd_sc_hvl.gds
+  gds_file: /tools/commercial/skywater/skywater-pdk/libraries/sky130_fd_sc_hvl/latest/cells/lsbufhv2lv/sky130_fd_sc_hvl__lsbufhv2lv_1.gds
+  lef_file: cache/fd_sc_hvl__lef/sky130_fd_sc_hvl__lsbufhv2lv_1.lef
+  spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/cdl/sky130_fd_sc_hvl.cdl
+  verilog_sim: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/verilog/sky130_fd_sc_hvl__lsbufhv2lv.functional.v
+  provides:
+    - lib_type: lvlshift
+      vt: RVT
+
+vlsi.technology.extra_libraries_meta: ["append", "lazydeepsubst"]
 vlsi.technology.extra_libraries:
   - library:
       nldm_liberty_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lib
@@ -80,100 +183,53 @@ vlsi.technology.extra_libraries:
       corner: {nmos: typical, pmos: typical, temperature: "025 C"}
       supplies: {VDD: "1.80 V", GND: "0 V"}
       provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
+      nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__ss_100C_1v65_lv1v60.lib
+      corner:
+        nmos: "slow"
+        pmos: "slow"
+        temperature: "100 C"
+      supplies:
+        VDD: "1.60 V"
+        GND: "0 V"
+  - library:
+      <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
+      nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__ff_n40C_5v50_lv1v95_ccsnoise.lib
+      corner:
+        nmos: "fast"
+        pmos: "fast"
+        temperature: "-40 C"
+      supplies:
+        VDD: "1.95 V"
+        GND: "0 V"
+  - library:
+      <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
+      nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__tt_025C_3v30_lv1v80.lib
+      corner:
+        nmos: "typical"
+        pmos: "typical"
+        temperature: "025 C"
+      supplies:
+        VDD: "1.80 V"
+        GND: "0 V"
+  - library:
+      gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.gds
+      lef_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
+      spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/spice/sky130_ef_io.spice
+      provides:
+        - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
+          vt: RVT
+  - library:
+      gds_file: ${technology.sky130.caravel}/gds/simple_por.gds
+      lef_file: ${technology.sky130.caravel}/lef/simple_por.lef
+      spice_file: ${technology.sky130.caravel}/spi/lvs/simple_por.spice # TODO: which netlist to actually use?
+      verilog_sim: ${technology.sky130.caravel}/verilog/rtl/simple_por.v
+      provides:
+        - lib_type: por
+          vt: RVT
 
-vlsi.inputs:
-  power_spec_type: cpf
-  power_spec_mode: auto
-  supplies:
-    power:
-      - {name: "VDD", pin: "VDD"}
-    ground:
-      - {name: "VSS", pin: "VSS"}
-    VDD: "1.8 V"
-    GND: "0 V"
-
-  top_module: ChipTop
-
-  clocks:
-    - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
-
-  pin_mode: none
-
-  placement_constraints:
-    - path: ChipTop
-      type: toplevel
-      x: 0
-      y: 0
-      width: 3588
-      height: 5188
-      # margins: {left: 20, bottom: 20,
-      #           right: 0, # must be 0 so that power pins (to power straps) are created
-      #           top: 3500} 
-      margins: {left: 249.78, right: 249.78, bottom: 252.08,
-                top: 3000} # block off as much as possible for test SRAMs/analog
-
-    # Place SRAM memory instances
-
-    # TODO: improve sram placements
-
-    # backing scratchpad
-    - {path: ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0, type: hardmacro, 
-      x: 2900, y: 1500, orientation: r270}
-    
-    # dcache
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, 
-      x: 500, y: 255, orientation: my90}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, 
-      x: 720, y: 800, orientation: my90}
-
-    # TODO: place icache now that the sram exists again
-    # icache
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 2525, y: 255, orientation: r270}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_1_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 2880, y: 255, orientation: my90}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 3100, y: 850, orientation: r270}
-    
-    # test srams
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_0/inner, type: hardmacro, 
-      x: 250, y: 1100, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_1/inner, type: hardmacro, 
-      x: 250, y: 1400, orientation: my90}
-
-    # TODO: place TDC?
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_0/tdc, type: hardmacro, 
-      x: 800, y: 1700, orientation: mx}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_1/tdc, type: hardmacro, 
-      x: 800, y: 1900, orientation: mx}
-    
- 
-# Power Straps
-par.power_straps_mode: generate
-par.generate_power_straps_method: by_tracks
-par.blockage_spacing: 2.0
-par.blockage_spacing_top_layer: met3
-par.generate_power_straps_options:
-  by_tracks:
-    strap_layers:
-      - met4
-      - met5
-    pin_layers:
-      - met5
-    blockage_spacing_met2: 4.0
-    blockage_spacing_met4: 2.0
-    track_width: 3
-    track_width_met5: 1
-    track_spacing: 5
-    track_start: 10
-    track_start_met5: 1
-    power_utilization: 0.1
-    power_utilization_met4: 0.1
-    power_utilization_met5: 0.1
-
-# Pin placement constraints
-vlsi.inputs.pin_mode: generated
-vlsi.inputs.pin.generate_mode: semi_auto
-vlsi.inputs.pin.assignments: [
-  {pins: "*", layers: ["met2", "met4"], side: "bottom"}
-]
+vlsi.inputs.dont_use_mode: append
+vlsi.inputs.dont_use_list_meta: append
+vlsi.inputs.dont_use_list:
+  - sky130_fd_sc_hvl__*
