@@ -72,6 +72,21 @@ time_design -sign_off -hold
 # # LEF file
 # write_lef_abstract -stripe_pins -pg_pin_layers met5 {handoff_dir}/{x.top_module}.lef
 
+def drc_blackbox_tdc_64(x: HammerTool) -> bool:
+    if x.get_setting("vlsi.core.drc_tool")   == "hammer.drc.calibre" :
+        run_file = x.drc_run_file
+        with open(run_file, "a") as f:
+            f.write("EXCLUDE CELL tdc_64")
+    return True
+
+def lvs_blackbox_tdc_64(x: HammerTool) -> bool:
+    if x.get_setting("vlsi.core.lvs_tool")   == "hammer.lvs.calibre" :
+        run_file = x.drc_run_file
+        with open(run_file, "a") as f:
+            f.write("LVS BOX tdc_64")
+            f.write("LVS FILTER tdc_64")
+    return True
+
 
 class Driver(CLIDriver):
     def get_extra_synthesis_hooks(self) -> List[HammerToolHookAction]:
@@ -88,7 +103,7 @@ class Driver(CLIDriver):
 
             HammerTool.make_pre_insertion_hook("place_opt_design", derate_srams),
 
-            HammerTool.make_pre_insertion_hook("route_design", set_routing_layers),
+            HammerTool.make_post_insertion_hook("init_design", set_routing_layers),
 
             # move fillers step to after opt_design
             HammerTool.make_removal_hook("add_fillers"),
@@ -100,6 +115,11 @@ class Driver(CLIDriver):
 
             # # write final files
             # HammerTool.make_post_insertion_hook("write_design", write_top_files),
+        ]
+    
+    def get_extra_drc_hooks(self) -> List[HammerToolHookAction]:
+        return [
+            HammerTool.make_post_insertion_hook("generate_drc_run_file", drc_blackbox_tdc_64)
         ]
 
 if __name__ == '__main__':
