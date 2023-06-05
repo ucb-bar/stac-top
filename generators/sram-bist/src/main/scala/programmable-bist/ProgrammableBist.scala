@@ -131,7 +131,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   val lfsr = Module(new MaxPeriodFibonacciLFSR(params.seedWidth))
   lfsr.io.seed.bits := io.seed.asBools
   lfsr.io.seed.valid := io.start
-  lfsr.io.increment := true.B
+  lfsr.io.increment := io.en
   val rand = lfsr.io.out.asUInt
   randData := rand(params.dataWidth - 1, 0)
   randMask := rand(2 * params.dataWidth - 1, params.dataWidth)
@@ -198,7 +198,6 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
 
   sramEn := !done && io.en && currElement.elementType === ElementType.rwOp
 
-  // TODO wrong for random ops
   sramWen := !done && io.en && (currOperation.operationType === OperationType.write || (currOperation.operationType === OperationType.rand && randWen))
 
   when(!done) {
@@ -298,7 +297,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   io.checkEn := checkEn
   io.cycle := cycle
   io.done := done
-  io.resetHash := false.B
+  io.resetHash := io.start
   io.sramEn := sramEn
   io.sramWen := sramWen
 }

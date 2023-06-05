@@ -24,6 +24,7 @@ class SramBistTopIO extends Bundle {
   val sramScanEn = Input(Bool())
   val sramSaeClk = Input(Bool())
   val bistEn = Input(Bool())
+  val bistStart = Input(Bool())
   val sramScanOut = Output(Bool())
   val bistDone = Output(Bool())
 }
@@ -36,72 +37,73 @@ class SramBistIO extends Bundle {
 
 class SramBist()(implicit p: Parameters) extends Module {
   val io = IO(new SramBistIO)
-    val scanChainIntf = Module(new ScanChainIntf)
-    val bistTopParams = new BistTopParams
-    val bistTop = Module(new BistTop(bistTopParams))
+  val scanChainIntf = Module(new ScanChainIntf)
+  val bistTopParams = new BistTopParams
+  val bistTop = Module(new BistTop(bistTopParams))
 
-    val ready = RegNext(bistTop.io.done)
+  val ready = RegNext(bistTop.io.done)
 
-    scanChainIntf.io.sramScanMode := io.top.sramScanMode
-    scanChainIntf.io.sramScanIn := io.top.sramScanIn
-    scanChainIntf.io.sramScanEn := io.top.sramScanEn
-    io.top.sramScanOut := scanChainIntf.io.sramScanOut
+  scanChainIntf.io.sramScanMode := io.top.sramScanMode
+  scanChainIntf.io.sramScanIn := io.top.sramScanIn
+  scanChainIntf.io.sramScanEn := io.top.sramScanEn
+  io.top.sramScanOut := scanChainIntf.io.sramScanOut
 
-    bistTop.io.sramExtEn := io.top.sramExtEn
-    bistTop.io.sramScanMode := io.top.sramScanMode
-    bistTop.io.sramEn := io.top.sramEn
-    bistTop.io.bistEn := io.top.bistEn
-    bistTop.io.saeClk := io.top.sramSaeClk
-    bistTop.io.ex := io.ex.valid & io.ex.bits
-    io.ex.ready := ready // TODO: have someone verify that this is correct.
+  bistTop.io.sramExtEn := io.top.sramExtEn
+  bistTop.io.sramScanMode := io.top.sramScanMode
+  bistTop.io.sramEn := io.top.sramEn
+  bistTop.io.bistEn := io.top.bistEn
+  bistTop.io.bistStart := io.top.bistStart
+  bistTop.io.saeClk := io.top.sramSaeClk
+  bistTop.io.ex := io.ex.valid & io.ex.bits
+  io.ex.ready := ready
 
-    bistTop.io.addr := scanChainIntf.io.mmio.addr.q
-    bistTop.io.din := scanChainIntf.io.mmio.din.q
-    bistTop.io.mask := scanChainIntf.io.mmio.mask.q
-    bistTop.io.we := scanChainIntf.io.mmio.we.q.asBool
-    bistTop.io.sramId := scanChainIntf.io.mmio.sramId.q
-    bistTop.io.sramSel := scanChainIntf.io.mmio.sramSel.q.asTypeOf(SramSrc())
-    bistTop.io.saeCtl := scanChainIntf.io.mmio.saeCtl.q
-    bistTop.io.saeSel := scanChainIntf.io.mmio.saeSel.q.asTypeOf(SaeSrc())
-    bistTop.io.bistRandSeed := scanChainIntf.io.bistRandSeed
-    bistTop.io.bistSigSeed := scanChainIntf.io.mmio.bistSigSeed.q
-    bistTop.io.bistMaxRowAddr := scanChainIntf.io.mmio.bistMaxRowAddr.q
-    bistTop.io.bistMaxColAddr := scanChainIntf.io.mmio.bistMaxColAddr.q
-    bistTop.io.bistInnerDim := scanChainIntf.io.mmio.bistInnerDim.q
-      .asTypeOf(bistTop.bist.Dimension())
-    bistTop.io.bistPatternTable := scanChainIntf.io.bistPatternTable.asTypeOf(
+  bistTop.io.addr := scanChainIntf.io.mmio.addr.q
+  bistTop.io.din := scanChainIntf.io.mmio.din.q
+  bistTop.io.mask := scanChainIntf.io.mmio.mask.q
+  bistTop.io.we := scanChainIntf.io.mmio.we.q.asBool
+  bistTop.io.sramId := scanChainIntf.io.mmio.sramId.q
+  bistTop.io.sramSel := scanChainIntf.io.mmio.sramSel.q.asTypeOf(SramSrc())
+  bistTop.io.saeCtl := scanChainIntf.io.mmio.saeCtl.q
+  bistTop.io.saeSel := scanChainIntf.io.mmio.saeSel.q.asTypeOf(SaeSrc())
+  bistTop.io.bistRandSeed := scanChainIntf.io.bistRandSeed
+  bistTop.io.bistSigSeed := scanChainIntf.io.mmio.bistSigSeed.q
+  bistTop.io.bistMaxRowAddr := scanChainIntf.io.mmio.bistMaxRowAddr.q
+  bistTop.io.bistMaxColAddr := scanChainIntf.io.mmio.bistMaxColAddr.q
+  bistTop.io.bistInnerDim := scanChainIntf.io.mmio.bistInnerDim.q
+    .asTypeOf(bistTop.bist.Dimension())
+  bistTop.io.bistPatternTable := scanChainIntf.io.bistPatternTable.asTypeOf(
+    Vec(
+      bistTopParams.bistParams.patternTableLength,
+      UInt(bistTopParams.bistParams.dataWidth.W)
+    )
+  )
+  bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence
+    .asTypeOf(
       Vec(
-        bistTopParams.bistParams.patternTableLength,
-        UInt(bistTopParams.bistParams.dataWidth.W)
+        bistTopParams.bistParams.elementTableLength,
+        new bistTop.bist.Element()
       )
     )
-    bistTop.io.bistElementSequence := scanChainIntf.io.bistElementSequence
-      .asTypeOf(
-        Vec(
-          bistTopParams.bistParams.elementTableLength,
-          new bistTop.bist.Element()
-        )
-      )
-    bistTop.io.bistMaxElementIdx := scanChainIntf.io.mmio.bistMaxElementIdx.q
-    bistTop.io.bistCycleLimit := scanChainIntf.io.mmio.bistCycleLimit.q
-    bistTop.io.bistStopOnFailure := scanChainIntf.io.mmio.bistStopOnFailure.q.asBool
+  bistTop.io.bistMaxElementIdx := scanChainIntf.io.mmio.bistMaxElementIdx.q
+  bistTop.io.bistCycleLimit := scanChainIntf.io.mmio.bistCycleLimit.q
+  bistTop.io.bistStopOnFailure := scanChainIntf.io.mmio.bistStopOnFailure.q.asBool
 
-    scanChainIntf.io.dout := bistTop.io.dout
-    scanChainIntf.io.tdc := bistTop.io.tdc
-    scanChainIntf.io.done := bistTop.io.done.asUInt
+  scanChainIntf.io.dout := bistTop.io.dout
+  scanChainIntf.io.tdc := bistTop.io.tdc
+  scanChainIntf.io.done := bistTop.io.done.asUInt
 
-    scanChainIntf.io.bistFail := bistTop.io.bistFail.asUInt
-    scanChainIntf.io.bistFailCycle := bistTop.io.bistFailCycle
-    scanChainIntf.io.bistExpected := bistTop.io.bistExpected
-    scanChainIntf.io.bistReceived := bistTop.io.bistReceived
-    scanChainIntf.io.bistSignature := bistTop.io.bistSignature
+  scanChainIntf.io.bistFail := bistTop.io.bistFail.asUInt
+  scanChainIntf.io.bistFailCycle := bistTop.io.bistFailCycle
+  scanChainIntf.io.bistExpected := bistTop.io.bistExpected
+  scanChainIntf.io.bistReceived := bistTop.io.bistReceived
+  scanChainIntf.io.bistSignature := bistTop.io.bistSignature
 
-    io.top.bistDone := bistTop.io.bistDone
-    io.mmio <> scanChainIntf.io.mmio
+  io.top.bistDone := bistTop.io.bistDone
+  io.mmio <> scanChainIntf.io.mmio
 }
 
-abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implicit
-    p: Parameters
+abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(
+    implicit p: Parameters
 ) extends IORegisterRouter(
       RegisterRouterParams(
         name = "SramBist",
@@ -187,7 +189,7 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(implic
           sramBist.io.mmio.bistInnerDim
         )
       ),
-      REGMAP_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 9).map { i =>
+      REGMAP_OFFSET(BIST_ELEMENT_SEQUENCE) -> (0 until 16).map { i =>
         RegField.rwReg(
           64,
           sramBist.io.mmio.bistElementSequenceMmio(i)

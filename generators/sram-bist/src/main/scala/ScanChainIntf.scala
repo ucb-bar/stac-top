@@ -28,7 +28,7 @@ class MmioRegIO extends Bundle {
     )
   )
   val bistElementSequenceMmio =
-    Vec(9, new SimpleRegIO(64))
+    Vec(16, new SimpleRegIO(64))
   val bistMaxElementIdx =
     new SimpleRegIO(REG_WIDTH(BIST_MAX_ELEMENT_IDX))
   val bistCycleLimit = new SimpleRegIO(REG_WIDTH(BIST_CYCLE_LIMIT))
