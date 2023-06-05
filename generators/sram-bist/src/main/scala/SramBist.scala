@@ -264,10 +264,9 @@ class TLSramBist(busWidthBytes: Int, params: SramBistParams)(implicit
 
 case class SramBistAttachParams(
     device: SramBistParams,
-    controlWhere: TLBusWrapperLocation = PBUS,
+    controlWhere: TLBusWrapperLocation = SBUS,
     blockerAddr: Option[BigInt] = None,
     controlXType: ClockCrossingType = NoCrossing,
-    intXType: ClockCrossingType = NoCrossing
 ) {
   def attachTo(where: Attachable)(implicit p: Parameters): TLSramBist = {
     val name = s"sram_bist_${SramBist.nextId()}"

@@ -98,6 +98,17 @@ class Sky130FDXRes4V2Cell(cellName: String = consts.defaultXRes4V2CellName) exte
   override val desiredName = cellName
 }
 
+class Sky130EFAnalogCellIO extends Bundle {
+  val P_PAD = Analog(1.W)
+  val P_CORE = Analog(1.W)
+}
+
+class Sky130EFAnalogCell(cellName: String) extends BlackBox {
+  val io = IO(new Sky130EFAnalogCellIO)
+
+  override val desiredName = cellName
+}
+
 class Sky130EFIOCellCommonIO extends Bundle {
   // VDDIO domain
   val porb_h = Input(Bool())
@@ -242,11 +253,22 @@ class Sky130FDXRes4V2IOCell(cellName: String = consts.defaultXRes4V2CellName)
   io.reset := (!xres_n).asAsyncReset
 }
 
+class Sky130EFAnalogCellIOCell(cellName: String)
+  extends RawModule with Sky130EFIOCellLike with AnalogIOCell {
+  override val iocell = Module(new Sky130EFAnalogCell(cellName = cellName))
+
+  val io = IO(new AnalogIOCellBundle)
+
+  attach(io.pad, iocell.io.P_PAD)
+  attach(io.core, iocell.io.P_CORE)
+}
+
 case class Sky130EFIOCellTypeParams(
   gpioCellName: String = consts.defaultGPIOCellName,
   resetCellName: String = consts.defaultXRes4V2CellName,
 ) extends IOCellTypeParams {
-  override def analog() = Module(new Sky130EFGPIOV2CellAnalog(cellName = gpioCellName))
+//  override def analog() = Module(new Sky130EFGPIOV2CellAnalog(cellName = gpioCellName))
+  override def analog() = Module(new Sky130EFAnalogCellIOCell(cellName = "sky130_ef_io__analog_pad_esd2"))
 
   override def gpio() = Module(new Sky130EFGPIOV2CellIO(cellName = gpioCellName))
 
