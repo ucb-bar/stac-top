@@ -126,7 +126,7 @@ $(SMEMS_HAMMER): $(TOP_SMEMS_FILE)
 # Nayiri: need to manually specify SRAMs because BIST SRAMs are not emitted by MacroCompiler
 $(SRAM_GENERATOR_CONF): $(SMEMS_HAMMER)
 	mkdir -p $(dir $@)
-	echo "vlsi.inputs.sram_parameters: '$(SMEMS_CACHE)'" >> $@
+	echo "vlsi.inputs.sram_parameters: '$(strip $(SMEMS_CACHE))'" >> $@
 	echo "vlsi.inputs.sram_parameters_meta: [\"transclude\", \"json2list\"]">> $@
 # $(SRAM_GENERATOR_CONF): $(SMEMS_HAMMER)
 # 	mkdir -p $(dir $@)
