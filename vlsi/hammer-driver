@@ -18,6 +18,19 @@ def dont_touch(x: HammerTool) -> bool:
     x.append('set_dont_touch [get_db insts -if {.base_cell.base_class == block}]')
     return True
 
+def print_macros(x: HammerTool) -> bool:
+    x.append('''
+set macros_file "./macros.txt"
+set macros_file [open $macros_file "w"]
+set macros [get_db insts -if {.base_cell.base_class == block}]
+foreach m $macros {
+    puts "$m"
+    puts $macros_file "$m"
+}
+close $macros_file
+''')
+    return True
+
 def set_routing_layers(x: HammerTool) -> bool:
     if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
        x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
@@ -202,6 +215,8 @@ class Driver(CLIDriver):
     def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
         return [
             HammerTool.make_removal_hook("place_bumps"),
+
+            HammerTool.make_pre_insertion_hook("floorplan_design", print_macros),
 
             HammerTool.make_pre_insertion_hook("place_opt_design", derate_srams),
 
