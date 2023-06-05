@@ -140,10 +140,49 @@ vlsi.technology.extra_libraries:
       supplies: {VDD: "1.80 V", GND: "0 V"}
       provides: [ {lib_type: stdcell, vt: RVT} ]
   - library:
+      nldm_liberty_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lib
+      verilog_sim: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.v
+      lef_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lef
+      spice_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.spice
+      gds_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.gds      
+      corner: {nmos: slow, pmos: slow, temperature: "100 C"}
+      supplies: {VDD: "1.60 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      nldm_liberty_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lib
+      verilog_sim: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.v
+      lef_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lef
+      spice_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.spice
+      gds_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.gds      
+      corner: {nmos: fast, pmos: fast, temperature: "-40 C"}
+      supplies: {VDD: "1.95 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
       lef_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lef
       nldm_liberty_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lib
+      verilog_sim: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.v
+      spice_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.spice
+      gds_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.gds
       corner: {nmos: typical, pmos: typical, temperature: "025 C"}
       supplies: {VDD: "1.80 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lib
+      verilog_sim: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.v
+      spice_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.spice
+      gds_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.gds
+      corner: {nmos: slow, pmos: slow, temperature: "100 C"}
+      supplies: {VDD: "1.60 V", GND: "0 V"}
+      provides: [ {lib_type: stdcell, vt: RVT} ]
+  - library:
+      lef_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lef
+      nldm_liberty_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lib
+      verilog_sim: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.v
+      spice_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.spice
+      gds_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.gds
+      corner: {nmos: slow, pmos: slow, temperature: "-40 C"}
+      supplies: {VDD: "1.95 V", GND: "0 V"}
       provides: [ {lib_type: stdcell, vt: RVT} ]
   # - library:
   #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_2048x32m8w8_test/sram22_2048x32m8w8_test.lef
