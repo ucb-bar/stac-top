@@ -105,6 +105,12 @@ def load_hv_def_routing(x: HammerTool) -> bool:
     x.append(f'read_def {def_path}')
     return True
 
+def connect_core_stripes(x: HammerTool) -> bool:
+    x.append('''
+route_special -connect floating_stripe -floating_stripe_target ring -nets {VDD VSS} -stripe_layer_range {met4 met5} -detailed_log
+''')
+    return True
+
 
 class Driver(CLIDriver):
     def get_extra_synthesis_hooks(self) -> List[HammerToolHookAction]:
@@ -134,6 +140,7 @@ class Driver(CLIDriver):
             HammerTool.make_pre_insertion_hook("floorplan_design", set_die_snap_to_mfg_grid),
             HammerTool.make_post_insertion_hook("floorplan_design", efabless_ring_io),
             HammerTool.make_post_insertion_hook("efabless_ring_io", load_hv_def_routing),
+            HammerTool.make_post_insertion_hook("power_straps", connect_core_stripes),
             # TODO: connect rings to core stripes
             HammerTool.make_removal_hook("place_bumps"),
             HammerTool.make_removal_hook("sky130_connect_nets"),
