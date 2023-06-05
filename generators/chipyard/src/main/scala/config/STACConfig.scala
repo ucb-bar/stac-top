@@ -2,6 +2,7 @@ package chipyard
 
 import org.chipsalliance.cde.config.Config
 import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.subsystem.SBUS
 
 class STACConfig extends Config(
   //==================================
@@ -19,6 +20,8 @@ class STACDigitalConfig extends Config(
   //==================================
   // SRAM test payload configuration
   //==================================
+  new srambist.WithSramBistLocation(SBUS) ++ // See clocking
+  new srambist.WithSramBistCrossingType(SynchronousCrossing()) ++
   new srambist.WithSramBist(srambist.SramBistParams()) ++ // add SRAM BIST peripheral
   new chipyard.iobinders.WithSramBistIOCells ++
   new chipyard.harness.WithSramBistTiedToMMIOMode ++
@@ -26,6 +29,8 @@ class STACDigitalConfig extends Config(
   //==================================
   // Set up tiles
   //==================================
+  new freechips.rocketchip.subsystem.WithAsynchronousRocketTiles(depth = 8, sync = 3) ++ // See clocking section
+
   new freechips.rocketchip.subsystem.WithL1ICacheSets(64) ++ // 64 sets, 1 way, 4K cache
   new freechips.rocketchip.subsystem.WithL1ICacheWays(1) ++
   new freechips.rocketchip.subsystem.WithL1DCacheSets(64) ++ // 64 sets, 1 way, 4K cache
@@ -62,15 +67,20 @@ class STACDigitalConfig extends Config(
   new chipyard.WithAbsoluteFreqHarnessClockInstantiator ++        // use absolute frequencies for simulations in the harness
                                                                   // NOTE: This only simulates properly in VCS
 
-  // Create two clock groups, uncore and fbus, in addition to the tile clock groups
-  new chipyard.clocking.WithClockGroupsCombinedByName("uncore", "implicit", "sbus", "mbus", "cbus", "system_bus") ++
-  new chipyard.clocking.WithClockGroupsCombinedByName("fbus", "fbus", "pbus") ++
+  // Clock groups: SBUS (incl. BIST), Rocket, FBUS (incl. TSI), everything else
+  new chipyard.clocking.WithClockGroupsCombinedByName("periph", "cbus", "mbus", "pbus", "implicit") ++
+  new chipyard.clocking.WithClockGroupsCombinedByName("rocket", "tile_0") ++
+  new chipyard.clocking.WithClockGroupsCombinedByName("fbus", "fbus") ++
+  new chipyard.clocking.WithClockGroupsCombinedByName("sbus", "sbus") ++
 
   // Set up the crossings
-  new chipyard.config.WithFbusToSbusCrossingType(AsynchronousCrossing()) ++  // Add Async crossing between SBUS and FBUS
-  new chipyard.config.WithCbusToPbusCrossingType(AsynchronousCrossing()) ++  // Add Async crossing between PBUS and CBUS
-  new chipyard.config.WithSbusToMbusCrossingType(AsynchronousCrossing()) ++  // Add Async crossings between backside of L2 and MBUS
+  new chipyard.config.WithFbusToSbusCrossingType(AsynchronousCrossing()) ++
+  new chipyard.config.WithSbusToCbusCrossingType(AsynchronousCrossing()) ++
+  new chipyard.config.WithCbusToPbusCrossingType(SynchronousCrossing()) ++
+  new chipyard.config.WithSbusToMbusCrossingType(AsynchronousCrossing()) ++
   new testchipip.WithAsynchronousSerialSlaveCrossing ++                      // Add Async crossing between serial and MBUS. Its master-side is tied to the FBUS
+  // Async rocket -> above
+  // Sync SRAM BIST on SBUS -> above
 
 
   new freechips.rocketchip.subsystem.WithNBanks(1) ++              // one bank

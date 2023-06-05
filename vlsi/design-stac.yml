@@ -21,7 +21,18 @@ vlsi.inputs:
   top_module: ChipTop
 
   clocks:
-    - {name: "clock_clock", period: "20ns", uncertainty: "1ns"} # temporary
+    - {name: "clock", path: "iocell_clock_clock/iocell/OUT", period: "20ns", uncertainty: "1ns"}
+    - {name: "jtag_TCK", path: "iocell_jtag_TCK/iocell/OUT", period: "200ns", uncertainty: "1ns"}
+    - {name: "pll_clock_clk", path: "pllInst/io_pll_clk_out", period: "5ns", uncertainty: "0.1ns"}
+    - {name: "pll_clock_div", path: "pllInst/io_pll_div_out", period: "5ns", uncertainty: "0.1ns"}
+    # SBUS - SRAM BIST, full speed
+    - {name: "clkdiv_out_sbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_sbus_clock", period: "5ns", uncertainty: "0.1ns"}
+    # FBUS (serial-TL) - can't go faster than GPIO, so 50MHz
+    - {name: "clkdiv_out_fbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_fbus_clock", period: "20ns", uncertainty: "0.1ns"}
+    # Rocket - slower for easier timing closure
+    - {name: "clkdiv_out_rocket", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_rocket_clock", period: "15ns", uncertainty: "0.1ns"}
+    # Periphery / everything else - relaxed timing
+    - {name: "clkdiv_out_periph", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_periph_clock", period: "10ns", uncertainty: "0.1ns"}
 
   pin_mode: none
 
@@ -65,36 +76,6 @@ vlsi.inputs:
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_1/tdc, type: hardmacro, 
       x: 800, y: 1900, orientation: mx}
     
- 
-# Power Straps
-par.power_straps_mode: generate
-par.generate_power_straps_method: by_tracks
-par.blockage_spacing: 2.0
-par.blockage_spacing_top_layer: met3
-par.generate_power_straps_options:
-  by_tracks:
-    strap_layers:
-      - met4
-      - met5
-    pin_layers:
-      - met5
-    blockage_spacing_met2: 4.0
-    blockage_spacing_met4: 2.0
-    track_width: 3
-    track_width_met5: 1
-    track_spacing: 5
-    track_start: 10
-    track_start_met5: 1
-    power_utilization: 0.1
-    power_utilization_met4: 0.1
-    power_utilization_met5: 0.1
-
-# Pin placement constraints
-vlsi.inputs.pin_mode: generated
-vlsi.inputs.pin.generate_mode: semi_auto
-vlsi.inputs.pin.assignments: [
-  {pins: "*", layers: ["met2", "met4"], side: "bottom"}
-]
 
 design.def.hv_routing_meta: prependlocal
 design.def.hv_routing: stac-hv-routing.def
