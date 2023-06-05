@@ -21,7 +21,7 @@ vlsi.inputs:
   top_module: ChipTop
 
   clocks:
-    - {name: "clock", path: "iocell_clock_clock/iocell/IN", period: "20ns", uncertainty: "1ns"}
+    - {name: "clock", path: "iocell_clock_clock/iocell/IN", period: "10ns", uncertainty: "0.1ns"}
     - {name: "jtag_TCK", path: "iocell_jtag_TCK/iocell/IN", period: "200ns", uncertainty: "1ns"}
     - {name: "pll_clock_clk", path: "pllInst/io_pll_clk_out", period: "5ns", uncertainty: "0.1ns"}
     - {name: "pll_clock_div", path: "pllInst/io_pll_div_out", period: "5ns", uncertainty: "0.1ns"}
@@ -116,9 +116,9 @@ vlsi.inputs:
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_2/inner, type: hardmacro, 
       x: 2100, y: 3400, orientation: r270}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_3/inner, type: hardmacro, 
-      x: 2100, y: 2750, orientation: r270}
+      x: 2100, y: 2500, orientation: r270}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_4/inner, type: hardmacro, 
-      x: 2100, y: 2100, orientation: r270}
+      x: 2100, y: 1600, orientation: r270}
 
     # TDCs right column
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_1/tdc, type: hardmacro, 
@@ -139,6 +139,10 @@ vlsi.inputs:
       x: 1600, y: 2450 , orientation: r90}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_4/delay_line, type: hardmacro, 
       x: 1600, y: 1600 , orientation: r90}
+
+    # PLL
+    - {path: ChipTop/pllInst, type: hardmacro, 
+      x: 2700, y: 4200 , orientation: r90}
 
 
 design.def.hv_routing_meta: prependlocal
