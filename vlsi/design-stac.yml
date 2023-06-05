@@ -78,6 +78,13 @@ vlsi.technology.extra_libraries:
         VDD: "1.80 V"
         GND: "0 V"
   - library:
+      gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.gds
+      lef_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
+      spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/spice/sky130_ef_io.spice
+      provides:
+        - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
+          vt: RVT
+  - library:
       gds_file: ${technology.sky130.caravel}/gds/simple_por.gds
       lef_file: ${technology.sky130.caravel}/lef/simple_por.lef
       spice_file: ${technology.sky130.caravel}/spi/lvs/simple_por.spice # TODO: which netlist to actually use?
