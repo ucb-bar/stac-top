@@ -11,7 +11,7 @@ import json
 
 
 def check_timing_intent(x: HammerTool) -> bool:
-    x.append('check_timing_intent')
+    x.append('check_timing_intent -verbose')
     return True
 
 def dont_touch(x: HammerTool) -> bool:
@@ -44,18 +44,13 @@ set_db route_design_bottom_routing_layer 2
 
 def derate_srams(x: HammerTool) -> bool:
     if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
-       x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :        
-        # this is very hacky, TCL soln would be cleaner but harder to debug code
-        # NOTE: this doesn't check whether it's an SRAM!!!
-        floorplan_constraints = x.get_placement_constraints()
-        for constraint in floorplan_constraints:
-            macro_path = "/".join(constraint.path.split("/")[1:])
-            # TODO: only do this if we're using .schematic.lib files
-            if macro_path != "":
-                x.append(f'''
-set_timing_derate -cell_delay -delay_corner setup -late 3.0 [get_cells {{{macro_path}}}] 
-set_timing_derate -cell_delay -delay_corner hold  -early 0.95 [get_cells {{{macro_path}}}] 
-'''.strip())
+       x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
+        macros = ['sram22_2048x32m8w8_test']
+        for macro in macros:
+            x.append(f'''
+set_timing_derate -cell_delay -delay_corner [get_db delay_corners *.setup_delay] -late 3.0 [get_db insts -if {{.base_cell.name == {macro}}}]
+set_timing_derate -cell_delay -delay_corner [get_db delay_corners *.hold_delay] -late 0.95 [get_db insts -if {{.base_cell.name == {macro}}}]
+''')
     return True
 
 def add_fillers(x: HammerTool) -> bool:
@@ -208,7 +203,9 @@ class Driver(CLIDriver):
             HammerTool.make_post_insertion_hook("init_environment", check_timing_intent),
             HammerTool.make_post_insertion_hook("init_environment", dont_touch),
             HammerTool.make_post_insertion_hook("init_environment", donttouch_iocells),
+            HammerTool.make_pre_insertion_hook("syn_generic", derate_srams),
             HammerTool.make_pre_insertion_hook("syn_generic", flatten_analog_driver),
+
             HammerTool.make_persistent_hook(patch_hvl_ls_lef),  # abuse persistent steps to chuck stuff in cache
         ]
 
