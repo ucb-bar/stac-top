@@ -82,19 +82,28 @@ time_design -sign_off -hold
 # # LEF file
 # write_lef_abstract -stripe_pins -pg_pin_layers met5 {handoff_dir}/{x.top_module}.lef
 
-def drc_blackbox_tdc_64(x: HammerTool) -> bool:
+def drc_blackboxes(x: HammerTool) -> bool:
+    modules = ['tdc_64']
     if x.get_setting("vlsi.core.drc_tool")   == "hammer.drc.calibre" :
         run_file = x.drc_run_file
         with open(run_file, "a") as f:
-            f.write("EXCLUDE CELL tdc_64")
+            for module in modules:
+                f.write(f"\nEXCLUDE CELL {module}")
+            f.write('\n')
     return True
 
-def lvs_blackbox_tdc_64(x: HammerTool) -> bool:
+def lvs_blackboxes(x: HammerTool) -> bool:
+    modules = ['tdc_64',
+               'simple_por']
+    # NOTE: adding unrecognized devices here didn't work (e.g. SKY130_FD_PR__PFET_G5V0D10V5)
     if x.get_setting("vlsi.core.lvs_tool")   == "hammer.lvs.calibre" :
-        run_file = x.drc_run_file
+        run_file = x.lvs_run_file
         with open(run_file, "a") as f:
-            f.write("LVS BOX tdc_64")
-            f.write("LVS FILTER tdc_64")
+            for module in modules:
+                f.write(f"\nLVS BOX {module}")
+                f.write(f"\nLVS FILTER {module} OPEN")
+            f.write('\n')
+    return True
 
 def donttouch_iocells(x: HammerTool) -> bool:
     x.append('set_dont_touch [get_db insts -if {.base_cell.name == sky130_ef_io__*}] true')
@@ -245,7 +254,11 @@ class Driver(CLIDriver):
     
     def get_extra_drc_hooks(self) -> List[HammerToolHookAction]:
         return [
-            HammerTool.make_post_insertion_hook("generate_drc_run_file", drc_blackbox_tdc_64)
+            HammerTool.make_post_insertion_hook("generate_drc_run_file", drc_blackboxes)
+        ]
+    def get_extra_lvs_hooks(self) -> List[HammerToolHookAction]:
+        return [
+            HammerTool.make_post_insertion_hook("generate_lvs_run_file", lvs_blackboxes)
         ]
 
 if __name__ == '__main__':
