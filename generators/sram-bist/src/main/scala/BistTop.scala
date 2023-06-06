@@ -8,15 +8,26 @@ import srambist.analog.{Tdc, DelayLine, Sram, SramParams}
 import srambist.sramharness.{SramHarness, SramHarnessParams, SaeSrc}
 import srambist.programmablebist.{ProgrammableBist, ProgrammableBistParams}
 import srambist.misr.MaxPeriodFibonacciMISR
+import chisel3.experimental.VecLiterals._
 
 case class BistTopParams(
-    srams: Seq[SramParams] =
-      Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+    srams: Seq[SramParams] = Seq(
+      new SramParams(8, 8, 2048, 32),
+      new SramParams(8, 8, 1024, 32),
+      new SramParams(32, 8, 1024, 32),
+      new SramParams(32, 4, 512, 32),
+      new SramParams(8, 4, 512, 32),
+      new SramParams(8, 4, 256, 32),
+      new SramParams(8, 4, 64, 32),
+      new SramParams(24, 4, 64, 24),
+      new SramParams(2, 4, 64, 4)
+    ),
     bistParams: ProgrammableBistParams = new ProgrammableBistParams()
 )
 
 object SramSrc extends ChiselEnum {
-  val mmio, bist = Value
+  val mmio = Value(0.U(1.W))
+  val bist = Value(1.U(1.W))
 }
 
 class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
@@ -91,6 +102,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val fsmBistEn = Wire(Bool())
   val fsmBistStart = Wire(Bool())
 
+  val bistShouldStop = Wire(Bool())
   val bistSramEnPrev = RegNext(bist.io.sramEn)
   val bistSramWenPrev = RegNext(bist.io.sramWen)
   val bistDataPrev = RegNext(bist.io.data)
@@ -102,6 +114,13 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val bistFailCycle = Reg(UInt(32.W))
   val bistExpected = Reg(UInt(32.W))
   val bistReceived = Reg(UInt(32.W))
+  val sramMasks = RegInit(
+    Vec(params.srams.length, UInt(32.W)).Lit(params.srams.zipWithIndex.map {
+      case (p, i) => i -> ((1L << p.dataWidth) - 1).U(32.W)
+    }: _*)
+  )
+  val sramMask = Wire(UInt(32.W))
+  val maskedIOOut = Wire(chiselTypeOf(io.dout))
 
   io.bistFail := bistFail
   io.bistFailCycle := bistFailCycle
@@ -140,7 +159,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     is(State.executeOp) {
       switch(io.sramSel) {
         is(SramSrc.mmio) {
-          fsmSramEn := true.B // TODO: verify that this is OK for clock gating.
+          fsmSramEn := true.B
           state := State.delay
         }
         is(SramSrc.bist) {
@@ -156,8 +175,14 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   }
 
-  when(bistEnPrev & bistCheckEnPrev & bistDataPrev =/= io.dout) {
-    when(~(bistFail & io.bistStopOnFailure)) {
+  bistShouldStop := bistFail & io.bistStopOnFailure
+
+  sramMask := sramMasks(io.sramId)
+  maskedIOOut := io.dout & sramMask
+  when(
+    bistEnPrev & bistCheckEnPrev & ((bistDataPrev & sramMask) =/= maskedIOOut)
+  ) {
+    when(~bistShouldStop) {
       bistFail := true.B
       bistFailCycle := bistCyclePrev
       bistExpected := bistDataPrev
@@ -168,7 +193,11 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   }
 
-  bist.io.en := Mux(io.sramScanMode, io.bistEn & ~bistFail, fsmBistEn)
+  when(bist.io.start) {
+    bistFail := false.B
+  }
+
+  bist.io.en := Mux(io.sramScanMode, io.bistEn & ~bistShouldStop, fsmBistEn)
   bist.io.start := Mux(io.sramScanMode, io.bistStart, fsmBistStart)
   bist.io.maxRowAddr := io.bistMaxRowAddr
   bist.io.maxColAddr := io.bistMaxColAddr
@@ -179,7 +208,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   bist.io.maxElementIdx := io.bistMaxElementIdx
   bist.io.cycleLimit := io.bistCycleLimit
 
-  io.bistDone := bistDonePrev | bistFail
+  io.bistDone := bistDonePrev | bistShouldStop
 
   var (srams, harnesses) = params.srams.zipWithIndex.map {
     case (sramParams, i) => {
@@ -255,7 +284,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     }
   )
 
-  misr.io.in := io.dout.asBools
+  misr.io.in := maskedIOOut.asBools
 
   io.tdc := MuxCase(
     0.U,

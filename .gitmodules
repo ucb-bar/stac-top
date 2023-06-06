@@ -123,4 +123,7 @@
 	url = https://github.com/chipsalliance/cde.git
 [submodule "vlsi/hammer"]
 	path = vlsi/hammer
-	url = https://github.com/ucb-bar/hammer.git
+	url = https://github.com/rahulk29/hammer.git
+[submodule "vlsi/sram22_sky130_macros"]
+	path = vlsi/sram22_sky130_macros
+	url = https://github.com/rahulk29/sram22_sky130_macros.git

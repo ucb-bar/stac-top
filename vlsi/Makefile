@@ -5,6 +5,7 @@
 # Default settings
 SUB_PROJECT = chipyard
 CONFIG = STACConfig
+HAMMER_EXTRA_ARGS ?= -p tech-sky130.yml -p design-stac.yml  # always use latest hammer IR
 
 #########################################################################################
 # general path variables
@@ -43,6 +44,7 @@ TECH_CONF          ?= tech-$(tech_name).yml
 TOOLS_CONF         ?= tools.yml
 CHIP_CONF          ?= design-stac.yml
 INPUT_CONFS        ?= $(TOOLS_CONF) $(TECH_CONF) $(CHIP_CONF)
+PIN_MAP            ?= pin-map-stac.yml
 HAMMER_EXEC        ?= ./hammer-driver
 VLSI_TOP           ?= $(TOP)
 VLSI_MODEL_DUT_NAME ?= chiptop
@@ -83,9 +85,28 @@ ifneq ($(CUSTOM_VLOG), )
 	> $(VLSI_RTL)
 	$(foreach file,$^,echo $(file) >> $(VLSI_RTL))
 else
-	cat $(TOP_MODS_FILELIST) | sort -u > $(VLSI_RTL)
+#	cat $(TOP_MODS_FILELIST) | sort -u > $(VLSI_RTL)
+	for x in $$(cat $(TOP_MODS_FILELIST) | sort -u); do \
+		if [[ $$x != *tdc_64.v ]] && [[ $$x != *sram22_* ]] && [[ $$x != *delay_line_128.v ]] && [[ $$x != *bufbuf_16.v ]] ; then \
+			echo $$x >> $@; \
+		fi ; \
+	done
 	echo $(TOP_SMEMS_FILE) >> $(VLSI_RTL)
 endif
+
+#########################################################################################
+# io / pin map
+#########################################################################################
+IO_FILE_CONF = $(OBJ_DIR)/io_map-input.yml
+IO_FILE = $(OBJ_DIR)/io_map.io
+
+$(IO_FILE): scripts/gen-io-file.py $(PIN_MAP) $(build_dir)/$(long_name).sky130io.json
+	$< $(PIN_MAP) -d $(build_dir)/$(long_name).sky130io.json -o $@
+
+$(IO_FILE_CONF): $(IO_FILE)
+	mkdir -p $(dir $@)
+	echo "technology.sky130.io_file: '$(notdir $(IO_FILE))'" >> $@
+	echo "technology.sky130.io_file_meta: \"prependlocal\"">> $@
 
 #########################################################################################
 # srams
@@ -101,10 +122,17 @@ sram_generator: $(SRAM_CONF)
 # This should be built alongside $(TOP_SMEMS_FILE)
 $(SMEMS_HAMMER): $(TOP_SMEMS_FILE)
 
+# Nayiri: need to manually specify SRAMs because BIST SRAMs are not emitted by MacroCompiler
 $(SRAM_GENERATOR_CONF): $(SMEMS_HAMMER)
 	mkdir -p $(dir $@)
-	echo "vlsi.inputs.sram_parameters: '$(SMEMS_HAMMER)'" >> $@
+# 	SRAM cache contains all test + normal SRAMs:
+	echo "vlsi.inputs.sram_parameters: '$(vlsi_dir)/srams-all-cache.json'" >> $@
+#	echo "vlsi.inputs.sram_parameters: '$(strip $(SMEMS_CACHE))'" >> $@
 	echo "vlsi.inputs.sram_parameters_meta: [\"transclude\", \"json2list\"]">> $@
+# $(SRAM_GENERATOR_CONF): $(SMEMS_HAMMER)
+# 	mkdir -p $(dir $@)
+# 	echo "vlsi.inputs.sram_parameters: '$(SMEMS_HAMMER)'" >> $@
+# 	echo "vlsi.inputs.sram_parameters_meta: [\"transclude\", \"json2list\"]">> $@
 
 $(SRAM_CONF): $(SRAM_GENERATOR_CONF)
 	cd $(vlsi_dir) && $(HAMMER_EXEC) -e $(ENV_YML) $(foreach x,$(INPUT_CONFS) $(SRAM_GENERATOR_CONF), -p $(x)) --obj_dir $(build_dir) sram_generator
@@ -114,7 +142,7 @@ $(SRAM_CONF): $(SRAM_GENERATOR_CONF)
 # synthesis input configuration
 #########################################################################################
 SYN_CONF = $(OBJ_DIR)/inputs.yml
-GENERATED_CONFS = $(SYN_CONF)
+GENERATED_CONFS = $(SYN_CONF) $(IO_FILE_CONF)
 ifeq ($(CUSTOM_VLOG), )
 	GENERATED_CONFS += $(SRAM_CONF)
 endif
