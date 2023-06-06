@@ -49,7 +49,7 @@ vlsi.inputs:
 
     # backing scratchpad
     - {path: ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0, type: hardmacro, 
-      x: 2860, y: 1150, orientation: r270}
+      x: 2800, y: 1150, orientation: r270}
     
     # dcache
     - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, 
