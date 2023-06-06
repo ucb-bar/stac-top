@@ -30,20 +30,25 @@ par.blockage_spacing_top_layer: met3
 par.generate_power_straps_options:
   by_tracks:
     strap_layers:
+      - met2
+      - met3
       - met4
       - met5
     pin_layers:
       - met5
     blockage_spacing_met2: 4.0
     blockage_spacing_met4: 2.0
-    track_width: 3
-    track_width_met5: 1
+    track_width: 2
+    track_width_met2: 2
+    track_width_met3: 2
+    track_width_met4: 2
+    track_width_met5: 2
     track_spacing: 5
     track_start: 10
     track_start_met5: 1
-    power_utilization: 0.1
-    power_utilization_met4: 0.1
-    power_utilization_met5: 0.1
+    power_utilization: 0.2
+    power_utilization_met4: 0.4
+    power_utilization_met5: 0.5
 
 
 # Pin placement constraints

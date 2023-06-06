@@ -194,7 +194,27 @@ def load_hv_def_routing(x: HammerTool) -> bool:
 
 def connect_core_stripes(x: HammerTool) -> bool:
     x.append('''
-route_special -connect floating_stripe -floating_stripe_target ring -nets {VDD VSS} -stripe_layer_range {met4 met5} -detailed_log
+route_special -connect floating_stripe -floating_stripe_target ring -nets {VDD VSS} -stripe_layer_range {met4 met5} -allow_jogging 0 -detailed_log
+''')
+    return True
+
+def pll_power(x: HammerTool) -> bool:
+    x.append('''
+# Rings for PLL
+deselect_obj -all
+select_obj inst:pllInst
+add_rings -layer met4 -nets {VSS} -offset 10 -width 7 -around selected -type block_rings
+add_rings -layer met5 -nets {VDD} -offset 20 -width 7 -around selected -type block_rings
+route_special -connect block_pin -block_pin_target block_ring -block_pin all -inst pllInst -nets {VDD VSS}
+deselect_obj -all
+
+# Block off inside of rings for power strap routing
+set pll_route_blkgs_pre [get_db route_blockages]
+lappend pll_route_blkgs [create_route_blockage -pg_nets -inst pllInst -spacing 10 -layers met2 -cover]
+lappend pll_route_blkgs [create_route_blockage -pg_nets -inst pllInst -spacing 10 -layers met3 -cover]
+lappend pll_route_blkgs [create_route_blockage -pg_nets -inst pllInst -spacing 10 -layers met4 -cover]
+lappend pll_route_blkgs [create_route_blockage -pg_nets -inst pllInst -spacing 20 -layers met5 -cover]
+set pll_route_blkgs [lminus [get_db route_blockages] $pll_route_blkgs_pre]
 ''')
     return True
 
@@ -234,6 +254,7 @@ class Driver(CLIDriver):
             HammerTool.make_pre_insertion_hook("floorplan_design", set_die_snap_to_mfg_grid),
             HammerTool.make_post_insertion_hook("floorplan_design", efabless_ring_io),
             HammerTool.make_post_insertion_hook("efabless_ring_io", load_hv_def_routing),
+            HammerTool.make_pre_insertion_hook("power_straps", pll_power),
             HammerTool.make_post_insertion_hook("power_straps", connect_core_stripes),
 
             # Not needed with manual CPF flow

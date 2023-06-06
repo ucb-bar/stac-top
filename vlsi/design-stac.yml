@@ -63,6 +63,9 @@ vlsi.inputs:
     - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, 
       x: 3020, y: 860, orientation: r270}
 
+    # PLL
+    - {path: ChipTop/pllInst, type: hardmacro, x: 2771.96, y: 4187.92, orientation: r0}
+
     #####################
     #### SRAM BIST ######
     #### TDCs: place 100 below respective SRAM
@@ -132,10 +135,6 @@ vlsi.inputs:
       x: 1600, y: 2450 , orientation: r90}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_4/delay_line, type: hardmacro, 
       x: 1600, y: 1600 , orientation: r90}
-
-    # PLL
-    - {path: ChipTop/pllInst, type: hardmacro, 
-      x: 2700, y: 4200 , orientation: r90}
 
 
 design.def.hv_routing_meta: prependlocal

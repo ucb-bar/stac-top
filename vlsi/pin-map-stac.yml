@@ -5,7 +5,7 @@ pins:
   S6: jtag_TMS
   S7: jtag_TDI
   S8: jtag_TDO
-  E1: custom_boot
+  N11: custom_boot
   W10: uart_0_txd
   W11: uart_0_rxd
   E20: serial_tl_clock
@@ -33,10 +33,10 @@ pins:
   W8: sram_bist_bistDone
   N7: pll_arstb
   N8: pll_scan_out
-  N9: pll_div_out
-  N11: pll_ref_in
+  E5: pll_div_out
+  E1: pll_ref_in
   E3: pll_clk_out
-  E5: pll_scan_in
+  N9: pll_scan_in
   E6: pll_scan_clk
   E7: pll_scan_rst
   E8: pll_scan_en
