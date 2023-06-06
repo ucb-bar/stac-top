@@ -9,18 +9,18 @@ import srambist.sramharness.{SramHarness, SramHarnessParams, SaeSrc}
 import srambist.programmablebist.{ProgrammableBist, ProgrammableBistParams}
 import srambist.misr.MaxPeriodFibonacciMISR
 import chisel3.experimental.VecLiterals._
+import srambist.analog.{Tdc, DelayLine, BufferTree}
 
 case class BistTopParams(
     srams: Seq[SramParams] = Seq(
       new SramParams(8, 8, 2048, 32),
+      new SramParams(8, 4, 256, 32),
+      new SramParams(8, 4, 64, 32),
+      new SramParams(24, 4, 64, 24),
       new SramParams(8, 8, 1024, 32),
       new SramParams(32, 8, 1024, 32),
       new SramParams(32, 4, 512, 32),
       new SramParams(8, 4, 512, 32),
-      new SramParams(8, 4, 256, 32),
-      new SramParams(8, 4, 64, 32),
-      new SramParams(24, 4, 64, 24),
-      new SramParams(2, 4, 64, 4)
     ),
     bistParams: ProgrammableBistParams = new ProgrammableBistParams()
 )
@@ -286,10 +286,42 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
 
   misr.io.in := maskedIOOut.asBools
 
+  val (delay_lines, tdcs, b_buffers) = (0 until (((srams.length - 1) >> 2) + 1)).map { i =>
+    val delay_line = Module(new DelayLine)
+    delay_line.io.clk_in := clock.asBool
+    val saeCtlOH = UIntToOH(io.saeCtl)
+    delay_line.io.ctl := saeCtlOH
+    delay_line.io.ctl_b := ~saeCtlOH
+    val tdc = Module(new Tdc)
+
+    val aBuffered = Wire(chiselTypeOf(tdc.io.a))
+    val bBuffered = Wire(chiselTypeOf(tdc.io.b))
+
+    val bufA = Module(new BufferTree)
+    val bufB = Module(new BufferTree)
+    bufA.io.A := clock.asBool
+    aBuffered := bufA.io.X
+    bufB.io.A := false.B
+    bBuffered := bufB.io.X
+
+    tdc.io.a := aBuffered
+    tdc.io.b := bBuffered
+    tdc.io.reset_b := ~reset.asBool
+
+    (delay_line, tdc, bufB)
+  }.unzip3
+
+  harnesses.zipWithIndex.foreach { case (harness, i) =>
+    harness.io.delayLineIn := delay_lines(i >> 2).io.clk_out
+    when (i.U === io.sramId) {
+      b_buffers(i >> 2).io.A := harness.io.saeMuxed
+    }
+  }
+
   io.tdc := MuxCase(
     0.U,
-    harnesses.zipWithIndex.map { case (harness, i) =>
-      (i.U === io.sramId) -> harness.io.saeOut
+    tdcs.zipWithIndex.map { case (tdc, i) =>
+      (i.U === io.sramId >> 2) -> tdc.io.dout
     }
   )
 
