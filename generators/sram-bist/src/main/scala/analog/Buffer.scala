@@ -11,4 +11,5 @@ class BufferTree extends BlackBox with HasBlackBoxResource {
 
   override val desiredName = "buffer_tree"
   addResource(s"/vsrc/$desiredName.v")
+  addResource(s"/vsrc/sky130_fd_sc_hd__bufbuf_16.v")
 }
