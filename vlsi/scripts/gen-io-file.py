@@ -14,8 +14,10 @@ from pydantic import BaseModel
 PinData = str
 
 
+
 class IOMap(BaseModel):
     pins: dict[str, PinData]
+    extra_insts: dict[str, list[dict[str, str | int | float]]] = {}
 
 class DesignInfoInst(BaseModel):
     name: str
@@ -238,7 +240,7 @@ def get_inst_path_for_nc(idx: int) -> str:
     return get_inst_path_for_signal(f"nc_{idx}")
 
 
-def generate_iofile(mapping: dict[str, str], design_info: DesignInfo | None) -> IOFileModel:
+def generate_iofile(iomap: IOMap, design_info: DesignInfo | None) -> IOFileModel:
     root = {**skeleton}
     nc_idx = 0
     n_clamps = 0
@@ -248,7 +250,7 @@ def generate_iofile(mapping: dict[str, str], design_info: DesignInfo | None) -> 
     }
 
     has_dupe_signals = False
-    for signal, maps_iter in groupby(sorted(mapping.items(), key=lambda x: x[1]), lambda x: x[1]):
+    for signal, maps_iter in groupby(sorted(iomap.pins.items(), key=lambda x: x[1]), lambda x: x[1]):
         maps = list(maps_iter)
         if len(maps) != 1:
             print(f"Found duplicate signal {signal}: {maps}", file=sys.stderr)
@@ -272,16 +274,16 @@ def generate_iofile(mapping: dict[str, str], design_info: DesignInfo | None) -> 
                 cell = cell_fn
             else:
                 raise ValueError(f"Unexpected cell type {cell_fn}")
-            if site_name in mapping:
-                raise ValueError(f"Cannot override clamp at {site_name} ({pg_net}, got {mapping[site_name]})")
+            if site_name in iomap.pins:
+                raise ValueError(f"Cannot override clamp at {site_name} ({pg_net}, got {iomap.pins[site_name]})")
             add({
                 "name": f"clamp_{site_name.lower()}_{pg_net.lower()}",
                 "cell": cell,
             })
             n_clamps += 1
         else:
-            if site_name in mapping:
-                add({"name": get_inst_path_for_signal(mapping[site_name])})
+            if site_name in iomap.pins:
+                add({"name": get_inst_path_for_signal(iomap.pins[site_name])})
                 n_signals += 1
             else:
                 add({"name": get_inst_path_for_nc(nc_idx)})
@@ -289,7 +291,7 @@ def generate_iofile(mapping: dict[str, str], design_info: DesignInfo | None) -> 
 
     n_total = sum(1 for r in cells.values() for x in r if isinstance(x, E) and x.name == "inst")
     assert n_signals + nc_idx + n_clamps == n_total
-    assert n_signals == len(mapping)
+    assert n_signals == len(iomap.pins)
 
     if design_info is not None:
         logic_insts = [
@@ -320,6 +322,13 @@ def generate_iofile(mapping: dict[str, str], design_info: DesignInfo | None) -> 
         **cast(dict[str, IOFileModel], root["iopad"]),
         **cells,
     }
+    for side, v in iomap.extra_insts.items():
+        entry = root["iopad"][side]
+        assert isinstance(entry, list)
+        for attrs in v:
+            entry.append(E("inst", {
+                "orientation": SIDE_ORIENTATIONS[side],
+            } | attrs))
 
     return root
 
@@ -346,6 +355,6 @@ if __name__ == "__main__":
             design_info = json.load(f)
         design_info = DesignInfo.parse_obj(design_info)
 
-    iof = generate_iofile(config.pins, design_info)
+    iof = generate_iofile(config, design_info)
     with args.output.open("w") as f:
         write_iofile(iof, f)
