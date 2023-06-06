@@ -203,8 +203,8 @@ def pll_power(x: HammerTool) -> bool:
 # Rings for PLL
 deselect_obj -all
 select_obj inst:pllInst
-add_rings -layer met4 -nets {VSS} -offset 10 -width 7 -around selected -type block_rings
-add_rings -layer met5 -nets {VDD} -offset 20 -width 7 -around selected -type block_rings
+add_rings -layer met4 -nets {VSS} -offset 10 -width 7 -spacing 3 -around selected -type block_rings
+add_rings -layer met5 -nets {VDD} -offset 20 -width 7 -spacing 3 -around selected -type block_rings
 route_special -connect block_pin -block_pin_target block_ring -block_pin all -inst pllInst -nets {VDD VSS}
 deselect_obj -all
 
