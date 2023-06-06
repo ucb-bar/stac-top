@@ -5,7 +5,7 @@ import chisel3.util._
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.util.ClockGate
 
-import srambist.analog.{Tdc, DelayLine}
+import srambist.analog.Tdc
 import srambist.WithChiseltestSramsKey
 
 case class SramHarnessParams(
@@ -55,18 +55,13 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   io.data := io.inData(params.dataWidth - 1, 0)
   io.mask := io.inMask(params.maskWidth - 1, 0)
 
-  val delay_line = Module(new DelayLine)
-  delay_line.io.clk_in := clock.asBool
-  val saeCtlOH = UIntToOH(io.saeCtl)
-  delay_line.io.ctl := saeCtlOH
-  delay_line.io.ctl_b := ~saeCtlOH
   io.saeMuxed := io.saeInt; // TODO: verify default
   switch(io.saeSel) {
     is(SaeSrc.clk) {
       io.saeMuxed := io.saeClk
     }
     is(SaeSrc.ext) {
-      io.saeMuxed := delay_line.io.clk_out
+      io.saeMuxed := false.B
     }
   }
 
