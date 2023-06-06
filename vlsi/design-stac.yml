@@ -1,7 +1,9 @@
 # Generate Make include to aid in flow
 vlsi.core.build_system: make
 
+# TODO: temporary
 technology.sky130.drc_blackbox_srams: true
+technology.sky130.lvs_blackbox_srams: true
 
 vlsi.inputs:
   power_spec_type: cpf
@@ -21,12 +23,12 @@ vlsi.inputs:
   top_module: ChipTop
 
   clocks:
-    - {name: "clock", path: "iocell_clock_clock/iocell/IN", period: "10ns", uncertainty: "0.1ns"}
+    - {name: "clock", path: "iocell_clock_clock/iocell/IN", period: "15ns", uncertainty: "0.1ns"}
     - {name: "jtag_TCK", path: "iocell_jtag_TCK/iocell/IN", period: "200ns", uncertainty: "1ns"}
     - {name: "pll_clock_clk", path: "pllInst/io_pll_clk_out", period: "5ns", uncertainty: "0.1ns"}
     - {name: "pll_clock_div", path: "pllInst/io_pll_div_out", period: "5ns", uncertainty: "0.1ns"}
     # SBUS - SRAM BIST, full speed
-    - {name: "clkdiv_out_sbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_sbus_clock", period: "10ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_sbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_sbus_clock", period: "15ns", uncertainty: "0.1ns"}
     # FBUS (serial-TL) - can't go faster than GPIO, so 50MHz
     - {name: "clkdiv_out_fbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_fbus_clock", period: "20ns", uncertainty: "0.1ns"}
     # Rocket - slower for easier timing closure
@@ -147,6 +149,7 @@ design.def.hv_routing: stac-hv-routing.def
   gds_file: /tools/commercial/skywater/skywater-pdk/libraries/sky130_fd_sc_hvl/latest/cells/lsbufhv2lv/sky130_fd_sc_hvl__lsbufhv2lv_1.gds
   lef_file: cache/fd_sc_hvl__lef/sky130_fd_sc_hvl__lsbufhv2lv_1.lef
   spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/cdl/sky130_fd_sc_hvl.cdl
+  # spice_file: /tools/C/nayiri/sky130/chipyard-jun23_tapeout/vlsi/sky130_fd_sc_hvl.cdl
   verilog_sim: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/verilog/sky130_fd_sc_hvl__lsbufhv2lv.functional.v
   provides:
     - lib_type: lvlshift
@@ -163,6 +166,8 @@ design.def.hv_routing: stac-hv-routing.def
 
 vlsi.technology.extra_libraries_meta: ["append", "lazydeepsubst"]
 vlsi.technology.extra_libraries:
+  - library:
+      spice_file: /tools/C/nayiri/sky130/chipyard-jun23_tapeout/vlsi/devices.spice
   - library:
       nldm_liberty_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lib
       verilog_sim: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.v
@@ -335,6 +340,7 @@ vlsi.technology.extra_libraries:
       gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.gds
       lef_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
       spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/spice/sky130_ef_io.spice
+      # spice_file: /tools/C/nayiri/sky130/chipyard-jun23_tapeout/vlsi/sky130_ef_io.spice
       provides:
         - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
           vt: RVT
@@ -347,7 +353,8 @@ vlsi.technology.extra_libraries:
   - library:
       gds_file: ${technology.sky130.caravel}/gds/simple_por.gds
       lef_file: ${technology.sky130.caravel}/lef/simple_por.lef
-      spice_file: ${technology.sky130.caravel}/spi/lvs/simple_por.spice # TODO: which netlist to actually use?
+      spice_file: ${technology.sky130.caravel}/spi/lvs/caravel.spice # TODO: which netlist to actually use?
+      # spice_file: ${technology.sky130.caravel}/spi/lvs/simple_por.spice # TODO: which netlist to actually use?
       verilog_sim: ${technology.sky130.caravel}/verilog/rtl/simple_por.v
       provides:
         - lib_type: por
