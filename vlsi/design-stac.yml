@@ -49,7 +49,7 @@ vlsi.inputs:
 
     # backing scratchpad
     - {path: ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0, type: hardmacro, 
-      x: 2860, y: 1095, orientation: r270}
+      x: 2860, y: 1150, orientation: r270}
     
     # dcache
     - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, 
@@ -61,9 +61,9 @@ vlsi.inputs:
     - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
       x: 2750, y: 255, orientation: r270}
     - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_1_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 2800, y: 555, orientation: r270}
+      x: 2800, y: 575, orientation: r270}
     - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 3020, y: 860, orientation: r270}
+      x: 3020, y: 900, orientation: r270}
 
     # PLL
     - {path: ChipTop/pllInst, type: hardmacro, x: 2771.96, y: 4187.92, orientation: r0}
@@ -76,67 +76,37 @@ vlsi.inputs:
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_0/inner, type: hardmacro, 
       x: 300, y: 4400, orientation: my90}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_5/inner, type: hardmacro, 
-      x: 300, y: 3500, orientation: my90}
+      x: 300, y: 3875, orientation: my90}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_6/inner, type: hardmacro, 
-      x: 300, y: 2900, orientation: my90}
+      x: 300, y: 3525, orientation: my90}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_7/inner, type: hardmacro, 
-      x: 300, y: 2000, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_8/inner, type: hardmacro, 
-      x: 300, y: 1700, orientation: my90}
+      x: 300, y: 3175, orientation: my90}
 
     # TDCs left column
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_0/tdc, type: hardmacro, 
-      x: 300, y: 4200, orientation: my}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_5/tdc, type: hardmacro, 
-      x: 300, y: 3250 , orientation: my}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_6/tdc, type: hardmacro, 
-      x: 300, y: 2500 , orientation: my}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_7/tdc, type: hardmacro, 
-      x: 300, y: 1600 , orientation: my}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_8/tdc, type: hardmacro, 
-      x: 300, y: 1450 , orientation: my}
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/tdcs_0, type: hardmacro, 
+      x: 300, y: 3000 , orientation: my}
 
     # Delay lines left column
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_0/delay_line, type: hardmacro, 
-      x: 1400, y: 4150, orientation: r90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_5/delay_line, type: hardmacro, 
-      x: 1400, y: 3300 , orientation: r90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_6/delay_line, type: hardmacro, 
-      x: 1400, y: 2450 , orientation: r90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_7/delay_line, type: hardmacro, 
-      x: 1400, y: 1600 , orientation: r90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_8/delay_line, type: hardmacro, 
-      x: 1300, y: 1400 , orientation: r90}
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/delay_lines_0, type: hardmacro, 
+      x: 1400, y: 4100 , orientation: r90}
 
     # SRAMs right column
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_1/inner, type: hardmacro, 
-      x: 2100, y: 4200, orientation: r270}
+      x: 2771.96, y: 3800, orientation: r270}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_2/inner, type: hardmacro, 
-      x: 2100, y: 3400, orientation: r270}
+      x: 2771.96, y: 3450, orientation: r270}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_3/inner, type: hardmacro, 
-      x: 2100, y: 2500, orientation: r270}
+      x: 2771.96, y: 3150, orientation: r270}
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_4/inner, type: hardmacro, 
-      x: 2100, y: 1600, orientation: r270}
+      x: 2771.96, y: 2600, orientation: r270}
 
     # TDCs right column
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_1/tdc, type: hardmacro, 
-      x: 1700, y: 4000, orientation: r0}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_2/tdc, type: hardmacro, 
-      x: 1700, y: 3150 , orientation: r0}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_3/tdc, type: hardmacro, 
-      x: 1700, y: 2300 , orientation: r0}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_4/tdc, type: hardmacro, 
-      x: 1700, y: 1450 , orientation: r0}
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/tdcs_1, type: hardmacro, 
+      x: 2300, y: 2400 , orientation: r0}
 
     # Delay lines right column
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_1/delay_line, type: hardmacro, 
-      x: 1600, y: 4150, orientation: r90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_2/delay_line, type: hardmacro, 
-      x: 1600, y: 3300 , orientation: r90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_3/delay_line, type: hardmacro, 
-      x: 1600, y: 2450 , orientation: r90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/harnesses_4/delay_line, type: hardmacro, 
-      x: 1600, y: 1600 , orientation: r90}
+    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/delay_lines_1, type: hardmacro, 
+      x: 2100, y: 3400 , orientation: r90}
 
 
 design.def.hv_routing_meta: prependlocal
