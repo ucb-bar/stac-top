@@ -84,8 +84,8 @@ class SramHarness(params: SramHarnessParams)(implicit p: Parameters)
   bufB.io.A := io.saeMuxed
   bBuffered := bufB.io.X
 
-  tdc.io.a := clock.asBool
-  tdc.io.b := io.saeMuxed
+  tdc.io.a := aBuffered
+  tdc.io.b := bBuffered
   tdc.io.reset_b := ~reset.asBool
   io.saeOut := tdc.io.dout
 
