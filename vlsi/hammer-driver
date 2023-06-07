@@ -54,7 +54,7 @@ set_timing_derate -cell_delay -delay_corner [get_db delay_corners *.hold_delay] 
 ''')
     return True
 
-def enable_clock_antenna_insertion(x: HammerTool) -> bool
+def enable_clock_antenna_insertion(x: HammerTool) -> bool:
     x.append('set_db route_design_diode_insertion_for_clock_nets true')
     return True
 
