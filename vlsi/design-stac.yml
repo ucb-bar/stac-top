@@ -108,6 +108,15 @@ vlsi.inputs:
     - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/delay_lines_1, type: hardmacro, 
       x: 2100, y: 3400 , orientation: r90}
 
+    - path: ChipTop
+      type: obstruction
+      obs_types: [power, place, route]
+      layers: [met1]
+      x: 3243
+      y: 252
+      width: 34
+      height: 40
+
 
 design.def.hv_routing_meta: prependlocal
 design.def.hv_routing: stac-hv-routing.def
