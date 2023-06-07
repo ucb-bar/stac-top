@@ -54,6 +54,10 @@ set_timing_derate -cell_delay -delay_corner [get_db delay_corners *.hold_delay] 
 ''')
     return True
 
+def enable_clock_antenna_insertion(x: HammerTool) -> bool
+    x.append('set_db route_design_diode_insertion_for_clock_nets true')
+    return True
+
 def add_fillers(x: HammerTool) -> bool:
     if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
        x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
@@ -282,6 +286,8 @@ class Driver(CLIDriver):
             HammerTool.make_post_insertion_hook("power_straps", connect_core_stripes),
 
             HammerTool.make_pre_insertion_hook("write_design", force_bias_pins_nets),
+
+            HammerTool.make_post_insertion_hook("sky130_innovus_settings", enable_clock_antenna_insertion),
 
             # Not needed with manual CPF flow
             HammerTool.make_removal_hook("sky130_connect_nets"),
