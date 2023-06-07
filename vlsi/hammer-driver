@@ -98,7 +98,14 @@ def drc_blackboxes(x: HammerTool) -> bool:
 
 def lvs_blackboxes(x: HammerTool) -> bool:
     modules = ['tdc_64',
-               'simple_por']
+               'simple_por',
+               'sky130_ef_io__vccd_lvc_clamped3_pad',
+               'sky130_ef_io__vddio_hvc_clamped_pad',
+               'sky130_ef_io_vssd_lvc_clamped3_pad',
+               'sky130_ef_io__vdda_hvc_clamped_pad',
+               'sky130_ef_io__vssa_hvc_clamped_pad',
+               'sky130_ef_io__analog_pad_esd2',
+               'sky130_ef_io__vssio_hvc_clamped_pad']
     # NOTE: adding unrecognized devices here didn't work (e.g. SKY130_FD_PR__PFET_G5V0D10V5)
     if x.get_setting("vlsi.core.lvs_tool")   == "hammer.lvs.calibre" :
         run_file = x.lvs_run_file
