@@ -2,7 +2,7 @@
 
 Toplevel for the STAC tapeout, based on [Chipyard](https://github.com/ucb-bar/chipyard)
 
-[Chip docs](https://github.com/rahulk29/sram22/blob/substrate-port/docs/test_chip.md)
+[Chip docs](docs/test_chip.md)
 
 First-time setup:
 - Source Conda install / base environment
