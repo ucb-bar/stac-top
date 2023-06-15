@@ -134,7 +134,7 @@ clamp_cells: dict[str, str | Callable[[str], str]] = {
     pg_net:
         f"sky130_ef_io__{pg_net.lower()}_{domain_class.lower()}c_clamped_pad"
         if domain_class != "LV" else
-        (lambda pg_net, domain_class: lambda side: f"sky130_ef_io__{pg_net.lower()}_{domain_class.lower()}c_clamped{'3' if side in ['left', 'right'] else ''}_pad")(pg_net, domain_class)
+        (lambda pg_net, domain_class: lambda side, name: f"sky130_ef_io__{pg_net.lower()}_{domain_class.lower()}c_clamped{'3' if (side in ['left', 'right'] and name not in  ['W22']) else ''}_pad")(pg_net, domain_class)
         # I hate python scoping.
     for pg_net, domain_class in domain_classes.items()
 } | {
@@ -269,7 +269,7 @@ def generate_iofile(iomap: IOMap, design_info: DesignInfo | None) -> IOFileModel
             pg_net = clamp_pads[site_name]
             cell_fn = clamp_cells[pg_net]
             if callable(cell_fn):
-                cell = cell_fn(side)
+                cell = cell_fn(side, site_name)
             elif isinstance(cell_fn, str):
                 cell = cell_fn
             else:
