@@ -213,7 +213,19 @@ those registers via the scan chain.
 The control flags (such as `SRAM_EXT_EN` and `SRAM_SCAN_MODE`) will be set by the FPGA;
 the required values for each test mode is given in the chip docs.
 
-For tests involving VDD sweeps, we will use a sourcemeter configured to provide a precise supply voltage.
+For tests involving VDD sweeps, we will use a source meter configured to provide a precise supply voltage.
+We plan to use a Keithley 2420 source meter. We estimate that we will need 1mV precision
+over a 0.4V - 2.0V range. The specs for this source meter say it has a programming resolution
+of 50uV and a source accuracy of ~600uV. This should be more than sufficient for our usage.
+The source meter uses banana plugs, which we'll need to adapt to the male headers on our board
+(using a cable like [this](https://www.amazon.com/Goupchn-Stackable-Banana-Plug-Jumper/dp/B08KZJS8VB),
+though we can likely build something similar ourselves).
+
+The source meter will be connected to VDDDEXT1V8, which is connected to VDDD1V8 via a jumper.
+The Keithley source meter supports, but does not require, 4 wire sense.
+We don't anticipate needing to use 4 wire sense, but we will have spare VDDD1V8 headers
+that can be used for a sense connection if desired.
+
 When testing at high clock frequencies or low VDDD, we will bypass the Rocket to the maximum
 extent possible. This means we won't depend on external flash/PSRAM, JTAG/UART/serial TL, etc.
 while performing the test.
