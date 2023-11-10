@@ -44,3 +44,163 @@ SRAM test sequences at higher frequencies,
 we can still use the FPGA to read out the BIST checksum via the scan chain.
 This scan chain readout need not be particularly fast.
 
+## Rocket
+
+The Rocket core on the STAC chip supports 4 primary protocols:
+JTAG, UART, Quad SPI, and Serial TileLink.
+The intended usage of each of these interfaces is described below.
+
+### JTAG
+
+[JTAG](https://en.wikipedia.org/wiki/JTAG) is a protocol for
+providing debug access to the Rocket core.
+It is carried over the following STAC pins:
+* `JTAG_TCK`
+* `JTAG_TMS`
+* `JTAG_TDI`
+* `JTAG_TDO`
+
+JTAG allows us to access CPU registers and memory, and allows us to upload small programs for the core to execute.
+
+We feed these JTAG signals to an [FT2232HL](https://www.ftdichip.com/old2020/Products/ICs/FT2232H.html)
+chip, which adapts them to USB.
+The USB signals can then be connected to a host computer.
+
+The host computer uses the [OpenOCD](https://openocd.org/) software to
+drive the JTAG interface over USB. The USB to JTAG conversion is done by the FT2232HL.
+
+We have tested this setup with a STAC chip by jumper wiring from a STAC breakout board
+to an FT2232 breakout board with a USB C connector, and then plugging that USB C port into a laptop.
+To reduce jumper wire spaghetti, we plan to place the FT2232HL on the STAC test board,
+rather than using it as a separate breakout board.
+
+JTAG operations require the Rocket core to be able to execute instructions.
+
+### UART
+
+[UART](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter) is an
+asynchronous serial protocol with a configurable baud rate.
+UART requires only two signals:
+* `uart_0_txd` (output from the STAC chip)
+* `uart_0_rxd` (input to the STAC chip)
+
+Similar to JTAG, we use an FT2232H to convert UART to USB so that it is convenient
+to drive the UART from a laptop.
+The FT2232H supports two channels: we use one channel for JTAG, and the other for UART.
+Thus, we only need one FT2232H IC to speak both protocols.
+
+
+### Quad SPI
+
+[QSPI](https://infocenter.nordicsemi.com/index.jsp?topic=%2Fps_nrf52840%2Fqspi.html)
+is a protocol similar to SPI, except that it can carry 4 bits at a time (rather than
+the 1 bit at a time supported by SPI).
+It is intended for interfacing with external flash memory.
+The STAC chip has one QSPI interface, which uses the following signals:
+* `spi_0_dq_0`
+* `spi_0_dq_1`
+* `spi_0_dq_2`
+* `spi_0_dq_3`
+* `spi_0_cs_0`
+* `spi_0_sck`
+
+These signal names are different from the signal names conventionally used for QSPI;
+this is an artifact of how Chisel generates signal names.
+
+We envision two uses of the QSPI interface:
+1. Talk to a PSRAM chip. This will be useful for debugging:
+   it provides a fallback in case the serial TileLink interface does not work,
+   or if the SRAM macros tied to the Rocket do not work. The QSPI interface
+   may also be faster than serial TileLink, since QSPI carries 4 bits per cycle,
+   whereas serial TileLink only carries 1 bit per cycle.
+2. Talk to a flash chip. If serial TileLink and the SRAMs do work,
+   we can use the flash as a larger source of external memory.
+   We plan to use the [IS25LP128-JBLE](https://www.digikey.com/en/products/detail/issi-integrated-silicon-solution-inc/IS25LP128-JBLE/5189776)
+   flash chip.
+
+Since we are not sure whether all the SRAMs and the serial TileLink interface work as expected,
+we'd like it to be easy to switch between a PSRAM and a flash chip.
+We originally envisioned having 8 female header pins on the main STAC board
+and mounting a separate breakout board (such as
+[this](https://www.adafruit.com/product/5632)
+) above those headers.
+However, due to concerns about having proper signal return paths,
+we've decided to use a
+[Samtec MEC2-08-01-L-TH1](https://www.samtec.com/products/mec2-08-01-l-th1-wt)
+connector instead. This connector will require the flash/psram breakout board
+to have edge fingers at a 2mm pitch, along with a notch in the board to allow
+it to fit into the connector's polarizing plug.
+
+There are a few other options we've discussed:
+* Place both the PSRAM and the flash on the main board, and mux between them.
+  However, since the QSPI data pins are input/output, the mux would have to be an
+  analog mux. This seems error prone, but is doable.
+* Use 0ohm resistors to disconnect one of either the PSRAM or the flash.
+  This is also doable, but inconvenient: we'd need to solder/desolder at least
+  4 resistors per QSPI chip.
+* Use a mechanical switch. We'd prefer not to place a mechanical switch
+  in the signal path. RC-debouncing is not a viable option, as we don't
+  want to add a large capacitance to these nets.
+
+### Serial TileLink
+
+Serial TileLink (abbreviated serial TL) is a one bit per clock cycle variant of the TileLink protocol.
+It can be used for reading/writing memory, including memory-mapped peripherals.
+
+Serial TL uses the following signals:
+* `serial_tl_bits_out_ready`
+* `serial_tl_bits_out_valid`
+* `serial_tl_bits_in_ready`
+* `serial_tl_bits_in_bits`
+* `serial_tl_clock`
+* `serial_tl_bits_out_bits`
+* `serial_tl_bits_in_valid`
+
+We will use an Arty A7-100T FPGA to drive the serial TileLink interface.
+ChipYard provides RTL for speaking serial TL, and we can program
+the Arty FPGA with this RTL.
+
+The serial TL signals connect to the FPGA via a 12-pin right-angle PMOD header.
+Of the 12 PMOD pins, 2 are used for ground and 2 for power.
+However, we leave the pins intended for power unconnected.
+We don't want STAC to try to power itself off of the FPGA power supply,
+and we don't want the FPGA to try to power itself off of the STAC power supply.
+
+Serial TL is particularly important, as it allows reading/writing memory without
+needing the Rocket core to be involved (unlike JTAG, which goes through the core).
+
+## SRAM Test Area
+
+The SRAM test area consists of several SRAM macros that we wish to test.
+See the chip docs for a more detailed description of what is in the SRAM test area.
+
+The SRAM test area can be configured via memory-mapped registers (which can
+be read/written by either serial TL or JTAG), or via a scan chain.
+The scan chain signals are connected to the Arty FPGA via PMOD headers.
+We will write custom Chisel/Verilog to control these signals.
+
+The SRAM test area uses the following signals:
+* `SRAM_BIST_START`
+* `SRAM_EN`
+* `SRAM_BIST_EN`
+* `SRAM_EXT_EN`
+* `SRAM_SCAN_IN`
+* `SRAM_SCAN_OUT`
+* `SRAM_SCAN_EN`
+* `SRAM_BIST_DONE`
+* `SRAM_SCAN_MODE`
+
+For each test SRAM macro, we plan to perform the following tests:
+1. Single write then read at nominal VDD.
+2. BIST March C- pattern at nominal VDD and low frequency.
+3. BIST March C- pattern at nominal VDD, increasing frequency until errors are detected.
+4. BIST March C- pattern at low frequency, decreasing VDD until errors are detected.
+
+Each operation will be set up configuring memory-mapped registers via serial TL using
+the Arty FPGA. If serial TL does not work correctly, we will fall back to configuring
+those registers via the scan chain.
+The control flags (such as `SRAM_EXT_EN` and `SRAM_SCAN_MODE`) will be set by the FPGA;
+the required values for each test mode is given in the chip docs.
+
+For tests involving VDD sweeps, we will use a sourcemeter configured to provide a precise supply voltage.
+
