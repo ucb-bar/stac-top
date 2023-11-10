@@ -11,9 +11,9 @@ A 6V external power supply is fed to an over/under voltage protection IC.
 A power on button is fed to this IC. The IC debounces the button
 and turns on the output power when the button is pressed.
 
-A first stage LDO regulates the 6V supply to 5V.
-One second stage LDO regulates the 5V LDO output to 3.3V for VDDIO;
-another LDO regulates the 5V output to 1.8V for VDDD.
+A first stage LDO regulates the 6V supply to 4.66V.
+One second stage LDO regulates the 4.66V LDO output to 3.3V for VDDIO;
+another LDO regulates the 4.66V output to 1.8V for VDDD.
 
 If we wish to bypass the LDOs or test the chip under different voltages,
 power can also be supplied via a dedicated header. Two independent switches
@@ -70,7 +70,7 @@ The host computer uses the [OpenOCD](https://openocd.org/) software to
 drive the JTAG interface over USB. The USB to JTAG conversion is done by the FT2232HL.
 
 We have tested this setup with a STAC chip by jumper wiring from a STAC breakout board
-to an FT2232 breakout board with a USB C connector, and then plugging that USB C port into a laptop.
+to an FT2232HL breakout board with a USB C connector, and then plugging that USB C port into a laptop.
 To reduce jumper wire spaghetti, we plan to place the FT2232HL on the STAC test board,
 rather than using it as a separate breakout board.
 
@@ -84,10 +84,10 @@ UART requires only two signals:
 * `uart_0_txd` (output from the STAC chip)
 * `uart_0_rxd` (input to the STAC chip)
 
-Similar to JTAG, we use an FT2232H to convert UART to USB so that it is convenient
+Similar to JTAG, we use an FT2232HL to convert UART to USB so that it is convenient
 to drive the UART from a laptop.
-The FT2232H supports two channels: we use one channel for JTAG, and the other for UART.
-Thus, we only need one FT2232H IC to speak both protocols.
+The FT2232HL supports two channels: we use one channel for JTAG, and the other for UART.
+Thus, we only need one FT2232HL IC to speak both protocols.
 
 
 ### Quad SPI
@@ -113,17 +113,22 @@ We envision two uses of the QSPI interface:
    or if the SRAM macros tied to the Rocket do not work. The QSPI interface
    may also be faster than serial TileLink, since QSPI carries 4 bits per cycle,
    whereas serial TileLink only carries 1 bit per cycle.
+   The PSRAM chip we are currently considering is the
+   [APS6404L-3SQR-SN](https://www.mouser.com/ProductDetail/AP-Memory/APS6404L-3SQR-SN?qs=IS%252B4QmGtzzqsn3S5xo%2FEEg%3D%3D).
 2. Talk to a flash chip. If serial TileLink and the SRAMs do work,
    we can use the flash as a larger source of external memory.
    We plan to use the [IS25LP128-JBLE](https://www.digikey.com/en/products/detail/issi-integrated-silicon-solution-inc/IS25LP128-JBLE/5189776)
    flash chip.
 
+Both the PSRAM and the flash chip will use the 3.3V VDDIO3V3 supply,
+so they will not be directly affected if we sweep the core VDDD1V8 supply
+for low VDD tests of STAC circuitry.
+
 Since we are not sure whether all the SRAMs and the serial TileLink interface work as expected,
 we'd like it to be easy to switch between a PSRAM and a flash chip.
 We originally envisioned having 8 female header pins on the main STAC board
 and mounting a separate breakout board (such as
-[this](https://www.adafruit.com/product/5632)
-) above those headers.
+[this](https://www.adafruit.com/product/5632)) above those headers.
 However, due to concerns about having proper signal return paths,
 we've decided to use a
 [Samtec MEC2-08-01-L-TH1](https://www.samtec.com/products/mec2-08-01-l-th1-wt)
@@ -141,6 +146,10 @@ There are a few other options we've discussed:
 * Use a mechanical switch. We'd prefer not to place a mechanical switch
   in the signal path. RC-debouncing is not a viable option, as we don't
   want to add a large capacitance to these nets.
+
+We aren't currently sure how often we'll need to swap between PSRAM/flash chips;
+this will depend on bringup/debugging progress. The breakout board solution
+will make it easy to swap boards whenever we need to do so.
 
 ### Serial TileLink
 
@@ -196,6 +205,8 @@ For each test SRAM macro, we plan to perform the following tests:
 3. BIST March C- pattern at nominal VDD, increasing frequency until errors are detected.
 4. BIST March C- pattern at low frequency, decreasing VDD until errors are detected.
 
+Note that only VDDD1V8 will be decreased; VDDIO3V3 will be kept at 3.3V.
+
 Each operation will be set up configuring memory-mapped registers via serial TL using
 the Arty FPGA. If serial TL does not work correctly, we will fall back to configuring
 those registers via the scan chain.
@@ -203,4 +214,7 @@ The control flags (such as `SRAM_EXT_EN` and `SRAM_SCAN_MODE`) will be set by th
 the required values for each test mode is given in the chip docs.
 
 For tests involving VDD sweeps, we will use a sourcemeter configured to provide a precise supply voltage.
+When testing at high clock frequencies or low VDDD, we will bypass the Rocket to the maximum
+extent possible. This means we won't depend on external flash/PSRAM, JTAG/UART/serial TL, etc.
+while performing the test.
 
