@@ -73,8 +73,12 @@ We have tested this setup with a STAC chip by jumper wiring from a STAC breakout
 to an FT2232HL breakout board with a USB C connector, and then plugging that USB C port into a laptop.
 To reduce jumper wire spaghetti, we plan to place the FT2232HL on the STAC test board,
 rather than using it as a separate breakout board.
+The USB C connector we plan to use is
+Amphenol [12402012E212A](https://www.digikey.com/en/products/detail/amphenol-cs-commercial-products/12402012E212A/13683192).
+We will connect the USB-C port on the board to a USB-C port on a laptop using a cable such as
+Qualtek [3027007-005M](https://www.digikey.com/en/products/detail/qualtek/3027007-005M/9738749).
 
-JTAG operations require the Rocket core to be able to execute instructions.
+Note: JTAG operations require the Rocket core to be able to execute instructions.
 
 ### UART
 
@@ -126,17 +130,25 @@ for low VDD tests of STAC circuitry.
 
 Since we are not sure whether all the SRAMs and the serial TileLink interface work as expected,
 we'd like it to be easy to switch between a PSRAM and a flash chip.
-We originally envisioned having 8 female header pins on the main STAC board
-and mounting a separate breakout board (such as
-[this](https://www.adafruit.com/product/5632)) above those headers.
-However, due to concerns about having proper signal return paths,
-we've decided to use a
-[Samtec MEC2-08-01-L-TH1](https://www.samtec.com/products/mec2-08-01-l-th1-wt)
-connector instead. This connector will require the flash/psram breakout board
-to have edge fingers at a 2mm pitch, along with a notch in the board to allow
-it to fit into the connector's polarizing plug.
+
+We will use a TI [TS3A27518EPWR](https://www.digikey.com/en/products/detail/texas-instruments/TS3A27518EPWR/2075716)
+analog mux to switch between the QSPI peripherals, as shown in the datasheet for that part.
+Only one QSPI device will be active at a time;
+it is OK if we need to reset the core and/or re-power the board
+when switching devices.
+This analog mux is not intended to let us operate both QSPI devices
+at the same time.
+The control inputs of the mux are set by an RC debounced mechanical switch.
 
 There are a few other options we've discussed:
+* Having 8 female header pins on the main STAC board
+  and mounting a separate breakout board (such as
+  [this](https://www.adafruit.com/product/5632)) above those headers.
+  This approach has poor return paths, since there is only one ground pin.
+* Use a [Samtec MEC2-08-01-L-TH1](https://www.samtec.com/products/mec2-08-01-l-th1-wt)
+  connector. This connector would require the flash/psram breakout board
+  to have edge fingers at a 2mm pitch, along with a notch in the board to allow
+  it to fit into the connector's polarizing plug.
 * Place both the PSRAM and the flash on the main board, and mux between them.
   However, since the QSPI data pins are input/output, the mux would have to be an
   analog mux. This seems error prone, but is doable.
@@ -147,9 +159,13 @@ There are a few other options we've discussed:
   in the signal path. RC-debouncing is not a viable option, as we don't
   want to add a large capacitance to these nets.
 
+We believe the analog mux approach is best in terms of having
+proper grounding and return paths, while not requiring us to design
+a custom breakout board for the QSPI peripherals.
+
 We aren't currently sure how often we'll need to swap between PSRAM/flash chips;
-this will depend on bringup/debugging progress. The breakout board solution
-will make it easy to swap boards whenever we need to do so.
+this will depend on bringup/debugging progress. The analog mux solution
+will make it easy to swap peripherals whenever we need to do so.
 
 ### Serial TileLink
 
@@ -223,8 +239,10 @@ though we can likely build something similar ourselves).
 
 The source meter will be connected to VDDDEXT1V8, which is connected to VDDD1V8 via a jumper.
 The Keithley source meter supports, but does not require, 4 wire sense.
-We don't anticipate needing to use 4 wire sense, but we will have spare VDDD1V8 headers
-that can be used for a sense connection if desired.
+We don't anticipate strictly needing to use 4 wire sense,
+but we have designed the board to support a 4 wire connection
+in case we find it necessary. The 4 wire connector is a male 0.1" Samtec TSW
+header, placed close to the STAC VDDD pin nearest to the SRAM test area.
 
 When testing at high clock frequencies or low VDDD, we will bypass the Rocket to the maximum
 extent possible. This means we won't depend on external flash/PSRAM, JTAG/UART/serial TL, etc.
