@@ -1,5 +1,9 @@
 package staccontroller
 
+import chisel3._
+import chisel3.util._
+import freechips.rocketchip.util.SimpleRegIO
+
 import scala.collection.mutable.LinkedHashMap
 
 object StacControllerCtrlRegs extends Enumeration {
@@ -9,24 +13,24 @@ object StacControllerCtrlRegs extends Enumeration {
       PLL_SCAN_CLK, PLL_SCAN_IN, PLL_SCAN_OUT, PLL_ARSTB, CUSTOM_BOOT = Value
 
   val REG_WIDTH = LinkedHashMap(
-      SRAM_EXT_EN = 1,
-      SRAM_SCAN_MODE = 1,
-      SRAM_EN = 1,
-      SRAM_SCAN_IN = 1,
-      SRAM_SCAN_EN = 1,
-      SRAM_BIST_EN = 1,
-      SRAM_BIST_START = 1,
-      SRAM_SCAN_OUT = 1,
-      SRAM_BIST_DONE = 1,
-      CLK_SEL = 2,
-      PLL_SEL = 1,
-      PLL_SCAN_EN = 1,
-      PLL_SCAN_RST = 1,
-      PLL_SCAN_CLK = 1,
-      PLL_SCAN_IN = 1,
-      PLL_SCAN_OUT = 1,
-      PLL_ARSTB = 1,
-      CUSTOM_BOOT = 1
+    SRAM_EXT_EN -> 1,
+    SRAM_SCAN_MODE -> 1,
+    SRAM_EN -> 1,
+    SRAM_SCAN_IN -> 1,
+    SRAM_SCAN_EN -> 1,
+    SRAM_BIST_EN -> 1,
+    SRAM_BIST_START -> 1,
+    SRAM_SCAN_OUT -> 1,
+    SRAM_BIST_DONE -> 1,
+    CLK_SEL -> 2,
+    PLL_SEL -> 1,
+    PLL_SCAN_EN -> 1,
+    PLL_SCAN_RST -> 1,
+    PLL_SCAN_CLK -> 1,
+    PLL_SCAN_IN -> 1,
+    PLL_SCAN_OUT -> 1,
+    PLL_ARSTB -> 1,
+    CUSTOM_BOOT -> 1
   )
   val TOTAL_REG_WIDTH = REG_WIDTH.values.sum
 
