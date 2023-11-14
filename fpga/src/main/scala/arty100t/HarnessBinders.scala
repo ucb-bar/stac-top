@@ -58,3 +58,80 @@ class WithArty100TDDRTL extends OverrideHarnessBinder({
     ddrClientBundle <> ports.head
   }
 })
+
+// Uses PMOD JA/JB
+class WithArty100TSerialTLToGPIO extends HarnessBinder({
+  case (th: HasHarnessInstantiators, port: SerialTLPort) => {
+    val artyTh = th.asInstanceOf[LazyRawModuleImp].wrapper.asInstanceOf[Arty100THarness]
+    val harnessIO = IO(port.io.cloneType).suggestName("serial_tl")
+    harnessIO <> port.io
+    val clkIO = IOPin(harnessIO.clock)
+    val packagePinsWithPackageIOs = Seq(
+      ("G13", clkIO),
+      ("B11", IOPin(harnessIO.bits.out.valid)),
+      ("A11", IOPin(harnessIO.bits.out.ready)),
+      ("D12", IOPin(harnessIO.bits.in.valid)),
+      ("D13", IOPin(harnessIO.bits.in.ready)),
+      ("B18", IOPin(harnessIO.bits.out.bits, 0)),
+      ("A18", IOPin(harnessIO.bits.out.bits, 1)),
+      ("K16", IOPin(harnessIO.bits.out.bits, 2)),
+      ("E15", IOPin(harnessIO.bits.out.bits, 3)),
+      ("E16", IOPin(harnessIO.bits.in.bits, 0)),
+      ("D15", IOPin(harnessIO.bits.in.bits, 1)),
+      ("C15", IOPin(harnessIO.bits.in.bits, 2)),
+      ("J17", IOPin(harnessIO.bits.in.bits, 3))
+    )
+    packagePinsWithPackageIOs foreach { case (pin, io) => {
+      artyTh.xdc.addPackagePin(io, pin)
+      artyTh.xdc.addIOStandard(io, "LVCMOS33")
+    }}
+
+    // Don't add IOB to the clock, if its an input
+    if (DataMirror.directionOf(port.io.clock) == Direction.Input) {
+      packagePinsWithPackageIOs foreach { case (pin, io) => {
+        artyTh.xdc.addIOB(io)
+      }}
+    }
+
+    artyTh.sdc.addClock("ser_tl_clock", clkIO, 100)
+    artyTh.sdc.addGroup(pins = Seq(clkIO))
+    artyTh.xdc.clockDedicatedRouteFalse(clkIO)
+  }
+})
+
+
+class WithArty100TStacControllerToGPIO extends HarnessBinder({
+  case (th: HasHarnessInstantiators, port: StacControllerTopIO) => {
+    val artyTh = th.asInstanceOf[LazyRawModuleImp].wrapper.asInstanceOf[Arty100THarness]
+    val harnessIO = IO(port.io.cloneType).suggestName("stac_controller")
+    harnessIO <> port.io
+    val packagePinsWithPackageIOs = Seq(
+      ("J18", IOPin(harnessIO.sramExtEn)),
+      ("K15", IOPin(harnessIO.sramScanMode)),
+      ("J15", IOPin(harnessIO.sramScanIn)),
+      ("U12", IOPin(harnessIO.sramScanEn)),
+      ("V12", IOPin(harnessIO.sramBistEn)),
+      ("V10", IOPin(harnessIO.sramBistStart)),
+      ("V11", IOPin(harnessIO.clkSel)),
+      ("U14", IOPin(harnessIO.pllSel)),
+      ("V14", IOPin(harnessIO.pllScanEn)),
+      ("T13", IOPin(harnessIO.pllScanRst)),
+      ("U13", IOPin(harnessIO.pllScanClk)),
+      ("D4", IOPin(harnessIO.pllScanIn)),
+      ("D3", IOPin(harnessIO.pllArstb))
+      ("F4", IOPin(harnessIO.customBoot))
+      ("F3", IOPin(harnessIO.sramScanOut))
+      ("E2", IOPin(harnessIO.sramBistDone))
+      ("D2", IOPin(harnessIO.pllScanOut))
+    )
+    packagePinsWithPackageIOs foreach { case (pin, io) => {
+      artyTh.xdc.addPackagePin(io, pin)
+      artyTh.xdc.addIOStandard(io, "LVCMOS33")
+    }}
+
+    packagePinsWithPackageIOs foreach { case (pin, io) => {
+      artyTh.xdc.addIOB(io)
+    }}
+
+  }
+})

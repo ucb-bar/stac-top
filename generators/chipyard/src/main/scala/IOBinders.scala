@@ -209,6 +209,16 @@ class WithSramBistIOCells extends OverrideIOBinder({
   }
 })
 
+class WithStacControllerIOCells extends OverrideIOBinder({
+  (system: HasPeripheryStacControllerModuleImp) => {
+    val (ports: Seq[StacControllerTopIO], cells2d) = system.stacControllerIO.map({ stacControllerIO =>
+      val (port, ios) = IOCell.generateIOFromSignal(stacControllerIO, s"sram_bist", system.p(IOCellKey), abstractResetAsAsync = true)
+      (Seq(port), ios)
+    }).getOrElse((Nil, Nil))
+    (ports, cells2d)
+  }
+})
+
 class WithSPIIOCells extends OverrideIOBinder({
   (system: HasPeripherySPIFlashModuleImp) => {
     val (ports: Seq[SPIChipIO], cells2d) = system.qspi.zipWithIndex.map({ case (s, i) =>
