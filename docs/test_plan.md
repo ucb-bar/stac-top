@@ -71,12 +71,15 @@ drive the JTAG interface over USB. The USB to JTAG conversion is done by the FT2
 
 We have tested this setup with a STAC chip by jumper wiring from a STAC breakout board
 to an FT2232HL breakout board with a USB C connector, and then plugging that USB C port into a laptop.
+It seems that the chip must only be powered on after the USB C is plugged into a laptop so that the FT2232HL
+is not powered by the chip. 
 To reduce jumper wire spaghetti, we plan to place the FT2232HL on the STAC test board,
 rather than using it as a separate breakout board.
 The USB C connector we plan to use is
 Amphenol [12402012E212A](https://www.digikey.com/en/products/detail/amphenol-cs-commercial-products/12402012E212A/13683192).
 We will connect the USB-C port on the board to a USB-C port on a laptop using a cable such as
 Qualtek [3027007-005M](https://www.digikey.com/en/products/detail/qualtek/3027007-005M/9738749).
+We will also add a system reset button to allow us to reset the state of the FT2232HL if needed.
 
 Note: JTAG operations require the Rocket core to be able to execute instructions.
 
