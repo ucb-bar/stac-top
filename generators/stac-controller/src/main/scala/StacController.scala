@@ -12,7 +12,7 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.util._
 
-import srambist.StacControllerCtrlRegs._
+import staccontroller.StacControllerCtrlRegs._
 
 class StacControllerTopIO extends Bundle {
   val sramExtEn = Output(Bool())

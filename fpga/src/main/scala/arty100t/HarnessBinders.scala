@@ -11,7 +11,10 @@ import sifive.blocks.devices.uart.{UARTPortIO, HasPeripheryUARTModuleImp, UARTPa
 import sifive.blocks.devices.jtag.{JTAGPins, JTAGPinsFromPort}
 import sifive.blocks.devices.pinctrl.{BasePin}
 
-import sifive.fpgashells.ip.xilinx.{IBUFG, IOBUF, PULLUP, PowerOnResetFPGAOnly}
+import sifive.fpgashells.shell._
+import sifive.fpgashells.ip.xilinx._
+import sifive.fpgashells.shell.xilinx._
+import sifive.fpgashells.clocks._
 
 import chipyard._
 import chipyard.harness._

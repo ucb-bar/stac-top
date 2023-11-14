@@ -137,7 +137,7 @@ lazy val chipyard = (project in file("generators/chipyard"))
     sha3, // On separate line to allow for cleaner tutorial-setup patches
     dsptools, `rocket-dsp-utils`,
     gemmini, icenet, tracegen, cva6, nvdla, sodor, ibex, fft_generator,
-    constellation, mempress, sram_bist)
+    constellation, mempress, sram_bist, stac_controller)
   .settings(libraryDependencies ++= rocketLibDeps.value)
   .settings(
     libraryDependencies ++= Seq(
@@ -280,6 +280,12 @@ lazy val fpga_platforms = (project in file("./fpga"))
   .settings(commonSettings)
 
 lazy val sram_bist = (project in file("generators/sram-bist"))
+  .dependsOn(rocketchip)
+  .settings(libraryDependencies ++= rocketLibDeps.value)
+  .settings(chiselTestSettings)
+  .settings(commonSettings)
+
+lazy val stac_controller = (project in file("generators/stac-controller"))
   .dependsOn(rocketchip)
   .settings(libraryDependencies ++= rocketLibDeps.value)
   .settings(chiselTestSettings)
