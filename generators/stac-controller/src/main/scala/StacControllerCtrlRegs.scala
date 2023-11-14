@@ -5,6 +5,7 @@ import chisel3.util._
 import freechips.rocketchip.util.SimpleRegIO
 
 import scala.collection.mutable.LinkedHashMap
+import StacControllerCtrlRegs._
 
 object StacControllerCtrlRegs extends Enumeration {
   type Type = Value
