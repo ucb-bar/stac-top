@@ -111,24 +111,19 @@ class STACBringupHostConfig extends Config(
   //=============================
   // Set up TestHarness for standalone-sim
   //=============================
-  new WithArty100TTweaks ++
-  new chipyard.harness.WithAbsoluteFreqHarnessClockInstantiator ++  // Generate absolute frequencies
-  new chipyard.harness.WithSerialTLTiedOff ++                       // when doing standalone sim, tie off the serial-tl port
-  new chipyard.harness.WithSimTSIToUARTTSI ++                       // Attach SimTSI-over-UART to the UART-TSI port
-  new chipyard.iobinders.WithSerialTLPunchthrough ++                // Don't generate IOCells for the serial TL (this design maps to FPGA)
-  new srambist.WithStacControllerLocation(SBUS) ++ // See clocking
-  new srambist.WithStacControllerCrossingType(SynchronousCrossing()) ++
-  new srambist.WithStacController(staccontroller.StacControllerParams()) ++ // add SRAM BIST peripheral
+  new chipyard.WithAbsoluteFreqHarnessClockInstantiator ++  // Generate absolute frequencies
+  new chipyard.WithSerialTLPunchthrough ++                // Don't generate IOCells for the serial TL (this design maps to FPGA)
+  new staccontroller.WithStacControllerLocation(SBUS) ++ // See clocking
+  new staccontroller.WithStacControllerCrossingType(SynchronousCrossing()) ++
+  new staccontroller.WithStacController(staccontroller.StacControllerParams()) ++ // add SRAM BIST peripheral
   new chipyard.iobinders.WithStacControllerIOCells ++
-  new chipyard.fpga.arty100t.WithArty100TSerialTLToGPIO ++
-  new chipyard.fpga.arty100t.WithArty100TStacControllerToGPIO ++
 
   //=============================
   // Setup the SerialTL side on the bringup device
   //=============================
   new testchipip.WithSerialTLWidth(1) ++                                       // match width with the chip
   new testchipip.WithSerialTLMem(base = 0x0, size = 0x80000000L,               // accessible memory of the chip that doesn't come from the tethered host
-                                 idBits = 4, isMainMemory = false) ++          // This assumes off-chip mem starts at 0x8000_0000
+                                 isMainMemory = false) ++          // This assumes off-chip mem starts at 0x8000_0000
   new testchipip.WithSerialTLClockDirection(provideClockFreqMHz = None) ++ // bringup board drives the clock for the serial-tl receiver on the chip, use 75MHz clock
 
   //============================
@@ -160,9 +155,9 @@ class STACBringupHostConfig extends Config(
   new chipyard.NoCoresConfig)
 
 // DOC include start: TetheredChipLikeRocketConfig
-class TetheredChipLikeRocketConfig extends Config(
-  new chipyard.harness.WithAbsoluteFreqHarnessClockInstantiator ++   // use absolute freqs for sims in the harness
-  new chipyard.harness.WithMultiChipSerialTL(0, 1) ++                // connect the serial-tl ports of the chips together
-  new chipyard.harness.WithMultiChip(0, new STACConfig) ++ // ChipTop0 is the design-to-be-taped-out
-  new chipyard.harness.WithMultiChip(1, new STACBringupHostConfig))  // ChipTop1 is the bringup design
+// class TetheredChipLikeRocketConfig extends Config(
+//   new chipyard.harness.WithAbsoluteFreqHarnessClockInstantiator ++   // use absolute freqs for sims in the harness
+//   new chipyard.harness.WithMultiChipSerialTL(0, 1) ++                // connect the serial-tl ports of the chips together
+//   new chipyard.harness.WithMultiChip(0, new STACConfig) ++ // ChipTop0 is the design-to-be-taped-out
+//   new chipyard.harness.WithMultiChip(1, new STACBringupHostConfig))  // ChipTop1 is the bringup design
 // DOC include end: TetheredChipLikeRocketConfig

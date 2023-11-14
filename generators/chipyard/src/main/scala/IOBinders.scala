@@ -28,6 +28,7 @@ import chipyard.{CanHaveMasterTLMemPort}
 import chipyard.clocking.{HasChipyardPRCI, DividerOnlyClockGenerator}
 
 import srambist.{HasPeripherySramBistModuleImp, SramBistTopIO}
+import staccontroller.{HasPeripheryStacControllerModuleImp, StacControllerTopIO}
 
 import scala.reflect.{ClassTag}
 
@@ -211,7 +212,7 @@ class WithSramBistIOCells extends OverrideIOBinder({
 
 class WithStacControllerIOCells extends OverrideIOBinder({
   (system: HasPeripheryStacControllerModuleImp) => {
-    val (ports: Seq[StacControllerTopIO], cells2d) = system.stacControllerIO.map({ stacControllerIO =>
+    val (ports: Seq[StacControllerTopIO], cells2d: Seq[IOCell]) = system.stacControllerIO.map({ stacControllerIO =>
       val (port, ios) = IOCell.generateIOFromSignal(stacControllerIO, s"sram_bist", system.p(IOCellKey), abstractResetAsAsync = true)
       (Seq(port), ios)
     }).getOrElse((Nil, Nil))
@@ -328,6 +329,18 @@ class WithSerialTLIOCells extends OverrideIOBinder({
     val (port, cells) = IOCell.generateIOFromSignal(s.getWrappedValue, "serial_tl", sys.p(IOCellKey), abstractResetAsAsync = true)
     (Seq(port), cells)
   }).getOrElse((Nil, Nil))
+})
+
+class WithSerialTLPunchthrough extends OverrideIOBinder({
+  (system: CanHavePeripheryTLSerial) => {
+    val (ports, cells) = system.serial_tl.zipWithIndex.map({ case (s, id) =>
+      val sys = system.asInstanceOf[BaseSubsystem]
+      val port = IO(chiselTypeOf(s.getWrappedValue))
+      port <> s.getWrappedValue
+      (SerialTLPort(port, sys.p(SerialTLKey).get, system.serdesser.get, id), Nil)
+    }).unzip
+    (ports.toSeq, cells.flatten.toSeq)
+  }
 })
 
 class WithAXI4MemPunchthrough extends OverrideLazyIOBinder({

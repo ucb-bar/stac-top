@@ -54,5 +54,6 @@ class NoCoresArty100TConfig extends Config(
 
 class BringupArty100TConfig extends Config(
   new WithArty100TSerialTLToGPIO ++
+  new WithArty100TStacControllerToGPIO ++
   new WithArty100TTweaks(freqMHz = 75) ++
-  new chipyard.ChipBringupHostConfig)
+  new chipyard.STACBringupHostConfig)
