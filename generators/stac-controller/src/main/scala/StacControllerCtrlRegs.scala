@@ -5,7 +5,6 @@ import chisel3.util._
 import freechips.rocketchip.util.SimpleRegIO
 
 import scala.collection.mutable.LinkedHashMap
-import StacControllerCtrlRegs._
 
 object StacControllerCtrlRegs extends Enumeration {
   type Type = Value
@@ -48,6 +47,7 @@ object StacControllerCtrlRegs extends Enumeration {
       )
       .toMap
 }
+import StacControllerCtrlRegs._
 
 class StacControllerMmioRegIO extends Bundle {
   val sramExtEn = new SimpleRegIO(REG_WIDTH(SRAM_EXT_EN))
