@@ -44,41 +44,40 @@ The SRAM test area uses the following pins:
 * `SRAM_SAE_CLK`: The clock used to drive the SRAM sense amplifiers.
 * `SRAM_EXT_EN`: Enables external control of SRAMs (used only for **manual test mode (MTM)**).
 * `SRAM_SCAN_MODE`: Whether scan chain is using scanned inputs or Rocket inputs.
-* `SRAM_EN`: A global chip enable for all SRAM blocks. When setting up SRAM inputs (via scan chain or MMIO), should be held low; once the inputs are ready and stable, this should be set high (usually for one cycle). Similarly, should be held low when reading from the TDC output.
+* `SRAM_EN`: A global chip enable for all SRAM blocks. When setting up SRAM inputs via scan chain, should be held low; once the inputs are ready and stable, this should be set high (usually for one cycle). Similarly, should be held low when reading from the TDC output.
 * `BIST_EN`: Enables all BIST modules when in test mode.
+* `BIST_START`: Starts BIST sequence.
 * `BIST_DONE`: Indicates that the BIST has completed its test.
 
 There are three modes of test operation:
-* Rocket-controlled testing over memory-mapped I/O (MMIO).
+* RWM - Read/write operations via memory-mapped I/O (MMIO).
   Programmable test pattern, but limited speed due to needing to fetch instructions from memory
   and synchronize TDC output. Roughly 5-10 cycles per operation.
-    1. `SRAM_EXT_EN` and `SRAM_SCAN_MODE` held low. 
-    2. SRAM enable controlled by FSM that begins execution when MMIO writes to `ex` register.
-    3. `sram_sel` register set to `SRAM_SEL_MMIO`, indicating that the SRAMs should take inputs directy from MMIO registers.
-    2. SRAM enable controlled by FSM that begins execution when MMIO writes to `ex` register. Once execution begins, the FSM should turn on `sram_en_int` for one cycle to trigger a single memory operation.
-    4. Once the operation is complete and the correct values of `dout` and `tdc` are stored in scan chain after an additional cycle, the FSM will set `done` to high, allowing the Rocket to read the relevant values. _Operates under the assumption that `dout` and `tdc` will not change due to the SRAMs being disabled on the next clock cycle (i.e. that clock gating works correctly)._
-* Manual test mode (MTM). Enables testing via scan chain.
+    1. `SRAM_SCAN_EN`, `SRAM_EXT_EN`, `SRAM_SCAN_MODE`, `SRAM_EN`, `BIST_EN`, and `BIST_START` held low. 
+    2. `sram_sel` register set to `SRAM_SEL_MMIO`, indicating that the SRAMs should take inputs directy from MMIO registers rather than the BIST.
+    3. SRAM enable controlled by FSM that begins execution when MMIO writes to `ex` register. Once execution begins, the FSM should turn on `sram_en_int` for one cycle to trigger a single memory operation.
+    4. Once the operation is complete and the correct values of `dout` and `tdc` are stored in scan chain after an additional cycle, the FSM will set `done` to high. The Rocket should poll this register until it is high, then read the relevant values. _Operates under the assumption that `dout` and `tdc` will not change due to the SRAMs being disabled on the next clock cycle (i.e. that clock gating works correctly)._
+* RWS - Read/write operations via scan chain.
   Can scan inputs into registers, then scan out SRAM output.
-    1. `SRAM_EXT_EN` and `SRAM_SCAN_MODE` held high. 
-    2. Values are scanned into the registers and held (Rocket cannot write to MMIO registers while `SRAM_SCAN_MODE` is high).
-    3. `sram_sel` register set to `SRAM_SEL_MMIO`, indicating that the SRAMs should take inputs directy from MMIO registers 
-    2. SRAM enabled by external `SRAM_EN` signal for one cycle.
-    4. Once the operation is complete and the correct values of `dout` and `tdc` are stored in scan chain, results canbe scanned out.
   Slow (~1k cycles per op), but does not rely on Rocket or BIST working.
-* Built-in self-test (BIST) via MMIO. Performs at-speed (1 op per cycle) testing of predefined memory patterns.
-    1. `SRAM_EXT_EN` and `SRAM_SCAN_MODE` held low. 
+    1. `SRAM_EXT_EN` and `SRAM_SCAN_MODE` held high. `SRAM_SCAN_EN`, `SRAM_EXT_EN`, `SRAM_SCAN_MODE`, `SRAM_EN`, `BIST_EN`, and `BIST_START` held low. 
+    2. Values are scanned into the registers and held (Rocket cannot write to MMIO registers while `SRAM_SCAN_MODE` is high).
+    3. `sram_sel` register set to `SRAM_SEL_MMIO`, indicating that the SRAMs should take inputs directy from MMIO registers rather than the BIST.
+    2. SRAM enabled by external `SRAM_EN` signal for one cycle.
+    4. Once the operation is complete and the correct values of `dout` and `tdc` are stored in scan chain, results can be scanned out.
+* BISTM - Built-in self-test (BIST) via MMIO. Performs at-speed (1 op per cycle) testing of predefined memory patterns.
+    1. `SRAM_SCAN_EN`, `SRAM_EXT_EN`, `SRAM_SCAN_MODE`, `SRAM_EN`, `BIST_EN`, and `BIST_START` held low. 
     2. SRAM enable controlled by BIST.
     3. `sram_sel` register set to `SRAM_SEL_BIST`, indicating that the SRAMs should take inputs from the BIST.
     2. BIST controlled by FSM that begins execution when MMIO writes to `ex` register. The FSM writes `start` signal to reset BIST counters for one (or more) cycles, then enables the BIST.
     4. Once the test is complete, the BIST will write to the `done` register. The rocket can then read the relevant MMIO registers for the test results.
-* Built-in self-test (BIST) via scan chain. Performs at-speed (1 op per cycle) testing of predefined memory patterns.
-    1. `SRAM_EXT_EN` is held low, and `SRAM_SCAN_MODE` is held high.
-    2. Global reset set in order to reset BIST (`BIST_EN` held low).
-    2. SRAM enable controlled by BIST.
-    3. Values are scanned into the registers and held (Rocket cannot write to MMIO registers while `SRAM_SCAN_MODE` is high).
-    4. `sram_sel` register set to `SRAM_SEL_BIST`, indicating that the SRAMs should take inputs from the BIST.
-    5. Ocne registers are all scanned in, `BIST_EN` is set high, starting the BIST test.
-    4. Once the test is complete, the BIST will write to the `done` register, which can be read externally via the `DONE` pin. The test results can then be scanned out.
+* BISTS - Built-in self-test (BIST) via scan chain. Performs at-speed (1 op per cycle) testing of predefined memory patterns.
+    1. `SRAM_SCAN_MODE` held high. `SRAM_EXT_EN`, `SRAM_SCAN_EN`, `SRAM_EXT_EN`, `SRAM_EN`, `BIST_EN`, and `BIST_START` held low. 
+    2. Values are scanned into the registers and held (Rocket cannot write to MMIO registers while `SRAM_SCAN_MODE` is high).
+    3. `sram_sel` register set to `SRAM_SEL_BIST`, indicating that the SRAMs should take inputs from the BIST.
+    4. Once all the registers are scanned in, `BIST_START` set to high for one or more cycles then held low.
+    5. `BIST_EN` is then set to high, starting the BIST test. `BIST_EN` should remain high until the test is complete.
+    6. Once the test is complete, the BIST will write to the `done` register, which can be read externally via the `DONE` pin. The test results can then be scanned out.
 
 Note that there are no dual-clock scan chain FFs in the open-source SKY130 PDK.
 (Dual-clock FFs have a scan clock port and an independent system clock port.)
