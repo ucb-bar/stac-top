@@ -4,7 +4,7 @@ vlsi.core.max_threads: 32
 
 # Technology paths
 technology.sky130:
-  sky130A: "/tools/commercial/skywater/local/sky130A"
+  sky130A: "/tools/commercial/skywater/local/open_pdks-2022.10/share/pdk/sky130A"
   # sram22_sky130_macros: "/tools/commercial/skywater/local/chipyard-tutorial/sram22_sky130_macros"
   sram22_sky130_macros: "/tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros"
   # https://github.com/rahulk29/sram22_sky130_macros/tree/dev

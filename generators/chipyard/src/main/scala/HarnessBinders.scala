@@ -99,7 +99,7 @@ class WithSramBistTiedToMMIOMode extends OverrideHarnessBinder({
       p.sramEn := false.B
       p.sramScanIn := false.B
       p.sramScanEn := false.B
-      p.sramSaeClk := false.B
+      p.tdcClk := false.B
       p.bistEn := false.B
       p.bistStart := false.B
     })

@@ -21,7 +21,7 @@ pins:
   E16: spi_0_dq_2
   E15: spi_0_dq_1
   E14: spi_0_dq_0
-  W1: sram_bist_sramSaeClk
+  W1: sram_bist_tdcClk
   W5: sram_bist_sramScanIn
   W6: sram_bist_sramScanOut
   W7: sram_bist_sramScanEn
