@@ -13,8 +13,8 @@ import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.util._
 
 import srambist.analog.SramParams
-import srambist.sramharness.SaeSrc
 import srambist.SramBistCtrlRegs._
+import srambist.TdcSrc
 
 class SramBistTopIO extends Bundle {
   val sramExtEn = Input(Bool())
@@ -22,7 +22,7 @@ class SramBistTopIO extends Bundle {
   val sramEn = Input(Bool())
   val sramScanIn = Input(Bool())
   val sramScanEn = Input(Bool())
-  val sramSaeClk = Input(Bool())
+  val tdcClk = Input(Bool())
   val bistEn = Input(Bool())
   val bistStart = Input(Bool())
   val sramScanOut = Output(Bool())
@@ -53,7 +53,7 @@ class SramBist()(implicit p: Parameters) extends Module {
   bistTop.io.sramEn := io.top.sramEn
   bistTop.io.bistEn := io.top.bistEn
   bistTop.io.bistStart := io.top.bistStart
-  bistTop.io.saeClk := io.top.sramSaeClk
+  bistTop.io.tdcClk := io.top.tdcClk
   bistTop.io.ex := io.ex.valid & io.ex.bits
   io.ex.ready := ready
 
@@ -63,8 +63,8 @@ class SramBist()(implicit p: Parameters) extends Module {
   bistTop.io.we := scanChainIntf.io.mmio.we.q.asBool
   bistTop.io.sramId := scanChainIntf.io.mmio.sramId.q
   bistTop.io.sramSel := scanChainIntf.io.mmio.sramSel.q.asTypeOf(SramSrc())
-  bistTop.io.saeCtl := scanChainIntf.io.mmio.saeCtl.q
-  bistTop.io.saeSel := scanChainIntf.io.mmio.saeSel.q.asTypeOf(SaeSrc())
+  bistTop.io.dlCtl := scanChainIntf.io.mmio.dlCtl.q
+  bistTop.io.tdcSel := scanChainIntf.io.mmio.tdcSel.q.asTypeOf(TdcSrc())
   bistTop.io.bistRandSeed := scanChainIntf.io.bistRandSeed
   bistTop.io.bistSigSeed := scanChainIntf.io.mmio.bistSigSeed.q
   bistTop.io.bistMaxRowAddr := scanChainIntf.io.mmio.bistMaxRowAddr.q
@@ -144,11 +144,11 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(
       REGMAP_OFFSET(SRAM_SEL) -> Seq(
         RegField.rwReg(REG_WIDTH(SRAM_SEL), sramBist.io.mmio.sramSel)
       ),
-      REGMAP_OFFSET(SAE_CTL) -> Seq(
-        RegField.rwReg(REG_WIDTH(SAE_CTL), sramBist.io.mmio.saeCtl)
+      REGMAP_OFFSET(DL_CTL) -> Seq(
+        RegField.rwReg(REG_WIDTH(DL_CTL), sramBist.io.mmio.dlCtl)
       ),
-      REGMAP_OFFSET(SAE_SEL) -> Seq(
-        RegField.rwReg(REG_WIDTH(SAE_SEL), sramBist.io.mmio.saeSel)
+      REGMAP_OFFSET(TDC_SEL) -> Seq(
+        RegField.rwReg(REG_WIDTH(TDC_SEL), sramBist.io.mmio.tdcSel)
       ),
       REGMAP_OFFSET(DOUT) -> Seq(
         RegField.rwReg(REG_WIDTH(DOUT), sramBist.io.mmio.doutMmio)

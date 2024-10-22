@@ -19,9 +19,7 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
     val wmask = Input(UInt(wmaskWidth.W))
     val addr = Input(UInt(log2Ceil(params.numWords).W))
     val din = Input(UInt(params.dataWidth.W))
-    val saeMuxed = Input(Bool())
     val dout = Output(UInt(params.dataWidth.W))
-    val saeInt = Output(Bool())
   })
 
   val chiseltestCfg = p(WithChiseltestSramsKey)
@@ -68,7 +66,6 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
         }
         io.dout := out
       }
-      io.saeInt := clock.asBool
     }
     case None => {
       val inner = Module(new SramBlackBox(params))
@@ -77,9 +74,7 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
       inner.io.wmask := io.wmask
       inner.io.addr := io.addr
       inner.io.din := io.din
-      inner.io.sae_muxed := io.saeMuxed
       io.dout := inner.io.dout
-      io.saeInt := inner.io.sae_int
     }
   }
 
@@ -95,13 +90,11 @@ class SramBlackBox(params: SramParams)
     val wmask = Input(UInt(wmaskWidth.W))
     val addr = Input(UInt(log2Ceil(params.numWords).W))
     val din = Input(UInt(params.dataWidth.W))
-    val sae_muxed = Input(Bool())
     val dout = Output(UInt(params.dataWidth.W))
-    val sae_int = Output(Bool())
   })
 
   override val desiredName =
-    s"sram22_${params.numWords}x${params.dataWidth}m${params.muxRatio}w${params.maskGranularity}_test"
+    s"sram22_${params.numWords}x${params.dataWidth}m${params.muxRatio}w${params.maskGranularity}"
 
   addResource(s"/vsrc/$desiredName.v")
 }

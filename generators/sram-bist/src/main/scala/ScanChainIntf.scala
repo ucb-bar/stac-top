@@ -14,8 +14,8 @@ class MmioRegIO extends Bundle {
   val we = new SimpleRegIO(REG_WIDTH(WE))
   val sramId = new SimpleRegIO(REG_WIDTH(SRAM_ID))
   val sramSel = new SimpleRegIO(REG_WIDTH(SRAM_SEL))
-  val saeCtl = new SimpleRegIO(REG_WIDTH(SAE_CTL))
-  val saeSel = new SimpleRegIO(REG_WIDTH(SAE_SEL))
+  val dlCtl = new SimpleRegIO(REG_WIDTH(DL_CTL))
+  val tdcSel = new SimpleRegIO(REG_WIDTH(TDC_SEL))
   val bistRandSeedMmio = Vec(2, new SimpleRegIO(64))
   val bistSigSeed = new SimpleRegIO(REG_WIDTH(BIST_SIG_SEED))
   val bistMaxRowAddr = new SimpleRegIO(REG_WIDTH(BIST_MAX_ROW_ADDR))
@@ -161,8 +161,8 @@ class ScanChainIntf extends Module {
       io.mmio.sramSel,
       true
     ),
-    (SCAN_CHAIN_OFFSET(SAE_CTL), REG_WIDTH(SAE_CTL), io.mmio.saeCtl, true),
-    (SCAN_CHAIN_OFFSET(SAE_SEL), REG_WIDTH(SAE_SEL), io.mmio.saeSel, true),
+    (SCAN_CHAIN_OFFSET(DL_CTL), REG_WIDTH(DL_CTL), io.mmio.dlCtl, true),
+    (SCAN_CHAIN_OFFSET(TDC_SEL), REG_WIDTH(TDC_SEL), io.mmio.tdcSel, true),
     (
       SCAN_CHAIN_OFFSET(BIST_SIG_SEED),
       REG_WIDTH(BIST_SIG_SEED),

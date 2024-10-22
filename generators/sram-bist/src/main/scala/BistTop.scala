@@ -5,7 +5,7 @@ import chisel3.util._
 import org.chipsalliance.cde.config.Parameters
 
 import srambist.analog.{Tdc, DelayLine, Sram, SramParams}
-import srambist.sramharness.{SramHarness, SramHarnessParams, SaeSrc}
+import srambist.sramharness.{SramHarness, SramHarnessParams}
 import srambist.programmablebist.{ProgrammableBist, ProgrammableBistParams}
 import srambist.misr.MaxPeriodFibonacciMISR
 import chisel3.experimental.VecLiterals._
@@ -13,7 +13,7 @@ import srambist.analog.{Tdc, DelayLine, BufferTree}
 
 case class BistTopParams(
     srams: Seq[SramParams] = Seq(
-      new SramParams(8, 8, 2048, 32),
+      new SramParams(8, 4, 512, 64),
       new SramParams(8, 4, 256, 32),
       new SramParams(8, 4, 64, 32),
       new SramParams(24, 4, 64, 24),
@@ -23,11 +23,22 @@ case class BistTopParams(
       new SramParams(8, 4, 512, 32),
     ),
     bistParams: ProgrammableBistParams = new ProgrammableBistParams()
-)
+) {
+  def dataWidth = bistParams.dataWidth
+}
 
 object SramSrc extends ChiselEnum {
   val mmio = Value(0.U(1.W))
   val bist = Value(1.U(1.W))
+}
+
+object TdcSrc extends ChiselEnum {
+  // SRAM dout
+  val dout = Value(0.U(2.W))
+  // External 
+  val ext = Value(1.U(2.W))
+  // Delay line
+  val dl = Value(2.U(2.W))
 }
 
 class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
@@ -39,7 +50,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   )
   val misr = Module(
     new MaxPeriodFibonacciMISR(
-      32
+      params.dataWidth,
     )
   )
 
@@ -53,16 +64,16 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
 
     // MMIO registers
     val addr = Input(UInt(13.W))
-    val din = Input(UInt(32.W))
-    val mask = Input(UInt(32.W))
+    val din = Input(UInt(params.dataWidth.W))
+    val mask = Input(UInt(params.dataWidth.W))
     val we = Input(Bool())
     val sramId = Input(UInt(4.W))
     val sramSel = Input(SramSrc())
-    val saeCtl = Input(UInt(7.W))
-    val saeSel = Input(SaeSrc())
-    val saeClk = Input(Bool())
+    val dlCtl = Input(UInt(7.W))
+    val tdcSel = Input(TdcSrc())
+    val tdcClk = Input(Bool())
     val bistRandSeed = Input(UInt(params.bistParams.seedWidth.W))
-    val bistSigSeed = Input(UInt(32.W))
+    val bistSigSeed = Input(UInt(params.dataWidth.W))
     val bistMaxRowAddr = Input(UInt(params.bistParams.maxRowAddrWidth.W))
     val bistMaxColAddr = Input(UInt(params.bistParams.maxColAddrWidth.W))
     val bistInnerDim = Input(bist.Dimension())
@@ -76,20 +87,20 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
       Input(Vec(params.bistParams.elementTableLength, new bist.Element()))
     val bistMaxElementIdx =
       Input(UInt(log2Ceil(params.bistParams.elementTableLength).W))
-    val bistCycleLimit = Input(UInt(32.W))
+    val bistCycleLimit = Input(UInt(64.W))
     val bistStopOnFailure = Input(Bool())
     val ex = Input(Bool())
 
-    val dout = Output(UInt(32.W))
+    val dout = Output(UInt(params.dataWidth.W))
     val tdc = Output(UInt(252.W))
     val done = Output(Bool())
 
     val bistDone = Output(Bool())
     val bistFail = Output(Bool())
-    val bistFailCycle = Output(UInt(32.W))
-    val bistExpected = Output(UInt(32.W))
-    val bistReceived = Output(UInt(32.W))
-    val bistSignature = Output(UInt(32.W))
+    val bistFailCycle = Output(UInt(64.W))
+    val bistExpected = Output(UInt(params.dataWidth.W))
+    val bistReceived = Output(UInt(params.dataWidth.W))
+    val bistSignature = Output(UInt(params.dataWidth.W))
   })
 
   object State extends ChiselEnum {
@@ -111,15 +122,15 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val bistCyclePrev = RegNext(bist.io.cycle)
   val bistDonePrev = RegNext(bist.io.done)
   val bistFail = RegInit(false.B)
-  val bistFailCycle = Reg(UInt(32.W))
-  val bistExpected = Reg(UInt(32.W))
-  val bistReceived = Reg(UInt(32.W))
+  val bistFailCycle = Reg(UInt(64.W))
+  val bistExpected = Reg(UInt(params.dataWidth.W))
+  val bistReceived = Reg(UInt(params.dataWidth.W))
   val sramMasks = RegInit(
-    Vec(params.srams.length, UInt(32.W)).Lit(params.srams.zipWithIndex.map {
-      case (p, i) => i -> ((1L << p.dataWidth) - 1).U(32.W)
+    Vec(params.srams.length, UInt(params.dataWidth.W)).Lit(params.srams.zipWithIndex.map {
+      case (p, i) => i -> ((1L << p.dataWidth) - 1).U(params.dataWidth.W)
     }: _*)
   )
-  val sramMask = Wire(UInt(32.W))
+  val sramMask = Wire(UInt(params.dataWidth.W))
   val maskedIOOut = Wire(chiselTypeOf(io.dout))
 
   io.bistFail := bistFail
@@ -231,7 +242,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
       sram.io.wmask := harness.io.mask
       sram.io.addr := harness.io.addr
       sram.io.din := harness.io.data
-      sram.io.saeMuxed := harness.io.saeMuxed
 
       harness.io.sramEn := false.B
       harness.io.inRow := 0.U
@@ -269,10 +279,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
         }
       }
 
-      harness.io.saeInt := sram.io.saeInt
-      harness.io.saeSel := io.saeSel
-      harness.io.saeClk := io.saeClk
-      harness.io.saeCtl := io.saeCtl
       (sram, harness)
     }
   }.unzip
@@ -289,9 +295,9 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val (delay_lines, tdcs, b_buffers) = (0 until (((srams.length - 1) >> 2) + 1)).map { i =>
     val delay_line = Module(new DelayLine)
     delay_line.io.clk_in := clock.asBool
-    val saeCtlOH = UIntToOH(io.saeCtl)
-    delay_line.io.ctl := saeCtlOH
-    delay_line.io.ctl_b := ~saeCtlOH
+    val dlCtlOH = UIntToOH(io.dlCtl)
+    delay_line.io.ctl := dlCtlOH
+    delay_line.io.ctl_b := ~dlCtlOH
     val tdc = Module(new Tdc)
 
     val aBuffered = Wire(chiselTypeOf(tdc.io.a))
@@ -311,10 +317,17 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     (delay_line, tdc, bufB)
   }.unzip3
 
-  harnesses.zipWithIndex.foreach { case (harness, i) =>
-    harness.io.delayLineIn := delay_lines(i >> 2).io.clk_out
+  srams.zipWithIndex.foreach { case (sram, i) =>
     when (i.U === io.sramId) {
-      b_buffers(i >> 2).io.A := harness.io.saeMuxed
+      b_buffers(i >> 2).io.A := sram.io.dout
+    }
+  }
+
+  b_buffers.zipWithIndex.foreach { case (b_buffer, i) =>
+    switch (io.tdcSel) {
+      is (TdcSrc.dout) {}
+      is (TdcSrc.ext) { b_buffer.io.A := io.tdcClk }
+      is (TdcSrc.dl) { b_buffer.io.A := delay_lines(i).io.clk_out }
     }
   }
 

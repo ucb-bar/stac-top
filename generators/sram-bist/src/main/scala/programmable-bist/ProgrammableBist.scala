@@ -11,7 +11,7 @@ case class ProgrammableBistParams(
     patternTableLength: Int = 8,
     maxRowAddrWidth: Int = 10,
     maxColAddrWidth: Int = 3,
-    dataWidth: Int = 32,
+    dataWidth: Int = 64,
     randAddrWidth: Int = 14
 ) {
   // data + mask + row addr + col addr + operation
@@ -94,7 +94,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
     val patternTable =
       Input(Vec(params.patternTableLength, UInt(params.dataWidth.W)))
     val elementSequence = Input(Vec(params.elementTableLength, new Element()))
-    val cycleLimit = Input(UInt(32.W))
+    val cycleLimit = Input(UInt(64.W))
     val sramEn = Output(Bool())
     val sramWen = Output(Bool())
     val row = Output(UInt(params.maxRowAddrWidth.W))
@@ -102,7 +102,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
     val data = Output(UInt(params.dataWidth.W))
     val mask = Output(UInt(params.dataWidth.W))
     val checkEn = Output(Bool())
-    val cycle = Output(UInt(32.W))
+    val cycle = Output(UInt(64.W))
     val done = Output(Bool())
     val resetHash = Output(Bool())
   })
@@ -156,7 +156,7 @@ class ProgrammableBist(val params: ProgrammableBistParams) extends Module {
   val elementIndex = RegInit(0.asUInt(log2Ceil(params.elementTableLength).W))
   val opIndex = RegInit(0.asUInt(log2Ceil(params.operationsPerElement).W))
   val done = RegInit(false.B)
-  val cycle = RegInit(1.U(32.W))
+  val cycle = RegInit(1.U(64.W))
 
   currElement := io.elementSequence(elementIndex)
   currOperationElement := currElement.operationElement
