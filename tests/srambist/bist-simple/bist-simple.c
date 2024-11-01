@@ -15,7 +15,18 @@
 int main( int argc, char* argv[] )
 {
   
-  pattern_table_t pattern_table = { { 0, 0xffffffff, 0x5f1a950d, 0xa0e56af2, 0, 0xffffffff, 0, 0} };
+  pattern_table_t pattern_table = { 
+      { 
+          {0x0, 0x0},
+          {0xffffffffffffffff, 0xffffffffffffffff},
+          {0x5f1a950d9af236fc, 0xc76148fef684be4e},
+          {0xa0e56af2650dc903, 0x389eb701097b41b1}, 
+          {0x0, 0x0},
+          {0xffffffffffffffff, 0xffffffffffffffff},
+          {0x0, 0x0},
+          {0x0, 0x0}
+      } 
+  };
   packed_element_vec_t packed_elem_vec = { { 
     3604613414837551105UL,
     295129881980453250UL,
@@ -34,16 +45,21 @@ int main( int argc, char* argv[] )
     14130187937237467530UL,
     1568UL
   } };
-  bist_result_t result = srambist_run_bist_with_packed_elements(0, 1, 1, 15, 3, DIMENSION_ROW, &packed_elem_vec, 3, &pattern_table, 0, 1);
+  uint128_t bist_sig = {0, 1};
+  bist_result_t result = srambist_run_bist_with_packed_elements(6, 1, bist_sig, 15, 3, DIMENSION_ROW, &packed_elem_vec, 3, &pattern_table, 0, 1);
 
   if (result.fail != 0) {
     printf("BIST unexpectedly failed\n");
     return 1;
   }
 
-  uint32_t expected_signature = 973524019;
-  if (result.signature != expected_signature) {
-    printf("BIST signature %d does not match expected %d\n", result.signature, expected_signature);
+  uint128_t expected_signature;
+
+  expected_signature.hi = 0x88174c7de9471b1aUL;
+  expected_signature.lo = 0x318a70328b53356bUL;
+
+  if (!eq128(result.signature, expected_signature)) {
+    printf("BIST signature 0x%llx%llx does not match expected 0x%llx%llx\n", result.signature.hi, result.signature.lo, expected_signature.hi, expected_signature.lo);
     return 1;
   }
 

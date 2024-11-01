@@ -1,37 +1,33 @@
 // SRAM22 SRAM model
-// Words: 4096
-// Word size: 8
+// Words: 128
+// Word size: 16
 // Write size: 8
 
-module sram22_4096x8m8w8_test(
+module sram22_128x16m4w8(
 `ifdef USE_POWER_PINS
     vdd,
     vss,
 `endif
-  clk,we,wmask,addr,din,dout,sae_int,sae_muxed
+  clk,rstb,ce,we,wmask,addr,din,dout
   );
 
-  // These parameters should NOT be set to
-  // anything other than their defaults.
-  parameter DATA_WIDTH = 8 ;
-  parameter ADDR_WIDTH = 12 ;
-  parameter WMASK_WIDTH = 1 ;
-  parameter RAM_DEPTH = 1 << ADDR_WIDTH;
+  localparam DATA_WIDTH = 16 ;
+  localparam ADDR_WIDTH = 7 ;
+  localparam WMASK_WIDTH = 2 ;
+  localparam RAM_DEPTH = 1 << ADDR_WIDTH;
 
 `ifdef USE_POWER_PINS
     inout vdd; // power
     inout vss; // ground
 `endif
   input  clk; // clock
+  input  rstb; // reset bar
+  input  ce; // chip enable
   input  we; // write enable
   input [WMASK_WIDTH-1:0] wmask; // write mask
   input [ADDR_WIDTH-1:0]  addr; // address
   input [DATA_WIDTH-1:0]  din; // data in
   output reg [DATA_WIDTH-1:0] dout; // data out
-  
-  input sae_muxed; // muxed sense amp enable
-  output sae_int; // internal sense amp enable
-  
 
   reg [DATA_WIDTH-1:0] mem [0:RAM_DEPTH-1];
 
@@ -48,19 +44,24 @@ module sram22_4096x8m8w8_test(
 
   always @(posedge clk)
   begin
-    // Write
-    if (we) begin
-        if (wmask[0]) begin
-          mem[addr][7:0] <= din[7:0];
-        end
+    if (rstb & ce) begin
+      // Write
+      if (we) begin
+          if (wmask[0]) begin
+            mem[addr][7:0] <= din[7:0];
+          end
+          if (wmask[1]) begin
+            mem[addr][15:8] <= din[15:8];
+          end
 
-      // Output is arbitrary when writing to SRAM
-      dout <= {DATA_WIDTH{1'bx}};
-    end
+        // Output is all 1s when writing to SRAM due to precharge.
+        dout <= {DATA_WIDTH{1'b1}};
+      end
 
-    // Read
-    if (!we) begin
-      dout <= mem[addr];
+      // Read
+      if (!we) begin
+        dout <= mem[addr];
+      end
     end
   end
 

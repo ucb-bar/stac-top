@@ -25,9 +25,14 @@ module tdc_64(
   genvar i;
 
   generate for (i = 0; i < DATA_WIDTH; i = i + 1) begin
-    always @(*) begin
-      if (i == 0) intermediate[i] <= #1 a;
-      else intermediate[i] <= #1 intermediate[i-1];
+    if (i == 0) begin
+      always @(*) begin
+        intermediate[i] <= #1 a;
+      end
+    end else begin
+      always @(*) begin
+        intermediate[i] <= #1 intermediate[i-1];
+      end
     end
   end endgenerate
 

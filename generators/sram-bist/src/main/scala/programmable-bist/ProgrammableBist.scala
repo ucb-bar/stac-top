@@ -9,9 +9,9 @@ case class ProgrammableBistParams(
     elementTableLength: Int = 8,
     operationsPerElement: Int = 8,
     patternTableLength: Int = 8,
-    maxRowAddrWidth: Int = 10,
+    maxRowAddrWidth: Int = 11,
     maxColAddrWidth: Int = 3,
-    dataWidth: Int = 64,
+    dataWidth: Int = 128,
     randAddrWidth: Int = 14
 ) {
   // data + mask + row addr + col addr + operation

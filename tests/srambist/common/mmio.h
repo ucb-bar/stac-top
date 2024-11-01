@@ -2,6 +2,16 @@
 #define __MMIO_H__
 
 #include <stdint.h>
+#include <stdbool.h>
+
+typedef struct {
+    uint64_t hi;
+    uint64_t lo;
+} uint128_t;
+
+static inline bool eq128(uint128_t a, uint128_t b) {
+    return (a.hi == b.hi) && (a.lo == b.lo);
+}
 
 static inline void reg_write8(uintptr_t addr, uint8_t data)
 {
@@ -49,6 +59,20 @@ static inline uint64_t reg_read64(unsigned long addr)
 {
 	volatile uint64_t *ptr = (volatile uint64_t *) addr;
 	return *ptr;
+}
+
+static inline void reg_write128(unsigned long addr, uint128_t data)
+{
+    reg_write64(addr, data.lo);
+    reg_write64(addr + 8, data.hi);
+}
+
+static inline uint128_t reg_read128(unsigned long addr)
+{
+    uint128_t ret;
+    ret.lo = reg_read64(addr);
+    ret.hi = reg_read64(addr + 8);
+	return ret;
 }
 
 #endif

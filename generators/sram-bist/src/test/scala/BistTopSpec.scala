@@ -10,7 +10,6 @@ import org.chipsalliance.cde.config.Parameters
 import org.scalatest.flatspec.AnyFlatSpec
 
 import srambist.analog.SramParams
-import srambist.sramharness.SaeSrc
 import srambist.programmablebist.ProgrammableBistParams
 
 class BistTopTestHelpers(val c: BistTop) {
@@ -173,7 +172,7 @@ class BistTopTestHelpers(val c: BistTop) {
       we: Bool,
       sramId: UInt,
       sramSel: SramSrc.Type,
-      saeSel: SaeSrc.Type
+      tdcSel: TdcSrc.Type
   ): Unit = {
     // Interleave with clock steps to make sure that operations do not occur while registers are being set up.
     // Will be tested more thoroughly with scan chain module.
@@ -189,7 +188,7 @@ class BistTopTestHelpers(val c: BistTop) {
     c.clock.step()
     c.io.sramSel.poke(sramSel)
     c.clock.step()
-    c.io.saeSel.poke(saeSel)
+    c.io.tdcSel.poke(tdcSel)
     c.clock.step()
   }
 
@@ -226,7 +225,7 @@ class BistTopTestHelpers(val c: BistTop) {
       bistStopOnFailure: Bool,
       sramId: UInt,
       sramSel: SramSrc.Type,
-      saeSel: SaeSrc.Type
+      tdcSel: TdcSrc.Type
   ): Unit = {
     // Interleave with clock steps to make sure that operations do not occur while registers are being set up.
     // Will be tested more thoroughly with scan chain module.
@@ -254,7 +253,7 @@ class BistTopTestHelpers(val c: BistTop) {
     c.clock.step()
     c.io.sramSel.poke(sramSel)
     c.clock.step()
-    c.io.saeSel.poke(saeSel)
+    c.io.tdcSel.poke(tdcSel)
     c.clock.step()
   }
 
@@ -277,7 +276,7 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       0.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
 
@@ -288,7 +287,7 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("habcdabcd".U)
@@ -301,7 +300,7 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       0.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     c.io.dout.expect(
       "habcdabcd".U
@@ -315,7 +314,7 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("hab00ab00".U)
@@ -328,7 +327,7 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       1.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
 
@@ -339,7 +338,7 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       1.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("h12345678".U)
@@ -352,7 +351,7 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("hab00ab00".U)
@@ -365,7 +364,7 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       0.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
 
@@ -376,7 +375,7 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("h87654321".U)
@@ -388,7 +387,7 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("hab00ab00".U)
@@ -400,7 +399,7 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       1.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
 
@@ -411,7 +410,7 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       1.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("hdeadbeef".U)
@@ -423,7 +422,7 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       1.U,
       SramSrc.mmio,
-      SaeSrc.int
+      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("h12345678".U)
@@ -473,7 +472,7 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       0.U,
       SramSrc.bist,
-      SaeSrc.int
+      TdcSrc.dout
     )
     maybeReset()
     executeOp()
@@ -489,8 +488,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -550,8 +549,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -582,8 +581,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -613,8 +612,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -645,8 +644,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -678,8 +677,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -716,8 +715,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -777,7 +776,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          SaeSrc.int
+          TdcSrc.dout
         )
         maybeReset()
         executeOp()
@@ -814,8 +813,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -875,7 +874,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          SaeSrc.int
+          TdcSrc.dout
         )
         maybeReset()
         executeOp()
@@ -897,8 +896,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -958,7 +957,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          SaeSrc.int
+          TdcSrc.dout
         )
         maybeReset()
         executeOp()
@@ -984,8 +983,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(16, 8, 64, 16)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(16, 8, 64, 16)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -1009,7 +1008,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
 
@@ -1020,7 +1019,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
         assert((testhelpers.c.io.dout.peek().litValue & 0xffff) == 0x6bbd)
@@ -1033,7 +1032,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
 
@@ -1044,7 +1043,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
         // testhelpers.c.io.dout(15, 0).expect("h4321".U)
@@ -1057,7 +1056,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
         // testhelpers.c.io.dout(15, 0).expect("h6bbd".U)
@@ -1109,7 +1108,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
@@ -1162,8 +1161,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -1187,7 +1186,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
 
@@ -1198,7 +1197,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
 
@@ -1209,7 +1208,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
         testhelpers.c.io.dout.expect("hffffffdf".U)
@@ -1259,7 +1258,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          SaeSrc.int
+          TdcSrc.dout
         )
         maybeReset()
         executeOp()
@@ -1315,8 +1314,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -1339,7 +1338,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
 
@@ -1350,7 +1349,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
 
@@ -1361,7 +1360,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          SaeSrc.int
+          TdcSrc.dout
         )
         executeFn()
         testhelpers.c.io.dout.expect("h00000001".U)
@@ -1411,7 +1410,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          SaeSrc.int
+          TdcSrc.dout
         )
         maybeReset()
         executeOp()
@@ -1467,8 +1466,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(
       new BistTop(
         new BistTopParams(
-          Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
-          new ProgrammableBistParams(
+          srams = Seq(new SramParams(8, 4, 64, 32), new SramParams(8, 8, 1024, 32)),
+          bistParams = new ProgrammableBistParams(
             patternTableLength = 4,
             elementTableLength = 4,
             operationsPerElement = 4
@@ -1527,7 +1526,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          SaeSrc.int
+          TdcSrc.dout
         )
         maybeReset()
         executeOp()
@@ -1561,7 +1560,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.bist,
-          SaeSrc.int
+          TdcSrc.dout
         )
         maybeReset()
         executeOp()

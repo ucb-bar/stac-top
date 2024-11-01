@@ -9,26 +9,26 @@ import srambist.SramBistCtrlRegs._
 
 class MmioRegIO extends Bundle {
   val addr = new SimpleRegIO(REG_WIDTH(ADDR))
-  val din = new SimpleRegIO(REG_WIDTH(DIN))
-  val mask = new SimpleRegIO(REG_WIDTH(MASK))
+  val din = Vec(NUM_REGS(DIN), new SimpleRegIO(64))
+  val mask = Vec(NUM_REGS(MASK), new SimpleRegIO(64))
   val we = new SimpleRegIO(REG_WIDTH(WE))
   val sramId = new SimpleRegIO(REG_WIDTH(SRAM_ID))
   val sramSel = new SimpleRegIO(REG_WIDTH(SRAM_SEL))
   val dlCtl = new SimpleRegIO(REG_WIDTH(DL_CTL))
   val tdcSel = new SimpleRegIO(REG_WIDTH(TDC_SEL))
-  val bistRandSeedMmio = Vec(2, new SimpleRegIO(64))
-  val bistSigSeed = new SimpleRegIO(REG_WIDTH(BIST_SIG_SEED))
+  val bistRandSeedMmio = Vec(NUM_REGS(BIST_RAND_SEED), new SimpleRegIO(64))
+  val bistSigSeed = Vec(NUM_REGS(BIST_SIG_SEED), new SimpleRegIO(64))
   val bistMaxRowAddr = new SimpleRegIO(REG_WIDTH(BIST_MAX_ROW_ADDR))
   val bistMaxColAddr = new SimpleRegIO(REG_WIDTH(BIST_MAX_COL_ADDR))
   val bistInnerDim = new SimpleRegIO(REG_WIDTH(BIST_INNER_DIM))
   val bistPatternTableMmio = Vec(
-    4,
+    NUM_REGS(BIST_PATTERN_TABLE),
     new SimpleRegIO(
       64
     )
   )
   val bistElementSequenceMmio =
-    Vec(16, new SimpleRegIO(64))
+    Vec(NUM_REGS(BIST_ELEMENT_SEQUENCE), new SimpleRegIO(64))
   val bistMaxElementIdx =
     new SimpleRegIO(REG_WIDTH(BIST_MAX_ELEMENT_IDX))
   val bistCycleLimit = new SimpleRegIO(REG_WIDTH(BIST_CYCLE_LIMIT))
@@ -36,15 +36,15 @@ class MmioRegIO extends Bundle {
     REG_WIDTH(BIST_STOP_ON_FAILURE)
   )
 
-  val doutMmio = new SimpleRegIO(REG_WIDTH(DOUT))
-  val tdcMmio = Vec(4, new SimpleRegIO(64))
+  val doutMmio = Vec(NUM_REGS(DOUT), new SimpleRegIO(64))
+  val tdcMmio = Vec(NUM_REGS(TDC), new SimpleRegIO(64))
   val doneMmio = new SimpleRegIO(REG_WIDTH(DONE))
 
   val bistFailMmio = new SimpleRegIO(REG_WIDTH(BIST_FAIL))
   val bistFailCycleMmio = new SimpleRegIO(REG_WIDTH(BIST_FAIL_CYCLE))
-  val bistExpectedMmio = new SimpleRegIO(REG_WIDTH(BIST_EXPECTED))
-  val bistReceivedMmio = new SimpleRegIO(REG_WIDTH(BIST_RECEIVED))
-  val bistSignatureMmio = new SimpleRegIO(REG_WIDTH(BIST_SIGNATURE))
+  val bistExpectedMmio = Vec(NUM_REGS(BIST_EXPECTED), new SimpleRegIO(64))
+  val bistReceivedMmio = Vec(NUM_REGS(BIST_RECEIVED), new SimpleRegIO(64))
+  val bistSignatureMmio = Vec(NUM_REGS(BIST_SIGNATURE), new SimpleRegIO(64))
 }
 
 class ScanChainIntfIO extends Bundle {
@@ -99,7 +99,34 @@ class ScanChainIntf extends Module {
       io.mmio.bistElementSequenceMmio,
       true
     ),
-    (SCAN_CHAIN_OFFSET(TDC), REG_WIDTH(TDC), io.mmio.tdcMmio, false)
+    (SCAN_CHAIN_OFFSET(DIN), REG_WIDTH(DIN), io.mmio.din, true),
+    (SCAN_CHAIN_OFFSET(MASK), REG_WIDTH(MASK), io.mmio.mask, true),
+    (SCAN_CHAIN_OFFSET(DOUT), REG_WIDTH(DOUT), io.mmio.doutMmio, false),
+    (
+      SCAN_CHAIN_OFFSET(BIST_SIG_SEED),
+      REG_WIDTH(BIST_SIG_SEED),
+      io.mmio.bistSigSeed,
+      true
+    ),
+    (SCAN_CHAIN_OFFSET(TDC), REG_WIDTH(TDC), io.mmio.tdcMmio, false),
+    (
+      SCAN_CHAIN_OFFSET(BIST_EXPECTED),
+      REG_WIDTH(BIST_EXPECTED),
+      io.mmio.bistExpectedMmio,
+      false
+    ),
+    (
+      SCAN_CHAIN_OFFSET(BIST_RECEIVED),
+      REG_WIDTH(BIST_RECEIVED),
+      io.mmio.bistReceivedMmio,
+      false
+    ),
+    (
+      SCAN_CHAIN_OFFSET(BIST_SIGNATURE),
+      REG_WIDTH(BIST_SIGNATURE),
+      io.mmio.bistSignatureMmio,
+      false
+    )
   ).foreach((args: (Int, Int, Vec[SimpleRegIO], Boolean)) => {
     args match {
       case (start, width, regIO, writable) =>
@@ -151,8 +178,6 @@ class ScanChainIntf extends Module {
 
   Seq(
     (SCAN_CHAIN_OFFSET(ADDR), REG_WIDTH(ADDR), io.mmio.addr, true),
-    (SCAN_CHAIN_OFFSET(DIN), REG_WIDTH(DIN), io.mmio.din, true),
-    (SCAN_CHAIN_OFFSET(MASK), REG_WIDTH(MASK), io.mmio.mask, true),
     (SCAN_CHAIN_OFFSET(WE), REG_WIDTH(WE), io.mmio.we, true),
     (SCAN_CHAIN_OFFSET(SRAM_ID), REG_WIDTH(SRAM_ID), io.mmio.sramId, true),
     (
@@ -163,12 +188,6 @@ class ScanChainIntf extends Module {
     ),
     (SCAN_CHAIN_OFFSET(DL_CTL), REG_WIDTH(DL_CTL), io.mmio.dlCtl, true),
     (SCAN_CHAIN_OFFSET(TDC_SEL), REG_WIDTH(TDC_SEL), io.mmio.tdcSel, true),
-    (
-      SCAN_CHAIN_OFFSET(BIST_SIG_SEED),
-      REG_WIDTH(BIST_SIG_SEED),
-      io.mmio.bistSigSeed,
-      true
-    ),
     (
       SCAN_CHAIN_OFFSET(BIST_MAX_ROW_ADDR),
       REG_WIDTH(BIST_MAX_ROW_ADDR),
@@ -205,7 +224,6 @@ class ScanChainIntf extends Module {
       io.mmio.bistStopOnFailure,
       true
     ),
-    (SCAN_CHAIN_OFFSET(DOUT), REG_WIDTH(DOUT), io.mmio.doutMmio, false),
     (SCAN_CHAIN_OFFSET(DONE), REG_WIDTH(DONE), io.mmio.doneMmio, false),
     (
       SCAN_CHAIN_OFFSET(BIST_FAIL),
@@ -219,24 +237,6 @@ class ScanChainIntf extends Module {
       io.mmio.bistFailCycleMmio,
       false
     ),
-    (
-      SCAN_CHAIN_OFFSET(BIST_EXPECTED),
-      REG_WIDTH(BIST_EXPECTED),
-      io.mmio.bistExpectedMmio,
-      false
-    ),
-    (
-      SCAN_CHAIN_OFFSET(BIST_RECEIVED),
-      REG_WIDTH(BIST_RECEIVED),
-      io.mmio.bistReceivedMmio,
-      false
-    ),
-    (
-      SCAN_CHAIN_OFFSET(BIST_SIGNATURE),
-      REG_WIDTH(BIST_SIGNATURE),
-      io.mmio.bistSignatureMmio,
-      false
-    )
   ).foreach((args: (Int, Int, SimpleRegIO, Boolean)) => {
     args match {
       case (start, width, regIO, writable) =>

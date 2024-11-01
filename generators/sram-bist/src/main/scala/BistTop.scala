@@ -13,15 +13,25 @@ import srambist.analog.{Tdc, DelayLine, BufferTree}
 
 case class BistTopParams(
     srams: Seq[SramParams] = Seq(
-      new SramParams(8, 4, 512, 64),
-      new SramParams(8, 4, 256, 32),
       new SramParams(8, 4, 64, 32),
-      new SramParams(24, 4, 64, 24),
-      new SramParams(8, 8, 1024, 32),
-      new SramParams(32, 8, 1024, 32),
-      new SramParams(32, 4, 512, 32),
+      new SramParams(8, 4, 128, 16),
+      new SramParams(8, 4, 128, 32),
+      new SramParams(8, 8, 256, 16),
+      new SramParams(8, 4, 256, 32),
+      new SramParams(8, 4, 256, 64),
+      new SramParams(8, 4, 256, 128),
+      new SramParams(1, 8, 512, 8),
       new SramParams(8, 4, 512, 32),
+      new SramParams(8, 4, 512, 64),
+      new SramParams(8, 4, 512, 128),
+      new SramParams(8, 8, 1024, 32),
+      new SramParams(8, 4, 1024, 64),
+      new SramParams(1, 8, 4096, 8),
+      new SramParams(8, 8, 4096, 32),
+      new SramParams(8, 8, 8192, 32),
+      // new SramParams(1, 8, 256, 8),
     ),
+    logSramsPerTdc: Int = 3,
     bistParams: ProgrammableBistParams = new ProgrammableBistParams()
 ) {
   def dataWidth = bistParams.dataWidth
@@ -127,7 +137,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   val bistReceived = Reg(UInt(params.dataWidth.W))
   val sramMasks = RegInit(
     Vec(params.srams.length, UInt(params.dataWidth.W)).Lit(params.srams.zipWithIndex.map {
-      case (p, i) => i -> ((1L << p.dataWidth) - 1).U(params.dataWidth.W)
+      case (p, i) => i -> ((BigInt(1) << p.dataWidth) - 1).U(params.dataWidth.W)
     }: _*)
   )
   val sramMask = Wire(UInt(params.dataWidth.W))
@@ -237,21 +247,21 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
         )
       )
 
-      val sram = withClock(harness.io.sramClk) { Module(new Sram(sramParams)) }
+      val sram = Module(new Sram(sramParams))
 
       sram.io.wmask := harness.io.mask
       sram.io.addr := harness.io.addr
       sram.io.din := harness.io.data
 
-      harness.io.sramEn := false.B
       harness.io.inRow := 0.U
       harness.io.inCol := 0.U
       harness.io.inData := 0.U
       harness.io.inMask := 0.U
+      sram.io.ce := false.B
       sram.io.we := false.B
       switch(io.sramSel) {
         is(SramSrc.mmio) {
-          harness.io.sramEn := i.U === io.sramId & Mux(
+          sram.io.ce := i.U === io.sramId & Mux(
             io.sramExtEn,
             io.sramEn,
             fsmSramEn
@@ -266,7 +276,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
           sram.io.we := io.we
         }
         is(SramSrc.bist) {
-          harness.io.sramEn := i.U === io.sramId & bist.io.en & Mux(
+          sram.io.ce := i.U === io.sramId & bist.io.en & Mux(
             io.sramExtEn,
             io.sramEn,
             bist.io.sramEn
@@ -292,7 +302,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
 
   misr.io.in := maskedIOOut.asBools
 
-  val (delay_lines, tdcs, b_buffers) = (0 until (((srams.length - 1) >> 2) + 1)).map { i =>
+  val (delay_lines, tdcs, b_buffers) = (0 until (((srams.length - 1) >> params.logSramsPerTdc) + 1)).map { i =>
     val delay_line = Module(new DelayLine)
     delay_line.io.clk_in := clock.asBool
     val dlCtlOH = UIntToOH(io.dlCtl)
@@ -319,7 +329,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
 
   srams.zipWithIndex.foreach { case (sram, i) =>
     when (i.U === io.sramId) {
-      b_buffers(i >> 2).io.A := sram.io.dout
+      b_buffers(i >> params.logSramsPerTdc).io.A := sram.io.dout
     }
   }
 
@@ -334,7 +344,7 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   io.tdc := MuxCase(
     0.U,
     tdcs.zipWithIndex.map { case (tdc, i) =>
-      (i.U === io.sramId >> 2) -> tdc.io.dout
+      (i.U === io.sramId >> params.logSramsPerTdc) -> tdc.io.dout
     }
   )
 

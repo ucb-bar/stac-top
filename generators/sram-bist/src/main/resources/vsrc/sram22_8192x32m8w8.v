@@ -1,21 +1,21 @@
 // SRAM22 SRAM model
-// Words: 64
+// Words: 8192
 // Word size: 32
-// Write size: 32
+// Write size: 8
 
-module sram22_64x32m4w32_test(
+module sram22_8192x32m8w8(
 `ifdef USE_POWER_PINS
     vdd,
     vss,
 `endif
-  clk,we,wmask,addr,din,dout,sae_int,sae_muxed
+  clk,rstb,ce,we,wmask,addr,din,dout
   );
 
   // These parameters should NOT be set to
   // anything other than their defaults.
   parameter DATA_WIDTH = 32 ;
-  parameter ADDR_WIDTH = 6 ;
-  parameter WMASK_WIDTH = 1 ;
+  parameter ADDR_WIDTH = 13 ;
+  parameter WMASK_WIDTH = 4 ;
   parameter RAM_DEPTH = 1 << ADDR_WIDTH;
 
 `ifdef USE_POWER_PINS
@@ -23,15 +23,13 @@ module sram22_64x32m4w32_test(
     inout vss; // ground
 `endif
   input  clk; // clock
+  input  rstb; // reset bar
+  input  ce; // chip enable
   input  we; // write enable
   input [WMASK_WIDTH-1:0] wmask; // write mask
   input [ADDR_WIDTH-1:0]  addr; // address
   input [DATA_WIDTH-1:0]  din; // data in
   output reg [DATA_WIDTH-1:0] dout; // data out
-  
-  input sae_muxed; // muxed sense amp enable
-  output sae_int; // internal sense amp enable
-  
 
   reg [DATA_WIDTH-1:0] mem [0:RAM_DEPTH-1];
 
@@ -48,19 +46,34 @@ module sram22_64x32m4w32_test(
 
   always @(posedge clk)
   begin
-    // Write
-    if (we) begin
-        if (wmask[0]) begin
-          mem[addr][31:0] <= din[31:0];
+    if (!rstb) begin
+        dout <= {DATA_WIDTH{1'b1}};
+    end else begin
+      if (ce) begin 
+        // Write
+        if (we) begin
+            if (wmask[0]) begin
+              mem[addr][7:0] <= din[7:0];
+            end
+            if (wmask[1]) begin
+              mem[addr][15:8] <= din[15:8];
+            end
+            if (wmask[2]) begin
+              mem[addr][23:16] <= din[23:16];
+            end
+            if (wmask[3]) begin
+              mem[addr][31:24] <= din[31:24];
+            end
+
+          // Output is all 1s when writing to SRAM due to precharge.
+          dout <= {DATA_WIDTH{1'b1}};
         end
 
-      // Output is arbitrary when writing to SRAM
-      dout <= {DATA_WIDTH{1'bx}};
-    end
-
-    // Read
-    if (!we) begin
-      dout <= mem[addr];
+        // Read
+        if (!we) begin
+          dout <= mem[addr];
+        end
+      end
     end
   end
 

@@ -8,27 +8,24 @@ module sram22_64x24m4w24(
     vdd,
     vss,
 `endif
-  clk,we,wmask,addr,din,dout
+    clk,rstb,ce,we,addr,din,dout
   );
 
-  // These parameters should NOT be set to
-  // anything other than their defaults.
-  parameter DATA_WIDTH = 24 ;
-  parameter ADDR_WIDTH = 6 ;
-  parameter WMASK_WIDTH = 1 ;
-  parameter RAM_DEPTH = 1 << ADDR_WIDTH;
+  localparam DATA_WIDTH = 24 ;
+  localparam ADDR_WIDTH = 6 ;
+  localparam RAM_DEPTH = 1 << ADDR_WIDTH;
 
 `ifdef USE_POWER_PINS
     inout vdd; // power
     inout vss; // ground
 `endif
   input  clk; // clock
+  input  rstb; // reset bar
+  input  ce; // chip enable
   input  we; // write enable
-  input [WMASK_WIDTH-1:0] wmask; // write mask
   input [ADDR_WIDTH-1:0]  addr; // address
   input [DATA_WIDTH-1:0]  din; // data in
   output reg [DATA_WIDTH-1:0] dout; // data out
-  
 
   reg [DATA_WIDTH-1:0] mem [0:RAM_DEPTH-1];
 
@@ -45,19 +42,22 @@ module sram22_64x24m4w24(
 
   always @(posedge clk)
   begin
-    // Write
-    if (we) begin
-        if (wmask[0]) begin
-          mem[addr][23:0] <= din[23:0];
+    if (!rstb) begin
+        dout <= {DATA_WIDTH{1'b1}};
+    end else begin
+      if (ce) begin 
+        // Write
+        if (we) begin
+            mem[addr] <= din;
+            // Output is all 1s when writing to SRAM due to precharge.
+            dout <= {DATA_WIDTH{1'b1}};
         end
 
-      // Output is arbitrary when writing to SRAM
-      dout <= {DATA_WIDTH{1'bx}};
-    end
-
-    // Read
-    if (!we) begin
-      dout <= mem[addr];
+        // Read
+        if (!we) begin
+          dout <= mem[addr];
+        end
+      end
     end
   end
 

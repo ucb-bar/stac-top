@@ -1,9 +1,9 @@
 // SRAM22 SRAM model
-// Words: 512
+// Words: 1024
 // Word size: 64
 // Write size: 8
 
-module sram22_512x64m4w8(
+module sram22_1024x64m4w8(
 `ifdef USE_POWER_PINS
     vdd,
     vss,
@@ -12,7 +12,7 @@ module sram22_512x64m4w8(
   );
 
   localparam DATA_WIDTH = 64 ;
-  localparam ADDR_WIDTH = 9 ;
+  localparam ADDR_WIDTH = 10 ;
   localparam WMASK_WIDTH = 8 ;
   localparam RAM_DEPTH = 1 << ADDR_WIDTH;
 

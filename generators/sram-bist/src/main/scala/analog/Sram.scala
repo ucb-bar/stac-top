@@ -15,6 +15,7 @@ case class SramParams(
 class Sram(params: SramParams)(implicit p: Parameters) extends Module {
   val wmaskWidth = params.dataWidth / params.maskGranularity
   val io = IO(new Bundle {
+    val ce = Input(Bool())
     val we = Input(Bool())
     val wmask = Input(UInt(wmaskWidth.W))
     val addr = Input(UInt(log2Ceil(params.numWords).W))
@@ -70,6 +71,8 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
     case None => {
       val inner = Module(new SramBlackBox(params))
       inner.io.clk := clock
+      inner.io.rstb := !reset.asBool
+      inner.io.ce := io.ce
       inner.io.we := io.we
       inner.io.wmask := io.wmask
       inner.io.addr := io.addr
@@ -86,6 +89,8 @@ class SramBlackBox(params: SramParams)
   val wmaskWidth = params.dataWidth / params.maskGranularity
   val io = IO(new Bundle {
     val clk = Input(Clock())
+    val rstb = Input(Bool())
+    val ce = Input(Bool())
     val we = Input(Bool())
     val wmask = Input(UInt(wmaskWidth.W))
     val addr = Input(UInt(log2Ceil(params.numWords).W))

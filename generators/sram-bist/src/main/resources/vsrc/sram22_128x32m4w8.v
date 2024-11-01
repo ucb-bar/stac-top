@@ -1,9 +1,9 @@
 // SRAM22 SRAM model
-// Words: 512
-// Word size: 64
+// Words: 128
+// Word size: 32
 // Write size: 8
 
-module sram22_512x64m4w8(
+module sram22_128x32m4w8(
 `ifdef USE_POWER_PINS
     vdd,
     vss,
@@ -11,9 +11,9 @@ module sram22_512x64m4w8(
   clk,rstb,ce,we,wmask,addr,din,dout
   );
 
-  localparam DATA_WIDTH = 64 ;
-  localparam ADDR_WIDTH = 9 ;
-  localparam WMASK_WIDTH = 8 ;
+  localparam DATA_WIDTH = 32 ;
+  localparam ADDR_WIDTH = 7 ;
+  localparam WMASK_WIDTH = 4 ;
   localparam RAM_DEPTH = 1 << ADDR_WIDTH;
 
 `ifdef USE_POWER_PINS
@@ -58,18 +58,6 @@ module sram22_512x64m4w8(
           end
           if (wmask[3]) begin
             mem[addr][31:24] <= din[31:24];
-          end
-          if (wmask[4]) begin
-            mem[addr][39:32] <= din[39:32];
-          end
-          if (wmask[5]) begin
-            mem[addr][47:40] <= din[47:40];
-          end
-          if (wmask[6]) begin
-            mem[addr][55:48] <= din[55:48];
-          end
-          if (wmask[7]) begin
-            mem[addr][63:56] <= din[63:56];
           end
 
         // Output is all 1s when writing to SRAM due to precharge.

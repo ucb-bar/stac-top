@@ -9,7 +9,6 @@ import org.chipsalliance.cde.config.Parameters
 import org.scalatest.flatspec.AnyFlatSpec
 
 import srambist.analog.SramParams
-import srambist.sramharness.SaeSrc
 import srambist.programmablebist.ProgrammableBistParams
 import srambist.SramBistCtrlRegs._
 
@@ -93,11 +92,11 @@ class SramBistTestHelpers(val c: SramBist) {
     _.waitElement -> waitElement,
     _.elementType -> c.bistTop.bist.ElementType.rwOp
   )
-  val zeros = 0.U(32.W)
-  val ones = "hffffffff".U(32.W)
-  val bp0 = "h5f1a950d".U(32.W)
-  val bp0f = "ha0e56af2".U(32.W)
-  val patternTable = Vec(8, UInt(32.W))
+  val zeros = 0.U(128.W)
+  val ones = "hffffffff".U(128.W)
+  val bp0 = "h5f1a950d9af236fcc76148fef684be4e".U(128.W)
+  val bp0f = "ha0e56af2650dc903389eb701097b41b1".U(128.W)
+  val patternTable = Vec(8, UInt(128.W))
     .Lit(
       0 -> zeros,
       1 -> ones,
@@ -250,7 +249,7 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
-    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { d =>
+    ).withAnnotations(Seq(VcsBackendAnnotation, WriteFsdbAnnotation)) { d =>
       val scanIn = (width: Int, value: Int) => {
         d.io.top.sramScanEn.poke(true.B)
         var bitSeq = Seq[Int]()
@@ -348,7 +347,7 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
-    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { d =>
+    ).withAnnotations(Seq(VcsBackendAnnotation, WriteFsdbAnnotation)) { d =>
       val scanIn = (width: Int, value: BigInt) => {
         d.io.top.sramScanEn.poke(true.B)
         var bitSeq = Seq[Int]()
@@ -365,12 +364,15 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       }
 
       val scanOutAndAssert = (width: Int, value: BigInt) => {
+        println(s"width = ${width}")
         d.io.top.sramScanEn.poke(true.B)
-        var num: Long = 0
+        
+        var num = BigInt(0)
         for (i <- 1 to width) {
           var bit = d.io.top.sramScanOut.peek().litToBoolean
           var digit = if (bit) 1 else 0
-          num = num * 2 + digit
+          num = num * BigInt(2) + BigInt(digit)
+          println(s"num = ${num}")
           d.clock.step()
         }
         assert(num == value)
@@ -418,10 +420,10 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       scanIn(REG_WIDTH(DONE), 0)
       scanIn(REG_WIDTH(TDC), 0)
       scanIn(REG_WIDTH(DOUT), 0)
-      scanIn(REG_WIDTH(SAE_SEL), 0)
-      scanIn(REG_WIDTH(SAE_CTL), 0)
+      scanIn(REG_WIDTH(TDC_SEL), 0)
+      scanIn(REG_WIDTH(DL_CTL), 0)
       scanIn(REG_WIDTH(SRAM_SEL), 1)
-      scanIn(REG_WIDTH(SRAM_ID), 0)
+      scanIn(REG_WIDTH(SRAM_ID), 6)
       scanIn(REG_WIDTH(WE), 0)
       scanIn(REG_WIDTH(MASK), 511)
       scanIn(REG_WIDTH(DIN), 0)
@@ -447,13 +449,13 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.top.bistDone.expect(true.B)
       d.io.top.bistEn.poke(false.B)
 
-      val misrModel = new MaxPeriodFibonacciXORMISRModel(32)
+      val misrModel = new MaxPeriodFibonacciXORMISRModel(128)
       for (i <- 1 to (h.maxRows + 1) * (h.maxCols + 1) * 4) {
-        misrModel.add(0xa0e56af2L)
-        misrModel.add(0x5f1a950dL)
+        misrModel.add(BigInt("a0e56af2650dc903389eb701097b41b1", 16))
+        misrModel.add(BigInt("5f1a950d9af236fcc76148fef684be4e", 16))
       }
 
-      println(s"Expected signature = ${misrModel.state}")
+      println(s"Expected signature = ${misrModel.state.toString(16)}")
       scanOutAndAssert(REG_WIDTH(BIST_SIGNATURE), misrModel.state)
       scanOut(REG_WIDTH(BIST_RECEIVED))
       scanOut(REG_WIDTH(BIST_EXPECTED))
@@ -467,7 +469,7 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
-    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { d =>
+    ).withAnnotations(Seq(VcsBackendAnnotation, WriteFsdbAnnotation)) { d =>
       val scanIn = (width: Int, value: BigInt) => {
         d.io.top.sramScanEn.poke(true.B)
         var bitSeq = Seq[Int]()
@@ -485,11 +487,11 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
 
       val scanOutAndAssert = (width: Int, value: BigInt) => {
         d.io.top.sramScanEn.poke(true.B)
-        var num: Long = 0
+        var num = BigInt(0)
         for (i <- 1 to width) {
           var bit = d.io.top.sramScanOut.peek().litToBoolean
           var digit = if (bit) 1 else 0
-          num = num * 2 + digit
+          num = num * BigInt(2) + BigInt(digit)
           d.clock.step()
         }
         assert(num == value)
@@ -537,10 +539,10 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       scanIn(REG_WIDTH(DONE), 0)
       scanIn(REG_WIDTH(TDC), 0)
       scanIn(REG_WIDTH(DOUT), 0)
-      scanIn(REG_WIDTH(SAE_SEL), 0)
-      scanIn(REG_WIDTH(SAE_CTL), 0)
+      scanIn(REG_WIDTH(TDC_SEL), 0)
+      scanIn(REG_WIDTH(DL_CTL), 0)
       scanIn(REG_WIDTH(SRAM_SEL), 1)
-      scanIn(REG_WIDTH(SRAM_ID), 0)
+      scanIn(REG_WIDTH(SRAM_ID), 6)
       scanIn(REG_WIDTH(WE), 0)
       scanIn(REG_WIDTH(MASK), 511)
       scanIn(REG_WIDTH(DIN), 0)
@@ -566,16 +568,10 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.top.bistDone.expect(true.B)
       d.io.top.bistEn.poke(false.B)
 
-      val misrModel = new MaxPeriodFibonacciXORMISRModel(32)
-      for (i <- 1 to (h.maxRows + 1) * (h.maxCols + 1) * 4) {
-        misrModel.add(0xa0e56af2L)
-        misrModel.add(0x5f1a950dL)
-      }
-
       scanOut(SCAN_OUT_OFFSET(BIST_SIGNATURE))
       scanOut(REG_WIDTH(BIST_SIGNATURE))
-      scanOutAndAssert(REG_WIDTH(BIST_RECEIVED), 0x5f1a950dL)
-      scanOutAndAssert(REG_WIDTH(BIST_EXPECTED), 0xa0e56af2L)
+      scanOutAndAssert(REG_WIDTH(BIST_RECEIVED), BigInt("5f1a950d9af236fcc76148fef684be4e", 16))
+      scanOutAndAssert(REG_WIDTH(BIST_EXPECTED), BigInt("a0e56af2650dc903389eb701097b41b1", 16))
       scanOutAndAssert(REG_WIDTH(BIST_FAIL_CYCLE), 5)
       scanOutAndAssert(REG_WIDTH(BIST_FAIL), 1)
     }
