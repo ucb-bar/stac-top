@@ -34,38 +34,40 @@ class Sram(params: SramParams)(implicit p: Parameters) extends Module {
       io.dout := DontCare
       val rdPort = mem(io.addr)
       val wrPort = mem(io.addr)
-      when(io.we) {
-        val toWrite = Wire(Vec(params.dataWidth, Bool()))
-        toWrite := io.din.asBools
-        failureMode match {
-          case ChiseltestSramFailureMode.stuckAt => {
-            when(io.addr === 29.U) {
-              toWrite(5) := false.B
-            }
-          }
-          case ChiseltestSramFailureMode.transition => {
-            when(io.addr === 15.U) {
-              when(rdPort(0)(0) & ~io.din(0)) {
-                toWrite(0) := true.B
+      when (!reset.asBool && io.ce) {
+        when(io.we) {
+          val toWrite = Wire(Vec(params.dataWidth, Bool()))
+          toWrite := io.din.asBools
+          failureMode match {
+            case ChiseltestSramFailureMode.stuckAt => {
+              when(io.addr === 29.U) {
+                toWrite(5) := false.B
               }
             }
+            case ChiseltestSramFailureMode.transition => {
+              when(io.addr === 15.U) {
+                when(rdPort(0)(0) & ~io.din(0)) {
+                  toWrite(0) := true.B
+                }
+              }
+            }
+            case _ => {}
           }
-          case _ => {}
-        }
-        for (i <- 0 to wmaskWidth - 1) {
-          when(io.wmask(i)) {
-            wrPort(i) := toWrite.asUInt(
-              params.maskGranularity * (i + 1) - 1,
-              params.maskGranularity * i
-            )
+          for (i <- 0 to wmaskWidth - 1) {
+            when(io.wmask(i)) {
+              wrPort(i) := toWrite.asUInt(
+                params.maskGranularity * (i + 1) - 1,
+                params.maskGranularity * i
+              )
+            }
           }
+        }.otherwise {
+          var out = rdPort(0)
+          for (i <- 1 to wmaskWidth - 1) {
+            out = Cat(rdPort(i), out)
+          }
+          io.dout := out
         }
-      }.otherwise {
-        var out = rdPort(0)
-        for (i <- 1 to wmaskWidth - 1) {
-          out = Cat(rdPort(i), out)
-        }
-        io.dout := out
       }
     }
     case None => {

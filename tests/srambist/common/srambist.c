@@ -8,6 +8,45 @@
 #include "srambist.h"
 #include <stdio.h>
 
+const sram_params_t SRAMS[NUM_SRAMS] = {
+    {8, 64, 24},
+    {8, 64, 32},
+    {8, 128, 16},
+    {8, 128, 24},
+    {8, 128, 32},
+    {1, 256, 8},
+    {8, 256, 16},
+    {8, 256, 32},
+    {8, 256, 64},
+    {8, 256, 128},
+    {1, 512, 8},
+    {8, 512, 32},
+    {8, 512, 64},
+    {8, 512, 128},
+    {1, 1024, 8},
+    {8, 1024, 32},
+    {8, 1024, 64},
+    {1, 2048, 8},
+    {8, 2048, 32},
+    {1, 4096, 8},
+    {8, 4096, 32},
+    {8, 8192, 32},
+};
+
+// TODO: support masks wider than 63 bits
+uint128_t create_mask(uint8_t sram_id) {
+    sram_params_t params = SRAMS[sram_id];
+    uint128_t ret;
+    if (params.data_width >= 64) {
+        ret.hi = (1UL << (params.data_width - 64)) - 1;
+        ret.lo = 0xffffffffffffffff;
+    } else {
+        ret.hi = 0x0;
+        ret.lo = (1UL << params.data_width) - 1;
+    }
+    return ret;
+}
+
 // `num_bits` must be less than 32.
 uint32_t read_at_bit_offset(void* x, int bit_offset, uint8_t num_bits) {
   uint8_t* byte_ptr = ((uint8_t*) x) + bit_offset/8;

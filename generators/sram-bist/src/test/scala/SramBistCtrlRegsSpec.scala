@@ -12,9 +12,9 @@ class SramBistCtrlRegsSpec extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "SramBistCtrlReg"
   it should "correctly compute offsets" in {
     println(
-      s"Scan chain offsets: ${REG_WIDTH.keys.map(key => (key, SCAN_CHAIN_OFFSET(key)))}"
+      s"Scan chain offsets: ${REGS.map(_._1).map(key => (key, SCAN_CHAIN_OFFSET(key)))}"
     )
-    println(s"Reg map offsets: ${(REG_WIDTH.keys ++ Iterator(EX))
+    println(s"Reg map offsets: ${(REGS.map(_._1) ++ Iterator(EX))
         .map(key => (key, REGMAP_OFFSET(key).toHexString))}")
   }
 }

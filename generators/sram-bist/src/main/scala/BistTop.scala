@@ -4,18 +4,21 @@ import chisel3._
 import chisel3.util._
 import org.chipsalliance.cde.config.Parameters
 
-import srambist.analog.{Tdc, DelayLine, Sram, SramParams}
+import srambist.analog.{Sram, SramParams}
 import srambist.sramharness.{SramHarness, SramHarnessParams}
 import srambist.programmablebist.{ProgrammableBist, ProgrammableBistParams}
 import srambist.misr.MaxPeriodFibonacciMISR
 import chisel3.experimental.VecLiterals._
-import srambist.analog.{Tdc, DelayLine, BufferTree}
+import srambist.SramBistCtrlRegs._
 
 case class BistTopParams(
     srams: Seq[SramParams] = Seq(
+      new SramParams(8, 4, 64, 24),
       new SramParams(8, 4, 64, 32),
       new SramParams(8, 4, 128, 16),
+      new SramParams(8, 4, 128, 24),
       new SramParams(8, 4, 128, 32),
+      new SramParams(1, 8, 256, 8),
       new SramParams(8, 8, 256, 16),
       new SramParams(8, 4, 256, 32),
       new SramParams(8, 4, 256, 64),
@@ -24,14 +27,15 @@ case class BistTopParams(
       new SramParams(8, 4, 512, 32),
       new SramParams(8, 4, 512, 64),
       new SramParams(8, 4, 512, 128),
+      new SramParams(1, 8, 1024, 8),
       new SramParams(8, 8, 1024, 32),
       new SramParams(8, 4, 1024, 64),
+      new SramParams(1, 8, 2048, 8),
+      new SramParams(8, 8, 2048, 32),
       new SramParams(1, 8, 4096, 8),
       new SramParams(8, 8, 4096, 32),
       new SramParams(8, 8, 8192, 32),
-      // new SramParams(1, 8, 256, 8),
     ),
-    logSramsPerTdc: Int = 3,
     bistParams: ProgrammableBistParams = new ProgrammableBistParams()
 ) {
   def dataWidth = bistParams.dataWidth
@@ -40,15 +44,6 @@ case class BistTopParams(
 object SramSrc extends ChiselEnum {
   val mmio = Value(0.U(1.W))
   val bist = Value(1.U(1.W))
-}
-
-object TdcSrc extends ChiselEnum {
-  // SRAM dout
-  val dout = Value(0.U(2.W))
-  // External 
-  val ext = Value(1.U(2.W))
-  // Delay line
-  val dl = Value(2.U(2.W))
 }
 
 class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
@@ -77,11 +72,8 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val din = Input(UInt(params.dataWidth.W))
     val mask = Input(UInt(params.dataWidth.W))
     val we = Input(Bool())
-    val sramId = Input(UInt(4.W))
+    val sramId = Input(UInt(REG_WIDTH(SRAM_ID).W))
     val sramSel = Input(SramSrc())
-    val dlCtl = Input(UInt(7.W))
-    val tdcSel = Input(TdcSrc())
-    val tdcClk = Input(Bool())
     val bistRandSeed = Input(UInt(params.bistParams.seedWidth.W))
     val bistSigSeed = Input(UInt(params.dataWidth.W))
     val bistMaxRowAddr = Input(UInt(params.bistParams.maxRowAddrWidth.W))
@@ -102,7 +94,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
     val ex = Input(Bool())
 
     val dout = Output(UInt(params.dataWidth.W))
-    val tdc = Output(UInt(252.W))
     val done = Output(Bool())
 
     val bistDone = Output(Bool())
@@ -301,52 +292,6 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
   )
 
   misr.io.in := maskedIOOut.asBools
-
-  val (delay_lines, tdcs, b_buffers) = (0 until (((srams.length - 1) >> params.logSramsPerTdc) + 1)).map { i =>
-    val delay_line = Module(new DelayLine)
-    delay_line.io.clk_in := clock.asBool
-    val dlCtlOH = UIntToOH(io.dlCtl)
-    delay_line.io.ctl := dlCtlOH
-    delay_line.io.ctl_b := ~dlCtlOH
-    val tdc = Module(new Tdc)
-
-    val aBuffered = Wire(chiselTypeOf(tdc.io.a))
-    val bBuffered = Wire(chiselTypeOf(tdc.io.b))
-
-    val bufA = Module(new BufferTree)
-    val bufB = Module(new BufferTree)
-    bufA.io.A := clock.asBool
-    aBuffered := bufA.io.X
-    bufB.io.A := false.B
-    bBuffered := bufB.io.X
-
-    tdc.io.a := aBuffered
-    tdc.io.b := bBuffered
-    tdc.io.reset_b := ~reset.asBool
-
-    (delay_line, tdc, bufB)
-  }.unzip3
-
-  srams.zipWithIndex.foreach { case (sram, i) =>
-    when (i.U === io.sramId) {
-      b_buffers(i >> params.logSramsPerTdc).io.A := sram.io.dout
-    }
-  }
-
-  b_buffers.zipWithIndex.foreach { case (b_buffer, i) =>
-    switch (io.tdcSel) {
-      is (TdcSrc.dout) {}
-      is (TdcSrc.ext) { b_buffer.io.A := io.tdcClk }
-      is (TdcSrc.dl) { b_buffer.io.A := delay_lines(i).io.clk_out }
-    }
-  }
-
-  io.tdc := MuxCase(
-    0.U,
-    tdcs.zipWithIndex.map { case (tdc, i) =>
-      (i.U === io.sramId >> params.logSramsPerTdc) -> tdc.io.dout
-    }
-  )
 
   io.bistSignature := misr.io.out.asUInt
 

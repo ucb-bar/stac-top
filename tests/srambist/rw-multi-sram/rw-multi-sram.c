@@ -31,7 +31,7 @@ int main( int argc, char* argv[] )
   mask2.hi = 0xffffffffffffffffULL;
   mask2.lo = 0xffffffffffffffffULL;
 
-  srambist_write(0, ref2, mask2, 6);
+  srambist_write(0, ref2, mask2, 9);
   result = srambist_read(0, 6);
 
   if (!eq128(result, ref2)) {

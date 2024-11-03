@@ -27,14 +27,14 @@ vlsi.inputs:
     - {name: "jtag_TCK", path: "iocell_jtag_TCK/iocell/IN", period: "200ns", uncertainty: "1ns"}
     - {name: "pll_clock_clk", path: "pllInst/io_pll_clk_out", period: "5ns", uncertainty: "0.1ns"}
     - {name: "pll_clock_div", path: "pllInst/io_pll_div_out", period: "5ns", uncertainty: "0.1ns"}
-    # SBUS - SRAM BIST, full speed
+    # SBUS - SRAM BIST
     - {name: "clkdiv_out_sbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_sbus_clock", period: "15ns", uncertainty: "0.1ns"}
-    # FBUS (serial-TL) - can't go faster than GPIO, so 50MHz
-    - {name: "clkdiv_out_fbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_fbus_clock", period: "20ns", uncertainty: "0.1ns"}
-    # Rocket - slower for easier timing closure
+    # FBUS (serial-TL) - can't go faster than GPIO (50 MHz, but maybe constrain for faster speed)
+    - {name: "clkdiv_out_fbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_fbus_clock", period: "15ns", uncertainty: "0.1ns"}
+    # Rocket
     - {name: "clkdiv_out_rocket", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_rocket_clock", period: "15ns", uncertainty: "0.1ns"}
-    # Periphery / everything else - relaxed timing
-    - {name: "clkdiv_out_periph", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_periph_clock", period: "10ns", uncertainty: "0.1ns"}
+    # Periphery / everything else
+    - {name: "clkdiv_out_periph", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_periph_clock", period: "15ns", uncertainty: "0.1ns"}
 
   pin_mode: none
 
@@ -47,53 +47,10 @@ vlsi.inputs:
       height: 5188
       margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
 
-    # backing scratchpad
-    - {path: ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0, type: hardmacro, 
-      x: 2800, y: 1150, orientation: r270}
-    
-    # dcache
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, 
-      x: 300, y: 255, orientation: my90}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, 
-      x: 470, y: 800, orientation: my90}
-
-    # icache
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 2750, y: 255, orientation: r270}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_1_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 2800, y: 575, orientation: r270}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, 
-      x: 3020, y: 900, orientation: r270}
-
     # PLL
-    - {path: ChipTop/pllInst, type: hardmacro, x: 2771.96, y: 4187.92, orientation: r0}
+    - {path: ChipTop/pllInst, type: hardmacro, x: 2771.96, y: 4387.92, orientation: r0}
 
-    #####################
-    #### SRAM BIST ######
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_0/inner, type: hardmacro, x: 2364.09, y: 2996.74, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_1/inner, type: hardmacro, x: 2381.38, y: 3816.89, orientation: r270}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_2/inner, type: hardmacro, x: 2377.66, y: 3376.55, orientation: r270}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_3/inner, type: hardmacro, x: 2113.09, y: 2955.91, orientation: r270}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_4/inner, type: hardmacro, x: 1875.28, y: 1385.935, orientation: r270}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_5/inner, type: hardmacro, x: 2062.675, y: 3379.49, orientation: r270}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_6/inner, type: hardmacro, x: 1888.575, y: 260.955, orientation: r270}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_7/inner, type: hardmacro, x: 1552.205, y: 1493.025, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_8/inner, type: hardmacro, x: 2883.69, y: 3094.635, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_9/inner, type: hardmacro, x: 2819.035, y: 262.595, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_10/inner, type: hardmacro, x: 1389.235, y: 256.02, orientation: r270}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_11/inner, type: hardmacro, x: 2877.925, y: 1084.99, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_12/inner, type: hardmacro, x: 261.345, y: 258.475, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_13/inner, type: hardmacro, x: 269.755, y: 3027.9, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_14/inner, type: hardmacro, x: 266.485, y: 3372.385, orientation: my90}
-    - {path: ChipTop/system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_15/inner, type: hardmacro, x: 263.27, y: 4100.81, orientation: my90}
-    - {path: ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0, type: hardmacro, x: 268.125, y: 2204.76, orientation: r270}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/data/data_arrays_0/backingscratchpad_ext/mem_0_0, type: hardmacro, x: 258.5, y: 1049.295, orientation: my90}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/dcache/tag_array_0/tag_array_0_ext/mem_0_0, type: hardmacro, x: 262.265, y: 1882.84, orientation: r270}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_0_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, x: 2883.345, y: 2177.905, orientation: r270}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/data_arrays_1_0/data_arrays_0_0_ext/mem_0_0, type: hardmacro, x: 2883.125, y: 2638.74, orientation: r270}
-    - {path: ChipTop/system/tile_prci_domain/tile_reset_domain_tile/frontend/icache/tag_array_0/tag_array_0_0_ext/mem_0_0, type: hardmacro, x: 3133.935, y: 1865.645, orientation: mx90}
-
-    - path: ChipTop/system
+    - path: ChipTop/system_obs
       type: obstruction
       obs_types: [power, place, route]
       layers: [met1]

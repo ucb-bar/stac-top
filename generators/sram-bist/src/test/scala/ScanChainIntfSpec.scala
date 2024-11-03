@@ -19,15 +19,8 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
           d.io.sramScanEn.poke(false.B)
 
           d.io.dout.poke(60.U)
-          d.io.tdc.poke(
-            "h123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".U
-          )
           d.clock.step()
           d.io.mmio.doutMmio(0).q.expect(60.U)
-          d.io.mmio.tdcMmio(0).q.expect("h0123456789abcdef".U)
-          d.io.mmio.tdcMmio(1).q.expect("h0123456789abcdef".U)
-          d.io.mmio.tdcMmio(2).q.expect("h0123456789abcdef".U)
-          d.io.mmio.tdcMmio(3).q.expect("h0123456789abcdef".U)
       }
   }
   it should "ignore writes to read-only MMIO registers" in {

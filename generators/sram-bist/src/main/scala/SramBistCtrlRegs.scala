@@ -2,7 +2,7 @@ package srambist
 
 object SramBistCtrlRegs extends Enumeration {
   type Type = Value
-  val ADDR, DIN, MASK, WE, SRAM_ID, SRAM_SEL, DL_CTL, TDC_SEL, DOUT, TDC, DONE,
+  val ADDR, DIN, MASK, WE, SRAM_ID, SRAM_SEL, DOUT, DONE,
       BIST_RAND_SEED, BIST_SIG_SEED, BIST_MAX_ROW_ADDR, BIST_MAX_COL_ADDR,
       BIST_INNER_DIM, BIST_ELEMENT_SEQUENCE, BIST_PATTERN_TABLE,
       BIST_MAX_ELEMENT_IDX, BIST_CYCLE_LIMIT, BIST_STOP_ON_FAILURE, BIST_FAIL,
@@ -13,12 +13,9 @@ object SramBistCtrlRegs extends Enumeration {
     (DIN, 128),
     (MASK, 128),
     (WE, 1),
-    (SRAM_ID, 4),
+    (SRAM_ID, 5),
     (SRAM_SEL, 1),
-    (DL_CTL, 7),
-    (TDC_SEL, 2),
     (DOUT, 128),
-    (TDC, 252),
     (DONE, 1),
     (BIST_RAND_SEED, 271),
     (BIST_SIG_SEED, 128),

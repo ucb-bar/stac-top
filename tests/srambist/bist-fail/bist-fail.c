@@ -15,7 +15,18 @@
 int main( int argc, char* argv[] )
 {
   
-  pattern_table_t pattern_table = { { 0, 0xffffffff, 0x5f1a950d, 0xa0e56af2, 0, 0xffffffff, 0, 0} };
+  pattern_table_t pattern_table = { 
+      { 
+          {0x0, 0x0},
+          {0xffffffffffffffff, 0xffffffffffffffff},
+          {0xc76148fef684be4e, 0x5f1a950d9af236fc},
+          {0x389eb701097b41b1, 0xa0e56af2650dc903},
+          {0x0, 0x0},
+          {0xffffffffffffffff, 0xffffffffffffffff},
+          {0x0, 0x0},
+          {0x0, 0x0}
+      } 
+  };
   packed_element_vec_t packed_elem_vec = { { 
     3604613416985034753UL,
     295129881980453250UL,
@@ -34,28 +45,29 @@ int main( int argc, char* argv[] )
     14130187937237467530UL,
     1568UL
   } };
-  bist_result_t result = srambist_run_bist_with_packed_elements(0, 1, 1, 15, 3, DIMENSION_ROW, &packed_elem_vec, 3, &pattern_table, 0, 1);
+  uint128_t bist_sig = {1, 0};
+  bist_result_t result = srambist_run_bist_with_packed_elements(9, 1, bist_sig, 15, 3, DIMENSION_ROW, &packed_elem_vec, 3, &pattern_table, 0, 1);
 
   if (result.fail == 0) {
     printf("BIST should have failed\n");
     return 1;
   }
 
-  uint32_t expected_fail_cycle = 5;
+  uint64_t expected_fail_cycle = 5;
   if (result.fail_cycle != expected_fail_cycle) {
     printf("BIST should have failed on cycle %d, but failed on cycle %d\n", expected_fail_cycle, result.fail_cycle);
     return 1;
   }
 
-  uint32_t expected_expected = 0xa0e56af2U;
-  if (result.expected != expected_expected) {
-    printf("BIST expected value should be %d, but was %d\n", expected_expected, result.fail_cycle);
+  uint128_t expected_expected = {0x389eb701097b41b1, 0xa0e56af2650dc903};
+  if (!eq128(result.expected, expected_expected)) {
+    printf("BIST expected value should be 0x%llx%llx, but was 0x%llx%llx\n", expected_expected.hi, expected_expected.lo, result.expected.hi, result.expected.lo);
     return 1;
   }
 
-  uint32_t expected_received = 0x5f1a950dU;
-  if (result.received != expected_received) {
-    printf("BIST received value %d does not match expected %d\n", result.received, expected_received);
+  uint128_t expected_received = {0xc76148fef684be4e, 0x5f1a950d9af236fc};
+  if (!eq128(result.received, expected_received)) {
+    printf("BIST received value 0x%llx%llx does not match expected 0x%llx%llx\n", result.received.hi, result.received.lo, expected_received.hi, expected_received.lo);
     return 1;
   }
 

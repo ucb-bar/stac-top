@@ -14,8 +14,6 @@ class MmioRegIO extends Bundle {
   val we = new SimpleRegIO(REG_WIDTH(WE))
   val sramId = new SimpleRegIO(REG_WIDTH(SRAM_ID))
   val sramSel = new SimpleRegIO(REG_WIDTH(SRAM_SEL))
-  val dlCtl = new SimpleRegIO(REG_WIDTH(DL_CTL))
-  val tdcSel = new SimpleRegIO(REG_WIDTH(TDC_SEL))
   val bistRandSeedMmio = Vec(NUM_REGS(BIST_RAND_SEED), new SimpleRegIO(64))
   val bistSigSeed = Vec(NUM_REGS(BIST_SIG_SEED), new SimpleRegIO(64))
   val bistMaxRowAddr = new SimpleRegIO(REG_WIDTH(BIST_MAX_ROW_ADDR))
@@ -37,7 +35,6 @@ class MmioRegIO extends Bundle {
   )
 
   val doutMmio = Vec(NUM_REGS(DOUT), new SimpleRegIO(64))
-  val tdcMmio = Vec(NUM_REGS(TDC), new SimpleRegIO(64))
   val doneMmio = new SimpleRegIO(REG_WIDTH(DONE))
 
   val bistFailMmio = new SimpleRegIO(REG_WIDTH(BIST_FAIL))
@@ -55,7 +52,6 @@ class ScanChainIntfIO extends Bundle {
   val sramScanOut = Output(Bool())
 
   val dout = Input(UInt(REG_WIDTH(DOUT).W))
-  val tdc = Input(UInt(REG_WIDTH(TDC).W))
   val done = Input(UInt(REG_WIDTH(DONE).W))
 
   val bistFail = Input(UInt(REG_WIDTH(BIST_FAIL).W))
@@ -64,7 +60,10 @@ class ScanChainIntfIO extends Bundle {
   val bistReceived = Input(UInt(REG_WIDTH(BIST_RECEIVED).W))
   val bistSignature = Input(UInt(REG_WIDTH(BIST_SIGNATURE).W))
 
+  val din = Output(UInt(REG_WIDTH(DIN).W))
+  val mask = Output(UInt(REG_WIDTH(DOUT).W))
   val bistRandSeed = Output(UInt(REG_WIDTH(BIST_RAND_SEED).W))
+  val bistSigSeed = Output(UInt(REG_WIDTH(BIST_SIG_SEED).W))
   val bistPatternTable = Output(UInt(REG_WIDTH(BIST_PATTERN_TABLE).W))
   val bistElementSequence = Output(UInt(REG_WIDTH(BIST_ELEMENT_SEQUENCE).W))
 
@@ -108,7 +107,6 @@ class ScanChainIntf extends Module {
       io.mmio.bistSigSeed,
       true
     ),
-    (SCAN_CHAIN_OFFSET(TDC), REG_WIDTH(TDC), io.mmio.tdcMmio, false),
     (
       SCAN_CHAIN_OFFSET(BIST_EXPECTED),
       REG_WIDTH(BIST_EXPECTED),
@@ -151,9 +149,24 @@ class ScanChainIntf extends Module {
 
   Seq(
     (
+      SCAN_CHAIN_OFFSET(DIN),
+      REG_WIDTH(DIN),
+      io.din
+    ),
+    (
+      SCAN_CHAIN_OFFSET(MASK),
+      REG_WIDTH(MASK),
+      io.mask
+    ),
+    (
       SCAN_CHAIN_OFFSET(BIST_RAND_SEED),
       REG_WIDTH(BIST_RAND_SEED),
       io.bistRandSeed
+    ),
+    (
+      SCAN_CHAIN_OFFSET(BIST_SIG_SEED),
+      REG_WIDTH(BIST_SIG_SEED),
+      io.bistSigSeed
     ),
     (
       SCAN_CHAIN_OFFSET(BIST_PATTERN_TABLE),
@@ -186,8 +199,6 @@ class ScanChainIntf extends Module {
       io.mmio.sramSel,
       true
     ),
-    (SCAN_CHAIN_OFFSET(DL_CTL), REG_WIDTH(DL_CTL), io.mmio.dlCtl, true),
-    (SCAN_CHAIN_OFFSET(TDC_SEL), REG_WIDTH(TDC_SEL), io.mmio.tdcSel, true),
     (
       SCAN_CHAIN_OFFSET(BIST_MAX_ROW_ADDR),
       REG_WIDTH(BIST_MAX_ROW_ADDR),
@@ -254,7 +265,6 @@ class ScanChainIntf extends Module {
 
   Seq(
     (SCAN_CHAIN_OFFSET(DOUT), REG_WIDTH(DOUT), io.dout),
-    (SCAN_CHAIN_OFFSET(TDC), REG_WIDTH(TDC), io.tdc),
     (SCAN_CHAIN_OFFSET(DONE), REG_WIDTH(DONE), io.done),
     (SCAN_CHAIN_OFFSET(BIST_FAIL), REG_WIDTH(BIST_FAIL), io.bistFail),
     (

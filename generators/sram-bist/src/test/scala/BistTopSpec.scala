@@ -162,8 +162,8 @@ class BistTopTestHelpers(val c: BistTop) {
     _.waitElement -> waitElement,
     _.elementType -> c.bist.ElementType.rwOp
   )
-  val zeros = 0.U(32.W)
-  val ones = "hffffffff".U(32.W)
+  val zeros = 0.U(128.W)
+  val ones = "hffffffffffffffffffffffffffffffff".U(128.W)
 
   def populateSramRegisters(
       addr: UInt,
@@ -172,7 +172,6 @@ class BistTopTestHelpers(val c: BistTop) {
       we: Bool,
       sramId: UInt,
       sramSel: SramSrc.Type,
-      tdcSel: TdcSrc.Type
   ): Unit = {
     // Interleave with clock steps to make sure that operations do not occur while registers are being set up.
     // Will be tested more thoroughly with scan chain module.
@@ -187,8 +186,6 @@ class BistTopTestHelpers(val c: BistTop) {
     c.io.sramId.poke(sramId)
     c.clock.step()
     c.io.sramSel.poke(sramSel)
-    c.clock.step()
-    c.io.tdcSel.poke(tdcSel)
     c.clock.step()
   }
 
@@ -225,7 +222,6 @@ class BistTopTestHelpers(val c: BistTop) {
       bistStopOnFailure: Bool,
       sramId: UInt,
       sramSel: SramSrc.Type,
-      tdcSel: TdcSrc.Type
   ): Unit = {
     // Interleave with clock steps to make sure that operations do not occur while registers are being set up.
     // Will be tested more thoroughly with scan chain module.
@@ -253,8 +249,6 @@ class BistTopTestHelpers(val c: BistTop) {
     c.clock.step()
     c.io.sramSel.poke(sramSel)
     c.clock.step()
-    c.io.tdcSel.poke(tdcSel)
-    c.clock.step()
   }
 
   def executeScanChainBistOp(): Unit = {
@@ -276,7 +270,6 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       0.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
 
@@ -287,7 +280,6 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("habcdabcd".U)
@@ -300,7 +292,6 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       0.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     c.io.dout.expect(
       "habcdabcd".U
@@ -314,7 +305,6 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("hab00ab00".U)
@@ -327,7 +317,6 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       1.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
 
@@ -338,7 +327,6 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       1.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("h12345678".U)
@@ -351,7 +339,6 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("hab00ab00".U)
@@ -364,7 +351,6 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       0.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
 
@@ -375,7 +361,6 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("h87654321".U)
@@ -387,7 +372,6 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       0.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("hab00ab00".U)
@@ -399,7 +383,6 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       1.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
 
@@ -410,7 +393,6 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       1.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("hdeadbeef".U)
@@ -422,7 +404,6 @@ class BistTopTestHelpers(val c: BistTop) {
       false.B,
       1.U,
       SramSrc.mmio,
-      TdcSrc.dout
     )
     executeFn()
     c.io.dout.expect("h12345678".U)
@@ -472,7 +453,6 @@ class BistTopTestHelpers(val c: BistTop) {
       true.B,
       0.U,
       SramSrc.bist,
-      TdcSrc.dout
     )
     maybeReset()
     executeOp()
@@ -699,7 +679,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
 
       testhelpers.testBistMethodFull(false)
 
-      val misrModel = new MaxPeriodFibonacciXORMISRModel(32)
+      val misrModel = new MaxPeriodFibonacciXORMISRModel(128)
       for (
         i <- 1 to (testhelpers.maxRows + 1) * (testhelpers.maxCols + 1) * 4
       ) {
@@ -776,7 +756,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          TdcSrc.dout
         )
         maybeReset()
         executeOp()
@@ -789,7 +768,7 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
 
       testBistMethod(false)
 
-      val misrModel = new MaxPeriodFibonacciXORMISRModel(32, Some(55))
+      val misrModel = new MaxPeriodFibonacciXORMISRModel(128, Some(55))
       for (
         i <- 1 to (testhelpers.maxRows + 1) * (testhelpers.maxCols + 1) * 2
       ) {
@@ -874,15 +853,14 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          TdcSrc.dout
         )
         maybeReset()
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
         testhelpers.c.io.bistFailCycle.expect(4.U)
-        testhelpers.c.io.bistExpected.expect(0.U)
-        testhelpers.c.io.bistReceived.expect(0xffffffffL.U)
+        testhelpers.c.io.bistExpected(31, 0).expect(0.U)
+        testhelpers.c.io.bistReceived(31, 0).expect(0xffffffffL.U)
       }
 
       testhelpers.c.io.sramExtEn.poke(false.B)
@@ -957,7 +935,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          TdcSrc.dout
         )
         maybeReset()
         executeOp()
@@ -1008,7 +985,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
 
@@ -1019,7 +995,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
         assert((testhelpers.c.io.dout.peek().litValue & 0xffff) == 0x6bbd)
@@ -1032,7 +1007,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
 
@@ -1043,7 +1017,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
         // testhelpers.c.io.dout(15, 0).expect("h4321".U)
@@ -1056,7 +1029,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
         // testhelpers.c.io.dout(15, 0).expect("h6bbd".U)
@@ -1108,7 +1080,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          TdcSrc.dout
         )
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
@@ -1186,7 +1157,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
 
@@ -1197,7 +1167,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
 
@@ -1208,7 +1177,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
         testhelpers.c.io.dout.expect("hffffffdf".U)
@@ -1258,14 +1226,13 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          TdcSrc.dout
         )
         maybeReset()
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
-        testhelpers.c.io.bistExpected.expect("hffffffff".U)
-        testhelpers.c.io.bistReceived.expect("hffffffdf".U)
+        testhelpers.c.io.bistExpected(31, 0).expect("hffffffff".U)
+        testhelpers.c.io.bistReceived(31, 0).expect("hffffffdf".U)
       }
 
       // ******************
@@ -1338,7 +1305,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
 
@@ -1349,7 +1315,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
 
@@ -1360,7 +1325,6 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.mmio,
-          TdcSrc.dout
         )
         executeFn()
         testhelpers.c.io.dout.expect("h00000001".U)
@@ -1410,14 +1374,13 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          TdcSrc.dout
         )
         maybeReset()
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
-        testhelpers.c.io.bistExpected.expect("h00000000".U)
-        testhelpers.c.io.bistReceived.expect("h00000001".U)
+        testhelpers.c.io.bistExpected(31, 0).expect("h00000000".U)
+        testhelpers.c.io.bistReceived(31, 0).expect("h00000001".U)
       }
 
       // ******************
@@ -1526,15 +1489,14 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           true.B,
           0.U,
           SramSrc.bist,
-          TdcSrc.dout
         )
         maybeReset()
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
         testhelpers.c.io.bistFailCycle.expect(120.U)
-        testhelpers.c.io.bistExpected.expect("hffffffff".U)
-        testhelpers.c.io.bistReceived.expect("hffffffdf".U)
+        testhelpers.c.io.bistExpected(31, 0).expect("hffffffff".U)
+        testhelpers.c.io.bistReceived(31, 0).expect("hffffffdf".U)
 
         testhelpers.populateBistRegisters(
           1.U,
@@ -1560,15 +1522,14 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
           false.B,
           0.U,
           SramSrc.bist,
-          TdcSrc.dout
         )
         maybeReset()
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
         testhelpers.c.io.bistFailCycle.expect(376.U)
-        testhelpers.c.io.bistExpected.expect("hffffffff".U)
-        testhelpers.c.io.bistReceived.expect("hffffffdf".U)
+        testhelpers.c.io.bistExpected(31, 0).expect("hffffffff".U)
+        testhelpers.c.io.bistReceived(31, 0).expect("hffffffdf".U)
       }
 
       // ******************

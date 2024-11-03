@@ -225,10 +225,10 @@ class ProgrammableBistHelpers(val d: ProgrammableBist) {
     elementSequence(Seq(m1, m2, m3, m4))
   }
 
-  val zeros = 0.U(32.W)
-  val ones = "hffffffff".U(32.W)
-  val bp0 = "h5f1a950d".U(32.W)
-  val bp0f = "ha0e56af2".U(32.W)
+  val zeros = 0.U(128.W)
+  val ones = "hffffffffffffffffffffffffffffffff".U(128.W)
+  val bp0 = "h5f1a950d9af236fcc76148fef684be4e".U(128.W)
+  val bp0f = "ha0e56af2650dc903389eb701097b41b1".U(128.W)
 
   val simpleMarchElements = elementSequence(Seq(march, march, march, march))
   val marchWaitMarch = elementSequence(Seq(march, wait100, march))
@@ -460,8 +460,8 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         _.waitElement -> waitElement,
         _.elementType -> d.ElementType.rwOp
       )
-      val zeros = 0.U(32.W)
-      val ones = "hffffffff".U(32.W)
+      val zeros = 0.U(128.W)
+      val ones = "hffffffffffffffffffffffffffffffff".U(128.W)
 
       d.clock.setTimeout((maxCols + 1) * (maxRows + 1) * 4 * 4)
       d.io.start.poke(true.B)
@@ -557,8 +557,8 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
           _.waitElement -> waitElement,
           _.elementType -> d.ElementType.rwOp
         )
-        val zeros = 0.U(32.W)
-        val ones = "hffffffff".U(32.W)
+        val zeros = 0.U(128.W)
+        val ones = "hffffffffffffffffffffffffffffffff".U(128.W)
 
         d.clock.setTimeout((maxRows + 1) * (maxCols + 1) + 100)
         d.io.start.poke(true.B)
@@ -657,8 +657,8 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
           _.waitElement -> waitElement,
           _.elementType -> d.ElementType.rwOp
         )
-        val zeros = 0.U(32.W)
-        val ones = "hffffffff".U(32.W)
+        val zeros = 0.U(128.W)
+        val ones = "hffffffffffffffffffffffffffffffff".U(128.W)
 
         d.clock.setTimeout((maxRows + 1) * (maxCols + 1) + 200)
         d.io.start.poke(true.B)
@@ -769,8 +769,8 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         _.waitElement -> waitElement,
         _.elementType -> d.ElementType.rwOp
       )
-      val zeros = 0.U(32.W)
-      val ones = "hffffffff".U(32.W)
+      val zeros = 0.U(128.W)
+      val ones = "hffffffffffffffffffffffffffffffff".U(128.W)
 
       d.clock.setTimeout((maxCols + 1) * (maxRows + 1) * 4 * 4)
       d.io.start.poke(true.B)
@@ -780,7 +780,7 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.innerDim.poke(d.Dimension.row)
       d.io.maxElementIdx.poke(3.U)
       d.io.seed.poke(1.U)
-      d.io.cycleLimit.poke(40.U(32.W))
+      d.io.cycleLimit.poke(40.U(64.W))
       d.io.patternTable.poke(Vec.Lit(ones, ones, zeros, zeros))
       d.io.elementSequence.poke(
         Vec(4, new d.Element())
@@ -1026,7 +1026,7 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
           h.marchWaitMarch
         )
         val cycleLimit = 4 * (h.maxCols + 1) * (h.maxRows + 1) + 73
-        h.io.cycleLimit.poke(cycleLimit.U(32.W))
+        h.io.cycleLimit.poke(cycleLimit.U(64.W))
         h.clock.step()
         h.clock.step()
         h.clock.step()
@@ -1073,7 +1073,7 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
           h.marchWaitMarch
         )
         val cycleLimit = 4 * (h.maxCols + 1) * (h.maxRows + 1) + 100 + 73
-        h.io.cycleLimit.poke(cycleLimit.U(32.W))
+        h.io.cycleLimit.poke(cycleLimit.U(64.W))
         h.clock.step()
         h.clock.step()
         h.clock.step()
@@ -1124,7 +1124,7 @@ class ProgrammableBistSpec extends AnyFlatSpec with ChiselScalatestTester {
         h.io.elementSequence.poke(
           h.randFillRand(1)
         )
-        h.io.cycleLimit.poke(0.U(32.W))
+        h.io.cycleLimit.poke(0.U(64.W))
         h.clock.step()
         h.clock.step()
         h.io.start.poke(false.B)

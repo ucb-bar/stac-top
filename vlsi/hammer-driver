@@ -9,6 +9,169 @@ from hammer.technology.sky130 import SKY130Tech
 
 import json
 
+def floorplan_sram_macros(x: HammerTool) -> bool:
+    srams_prefix = "system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_"
+    reset_domain_path = "system/tile_prci_domain/tile_reset_domain_tile/"
+    icache_path = reset_domain_path + "frontend/icache/"
+    dcache_path = reset_domain_path + "dcache/"
+
+    x.append("""
+        set core_bbox [get_db designs .core_bbox]
+        set pll_bbox [get_db inst:pllInst .bbox]
+        set sram_spacing 7.0
+        set sram_insts [get_db insts -if {.base_cell.name == sram22*}]
+        set_db $sram_insts .orient r90
+    """)
+
+    # Lower left corner SRAMs from bottom to top.
+    ll_srams = [srams_prefix + str(sram) + "/inner" for sram in [21, 17, 18]]
+    for (i, sram) in enumerate(ll_srams):
+        if i == 0:
+            x.append(f"place_inst {sram} [get_db designs .core_bbox.ll] r90")
+        else:
+            x.append(f"""
+                set prev_bbox [get_db inst:{ll_srams[i-1]} .bbox]
+                place_inst {sram}  [get_db $prev_bbox .ll.x] [ expr {{ [get_db $prev_bbox .ur.y] + $sram_spacing }} ] r90
+            """)
+
+    # Upper left corner SRAMs from top to bottom
+    ul_srams = [
+        srams_prefix + "20/inner",
+        srams_prefix + "19/inner",
+        "ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0",
+        dcache_path + "data/data_arrays_0/backingscratchpad_ext/mem_0_0"
+    ]
+    for (i, sram) in enumerate(ul_srams):
+        if i == 0:
+            x.append(f"""
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [get_db $core_bbox .ll.x] [ expr {{ [get_db $core_bbox .ur.y]  - [get_db $sram_bbox .dy]}} ] my90
+            """)
+        else:
+            x.append(f"""
+                set prev_bbox [get_db inst:{ul_srams[i-1]} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [get_db $prev_bbox .ll.x] [ expr {{ [get_db $prev_bbox .ll.y]  - $sram_spacing - [get_db $sram_bbox .dy]}} ] my90
+            """)
+
+    # Upper right corner SRAMs from top to bottom
+    ur_srams = [
+        srams_prefix + "11/inner",
+        icache_path + "data_arrays_1_0/data_arrays_0_0_ext/mem_0_0",
+        icache_path + "data_arrays_0_0/data_arrays_0_0_ext/mem_0_0",
+        icache_path + "tag_array_0/tag_array_0_0_ext/mem_0_0",
+        srams_prefix + "7/inner",
+        srams_prefix + "14/inner",
+        srams_prefix + "16/inner"
+    ]
+    for (i, sram) in enumerate(ur_srams):
+        if i == 0:
+            x.append(f"""
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $core_bbox .ur.x] - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $pll_bbox .ll.y]  - $sram_spacing - [get_db $sram_bbox .dy]}} ] r270
+            """)
+        else:
+            x.append(f"""
+                set prev_bbox [get_db inst:{ur_srams[i-1]} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $prev_bbox .ll.y]  - $sram_spacing - [get_db $sram_bbox .dy]}} ] r270
+            """)
+
+    # SRAMS that are placed in front of each other, but staggered such that pins are not blocked.
+    # First element is SRAM to be placed, second is SRAM that it is placed in front of.
+    staggered_srams = [
+        (
+            dcache_path + "tag_array_0/tag_array_0_ext/mem_0_0",
+            dcache_path + "data/data_arrays_0/backingscratchpad_ext/mem_0_0"
+        ),
+        (
+            srams_prefix + "0/inner",
+            "ChipTop/system/subsystem_mbus/spad/backingscratchpad/backingscratchpad_ext/mem_0_0",
+        ),
+    ]
+    for (sram, other_sram) in staggered_srams:
+        x.append(f"""
+            set prev_bbox [get_db inst:{other_sram} .bbox]
+            set sram_bbox [get_db inst:{sram} .bbox]
+            place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] + $sram_spacing }} ] [ expr {{ [get_db $prev_bbox .ur.y]  - [get_db $sram_bbox .dy]}} ] my90
+        """)
+
+    sram = srams_prefix + "2/inner"
+    x.append(f"""
+        set prev_bbox [get_db inst:{srams_prefix + "17/inner"} .bbox]
+        set sram_bbox [get_db inst:{sram} .bbox]
+        place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] + 200.0 }} ] [get_db $prev_bbox .ll.y] mx90
+    """)
+
+    # Lower middle column SRAMS from bottom to top
+    ll_middle_col = [srams_prefix + str(sram) + "/inner" for sram in [13, 15, 5]]
+    lr_middle_col = [srams_prefix + str(sram) + "/inner" for sram in [9, 12, 3]]
+    for (i, sram) in enumerate(ll_middle_col):
+        if i == 0:
+            x.append(f"""
+                set prev_bbox [get_db inst:{srams_prefix + "2/inner"} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] + $sram_spacing }} ] [get_db $prev_bbox .ll.y] mx90
+            """)
+        else:
+            x.append(f"""
+                set prev_bbox [get_db inst:{ll_middle_col[i-1]} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $prev_bbox .ur.y]  + $sram_spacing }} ] mx90
+            """)
+    for (i, sram) in enumerate(lr_middle_col):
+        if i == 0:
+            x.append(f"""
+                set prev_bbox [get_db inst:{ll_middle_col[0]} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] + $sram_spacing }} ] [get_db $prev_bbox .ll.y] r90
+            """)
+        else:
+            x.append(f"""
+                set prev_bbox [get_db inst:{lr_middle_col[i-1]} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [get_db $prev_bbox .ll.x] [ expr {{ [get_db $prev_bbox .ur.y]  + $sram_spacing }} ] r90
+            """)
+
+    # Upper middle column SRAMS from top to bottom
+    ul_middle_col = [srams_prefix + str(sram) + "/inner" for sram in [10, 4, 1]]
+    ur_middle_col = [srams_prefix + str(sram) + "/inner" for sram in [8, 6]]
+    for (i, sram) in enumerate(ul_middle_col):
+        if i == 0:
+            x.append(f"""
+                set prev_bbox [get_db inst:{srams_prefix + "20/inner"} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] + 200.0 }} ] [ expr {{ [get_db $core_bbox .ur.y]  - [get_db $sram_bbox .dy]}} ] r270
+            """)
+        else:
+            x.append(f"""
+                set prev_bbox [get_db inst:{ul_middle_col[i-1]} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $prev_bbox .ll.y] - $sram_spacing - [get_db $sram_bbox .dy] }} ] r270
+            """)
+    for (i, sram) in enumerate(ur_middle_col):
+        if i == 0:
+            x.append(f"""
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $pll_bbox .ll.x] - $sram_spacing - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $pll_bbox .ur.y] - [get_db $sram_bbox .dy] }} ] r270
+            """)
+        else:
+            x.append(f"""
+                set prev_bbox [get_db inst:{ur_middle_col[i-1]} .bbox]
+                set sram_bbox [get_db inst:{sram} .bbox]
+                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $prev_bbox .ll.y]  - $sram_spacing - [get_db $sram_bbox .dy] }} ] r270
+            """)
+
+    x.append("""
+        foreach inst [get_db $sram_insts .name] {
+            create_place_halo -insts $inst -halo_deltas {7.0 7.0 7.0 7.0} -snap_to_site
+            create_route_halo -bottom_layer li1 -space 2.0 -top_layer met2 -inst $inst
+        }
+    """)
+
+    return True
+        
+
 
 def check_timing_intent(x: HammerTool) -> bool:
     x.append('check_timing_intent -verbose')
@@ -16,20 +179,6 @@ def check_timing_intent(x: HammerTool) -> bool:
 
 def dont_touch(x: HammerTool) -> bool:
     x.append('set_dont_touch [get_db insts -if {.base_cell.base_class == block}]')
-    x.append('set_dont_touch [get_db insts -if {.base_cell.name == sky130_fd_sc_hd__bufbuf_16 }] true')
-    return True
-
-def print_macros(x: HammerTool) -> bool:
-    x.append('''
-set macros_file "./macros.txt"
-set macros_file [open $macros_file "w"]
-set macros [get_db insts -if {.base_cell.base_class == block}]
-foreach m $macros {
-    puts "$m"
-    puts $macros_file "$m"
-}
-close $macros_file
-''')
     return True
 
 def set_routing_layers(x: HammerTool) -> bool:
@@ -270,8 +419,6 @@ class Driver(CLIDriver):
         return [
             HammerTool.make_removal_hook("place_bumps"),
 
-            HammerTool.make_pre_insertion_hook("floorplan_design", print_macros),
-
             HammerTool.make_pre_insertion_hook("place_opt_design", derate_srams),
 
             HammerTool.make_post_insertion_hook("init_design", set_routing_layers),
@@ -289,6 +436,7 @@ class Driver(CLIDriver):
 
             HammerTool.make_pre_insertion_hook("floorplan_design", set_die_snap_to_mfg_grid),
             HammerTool.make_post_insertion_hook("floorplan_design", efabless_ring_io),
+            HammerTool.make_post_insertion_hook("floorplan_design", floorplan_sram_macros),
             HammerTool.make_post_insertion_hook("efabless_ring_io", load_hv_def_routing),
             HammerTool.make_pre_insertion_hook("power_straps", pll_power),
             HammerTool.make_post_insertion_hook("power_straps", connect_core_stripes),

@@ -14,7 +14,6 @@ import freechips.rocketchip.util._
 
 import srambist.analog.SramParams
 import srambist.SramBistCtrlRegs._
-import srambist.TdcSrc
 
 class SramBistTopIO extends Bundle {
   val sramExtEn = Input(Bool())
@@ -53,20 +52,17 @@ class SramBist()(implicit p: Parameters) extends Module {
   bistTop.io.sramEn := io.top.sramEn
   bistTop.io.bistEn := io.top.bistEn
   bistTop.io.bistStart := io.top.bistStart
-  bistTop.io.tdcClk := io.top.tdcClk
   bistTop.io.ex := io.ex.valid & io.ex.bits
   io.ex.ready := ready
 
   bistTop.io.addr := scanChainIntf.io.mmio.addr.q
-  bistTop.io.din := Cat(scanChainIntf.io.mmio.din.map { reg => reg.q }.reverse).asTypeOf(bistTop.io.din)
-  bistTop.io.mask := Cat(scanChainIntf.io.mmio.mask.map { reg => reg.q}.reverse).asTypeOf(bistTop.io.mask)
+  bistTop.io.din := scanChainIntf.io.din
+  bistTop.io.mask := scanChainIntf.io.mask
   bistTop.io.we := scanChainIntf.io.mmio.we.q.asBool
   bistTop.io.sramId := scanChainIntf.io.mmio.sramId.q
   bistTop.io.sramSel := scanChainIntf.io.mmio.sramSel.q.asTypeOf(SramSrc())
-  bistTop.io.dlCtl := scanChainIntf.io.mmio.dlCtl.q
-  bistTop.io.tdcSel := scanChainIntf.io.mmio.tdcSel.q.asTypeOf(TdcSrc())
   bistTop.io.bistRandSeed := scanChainIntf.io.bistRandSeed
-  bistTop.io.bistSigSeed := Cat(scanChainIntf.io.mmio.bistSigSeed.map { reg => reg.q }.reverse).asTypeOf(bistTop.io.bistSigSeed)
+  bistTop.io.bistSigSeed := scanChainIntf.io.bistSigSeed
   bistTop.io.bistMaxRowAddr := scanChainIntf.io.mmio.bistMaxRowAddr.q
   bistTop.io.bistMaxColAddr := scanChainIntf.io.mmio.bistMaxColAddr.q
   bistTop.io.bistInnerDim := scanChainIntf.io.mmio.bistInnerDim.q
@@ -89,7 +85,6 @@ class SramBist()(implicit p: Parameters) extends Module {
   bistTop.io.bistStopOnFailure := scanChainIntf.io.mmio.bistStopOnFailure.q.asBool
 
   scanChainIntf.io.dout := bistTop.io.dout
-  scanChainIntf.io.tdc := bistTop.io.tdc
   scanChainIntf.io.done := bistTop.io.done.asUInt
 
   scanChainIntf.io.bistFail := bistTop.io.bistFail.asUInt
@@ -152,12 +147,6 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(
       REGMAP_OFFSET(SRAM_SEL) -> Seq(
         RegField.rwReg(REG_WIDTH(SRAM_SEL), sramBist.io.mmio.sramSel)
       ),
-      REGMAP_OFFSET(DL_CTL) -> Seq(
-        RegField.rwReg(REG_WIDTH(DL_CTL), sramBist.io.mmio.dlCtl)
-      ),
-      REGMAP_OFFSET(TDC_SEL) -> Seq(
-        RegField.rwReg(REG_WIDTH(TDC_SEL), sramBist.io.mmio.tdcSel)
-      ),
       REGMAP_OFFSET(DOUT) -> 
         (0 until NUM_REGS(DOUT)).map { i =>
         RegField.rwReg(
@@ -165,9 +154,6 @@ abstract class SramBistRouter(busWidthBytes: Int, params: SramBistParams)(
           sramBist.io.mmio.doutMmio(i)
         )
         },
-      REGMAP_OFFSET(TDC) -> (0 until NUM_REGS(TDC)).map { i =>
-        RegField.rwReg(64, sramBist.io.mmio.tdcMmio(i))
-      },
       REGMAP_OFFSET(DONE) -> Seq(
         RegField.rwReg(REG_WIDTH(DONE), sramBist.io.mmio.doneMmio)
       ),

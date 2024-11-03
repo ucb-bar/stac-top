@@ -5,8 +5,8 @@
 #include <stdbool.h>
 
 typedef struct {
-    uint64_t hi;
     uint64_t lo;
+    uint64_t hi;
 } uint128_t;
 
 static inline bool eq128(uint128_t a, uint128_t b) {
