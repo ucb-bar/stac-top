@@ -446,10 +446,64 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.top.bistDone.expect(true.B)
       d.io.top.bistEn.poke(false.B)
 
-      val misrModel = new MaxPeriodFibonacciXORMISRModel(128)
+      var misrModel = new MaxPeriodFibonacciXORMISRModel(128)
       for (i <- 1 to (h.maxRows + 1) * (h.maxCols + 1) * 4) {
         misrModel.add(BigInt("a0e56af2650dc903389eb701097b41b1", 16))
         misrModel.add(BigInt("5f1a950d9af236fcc76148fef684be4e", 16))
+      }
+
+      println(s"Expected signature = ${misrModel.state.toString(16)}")
+      scanOutAndAssert(REG_WIDTH(BIST_SIGNATURE), misrModel.state)
+      scanOut(REG_WIDTH(BIST_RECEIVED))
+      scanOut(REG_WIDTH(BIST_EXPECTED))
+      scanOut(REG_WIDTH(BIST_FAIL_CYCLE))
+      scanOutAndAssert(REG_WIDTH(BIST_FAIL), 0)
+
+      d.io.top.sramExtEn.poke(false.B)
+      d.io.top.sramScanMode.poke(true.B)
+      d.io.top.sramEn.poke(false.B)
+      d.io.top.bistEn.poke(false.B)
+      d.io.top.bistStart.poke(false.B)
+
+      scanClear()
+      scanIn(REG_WIDTH(BIST_STOP_ON_FAILURE), 1)
+      scanIn(REG_WIDTH(BIST_CYCLE_LIMIT), 0)
+      scanIn(REG_WIDTH(BIST_MAX_ELEMENT_IDX), 3)
+      scanIn(REG_WIDTH(BIST_PATTERN_TABLE), patTable)
+      scanIn(REG_WIDTH(BIST_ELEMENT_SEQUENCE), eltSeq)
+      scanIn(REG_WIDTH(BIST_INNER_DIM), 0)
+      scanIn(REG_WIDTH(BIST_MAX_COL_ADDR), 3)
+      scanIn(REG_WIDTH(BIST_MAX_ROW_ADDR), 15)
+      scanIn(REG_WIDTH(BIST_SIG_SEED), 1)
+      scanIn(REG_WIDTH(BIST_RAND_SEED), 1)
+      scanIn(REG_WIDTH(DONE), 0)
+      scanIn(REG_WIDTH(DOUT), 0)
+      scanIn(REG_WIDTH(SRAM_SEL), 1)
+      scanIn(REG_WIDTH(SRAM_ID), 5)
+      scanIn(REG_WIDTH(WE), 0)
+      scanIn(REG_WIDTH(MASK), 511)
+      scanIn(REG_WIDTH(DIN), 0)
+      scanIn(REG_WIDTH(ADDR), 0)
+      d.io.top.sramScanIn.poke(false.B)
+
+      d.io.top.bistStart.poke(true.B)
+      d.clock.step()
+      d.clock.step()
+      d.clock.step()
+      d.io.top.bistStart.poke(false.B)
+      d.io.top.bistEn.poke(true.B)
+
+      for (i <- 0 to 4 * 4 * 16 * 4 + 3) {
+        d.clock.step()
+      }
+
+      d.io.top.bistDone.expect(true.B)
+      d.io.top.bistEn.poke(false.B)
+
+      misrModel = new MaxPeriodFibonacciXORMISRModel(128)
+      for (i <- 1 to (h.maxRows + 1) * (h.maxCols + 1) * 4) {
+        misrModel.add(BigInt("b1", 16))
+        misrModel.add(BigInt("4e", 16))
       }
 
       println(s"Expected signature = ${misrModel.state.toString(16)}")

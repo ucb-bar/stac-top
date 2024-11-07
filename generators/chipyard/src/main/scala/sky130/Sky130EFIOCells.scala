@@ -5,7 +5,7 @@ import chipyard.iobinders.{HasIOBinders, IOCellKey}
 import chipyard.sky130.util.analog.ConvertAnalog
 import chisel3._
 import chisel3.experimental.{Analog, BaseModule, DataMirror, attach}
-import freechips.rocketchip.diplomacy.{InModuleBody, LazyModule}
+import freechips.rocketchip.diplomacy.{InModuleBody, ModuleValue, LazyModule}
 import freechips.rocketchip.util.ElaborationArtefacts
 import org.chipsalliance.cde.config.Config
 
@@ -101,6 +101,8 @@ class Sky130FDXRes4V2Cell(cellName: String = consts.defaultXRes4V2CellName) exte
 class Sky130EFAnalogCellIO extends Bundle {
   val P_PAD = Analog(1.W)
   val P_CORE = Analog(1.W)
+  val AMUXBUS_A = Analog(1.W)
+  val AMUXBUS_B = Analog(1.W)
 }
 
 class Sky130EFAnalogCell(cellName: String) extends BlackBox {
@@ -112,6 +114,8 @@ class Sky130EFAnalogCell(cellName: String) extends BlackBox {
 class Sky130EFIOCellCommonIO extends Bundle {
   // VDDIO domain
   val porb_h = Input(Bool())
+  val AMUXBUS_A = Analog(1.W)
+  val AMUXBUS_B = Analog(1.W)
 }
 
 trait Sky130EFIOCellLike extends IOCell {
@@ -152,6 +156,9 @@ abstract class Sky130EFGPIOV2CellIOCellBase(cellName: String) extends RawModule 
 
   // VDDIO domain
   iocell.io.ENABLE_H := commonIO.porb_h
+
+  attach(iocell.io.AMUXBUS_A, commonIO.AMUXBUS_A)
+  attach(iocell.io.AMUXBUS_B, commonIO.AMUXBUS_B)
 }
 
 class Sky130EFGPIOV2CellAnalog(cellName: String = consts.defaultGPIOCellName)
@@ -236,6 +243,8 @@ class Sky130FDXRes4V2IOCell(cellName: String = consts.defaultXRes4V2CellName)
 
   // VDDIO domain
   iocell.io.ENABLE_H := commonIO.porb_h
+  attach(iocell.io.AMUXBUS_A, commonIO.AMUXBUS_A)
+  attach(iocell.io.AMUXBUS_B, commonIO.AMUXBUS_B)
   attach(iocell.io.PAD_A_ESD_H, iocell.io.TIE_WEAK_HI_H) // weak pull-up connection
 
   iocell.io.DISABLE_PULLUP_H := iocell.io.TIE_LO_ESD // enable pull-up on reset pad
@@ -261,6 +270,8 @@ class Sky130EFAnalogCellIOCell(cellName: String)
 
   attach(io.pad, iocell.io.P_PAD)
   attach(io.core, iocell.io.P_CORE)
+  attach(iocell.io.AMUXBUS_A, commonIO.AMUXBUS_A)
+  attach(iocell.io.AMUXBUS_B, commonIO.AMUXBUS_B)
 }
 
 case class Sky130EFIOCellTypeParams(
@@ -302,8 +313,25 @@ trait HasSky130EFIOCells {
 
   val sky130EFIOCellInsts: mutable.Buffer[Sky130EFIOCellLike] = mutable.Buffer[Sky130EFIOCellLike]()
 
+  val AMUXBUS: ModuleValue[Option[(Analog, Analog)]] = InModuleBody {
+    this match {
+      case top: HasIOBinders => {
+        top.iocells.getWrappedValue.collectFirst {
+          case (cell: Sky130EFIOCellLike) => (cell.commonIO.AMUXBUS_A, cell.commonIO.AMUXBUS_B)
+        }
+      }
+      case _ => None
+    }
+  }
+
   def registerSky130EFIOCell(cell: Sky130EFIOCellLike): Unit = {
     cell.commonIO.porb_h := porb_h.getWrappedValue
+    AMUXBUS.getWrappedValue match {
+      case Some((amuxbus_a, amuxbus_b)) => {
+        attach(cell.commonIO.AMUXBUS_A, amuxbus_a)
+        attach(cell.commonIO.AMUXBUS_B, amuxbus_b)
+      }
+    }
 
     sky130EFIOCellInsts.append(cell)
   }
@@ -311,9 +339,8 @@ trait HasSky130EFIOCells {
   InModuleBody {
     this match {
       case top: HasIOBinders =>
-        top.iocells.getWrappedValue.foreach {
-          case cell: Sky130EFIOCellLike => registerSky130EFIOCell(cell)
-          case _ =>
+        top.iocells.getWrappedValue.zipWithIndex.foreach {
+          case (cell: Sky130EFIOCellLike, i) => registerSky130EFIOCell(cell)
         }
     }
   }

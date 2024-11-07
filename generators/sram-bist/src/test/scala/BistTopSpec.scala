@@ -859,8 +859,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
         testhelpers.c.io.bistFailCycle.expect(4.U)
-        testhelpers.c.io.bistExpected(31, 0).expect(0.U)
-        testhelpers.c.io.bistReceived(31, 0).expect(0xffffffffL.U)
+        assert((testhelpers.c.io.bistExpected.peek().litValue & 0xffffffffL) == 0)
+        assert((testhelpers.c.io.bistReceived.peek().litValue & 0xffffffffL) == 0xffffffffL)
       }
 
       testhelpers.c.io.sramExtEn.poke(false.B)
@@ -1231,8 +1231,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
-        testhelpers.c.io.bistExpected(31, 0).expect("hffffffff".U)
-        testhelpers.c.io.bistReceived(31, 0).expect("hffffffdf".U)
+        assert((testhelpers.c.io.bistExpected.peek().litValue & 0xffffffffL) == 0xffffffffL)
+        assert((testhelpers.c.io.bistReceived.peek().litValue & 0xffffffffL) == 0xffffffdfL)
       }
 
       // ******************
@@ -1379,8 +1379,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         executeOp()
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
-        testhelpers.c.io.bistExpected(31, 0).expect("h00000000".U)
-        testhelpers.c.io.bistReceived(31, 0).expect("h00000001".U)
+        assert((testhelpers.c.io.bistExpected.peek().litValue & 0xffffffffL) == 0x00000000)
+        assert((testhelpers.c.io.bistReceived.peek().litValue & 0xffffffffL) == 0x00000001)
       }
 
       // ******************
@@ -1495,8 +1495,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
         testhelpers.c.io.bistFailCycle.expect(120.U)
-        testhelpers.c.io.bistExpected(31, 0).expect("hffffffff".U)
-        testhelpers.c.io.bistReceived(31, 0).expect("hffffffdf".U)
+        assert((testhelpers.c.io.bistExpected.peek().litValue & 0xffffffffL) == 0xffffffffL)
+        assert((testhelpers.c.io.bistReceived.peek().litValue & 0xffffffffL) == 0xffffffdfL)
 
         testhelpers.populateBistRegisters(
           1.U,
@@ -1528,8 +1528,8 @@ class BistTopSpec extends AnyFlatSpec with ChiselScalatestTester {
         testhelpers.c.io.bistDone.expect(true.B)
         testhelpers.c.io.bistFail.expect(true.B)
         testhelpers.c.io.bistFailCycle.expect(376.U)
-        testhelpers.c.io.bistExpected(31, 0).expect("hffffffff".U)
-        testhelpers.c.io.bistReceived(31, 0).expect("hffffffdf".U)
+        assert((testhelpers.c.io.bistExpected.peek().litValue & 0xffffffffL) == 0xffffffffL)
+        assert((testhelpers.c.io.bistReceived.peek().litValue & 0xffffffffL) == 0xffffffdfL)
       }
 
       // ******************

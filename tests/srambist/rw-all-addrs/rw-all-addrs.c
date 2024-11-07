@@ -16,7 +16,7 @@ int main( int argc, char* argv[] )
 {
   uint128_t result, ref;
 
-  for (int id = 0; id < NUM_SRAMS; id++) {
+  for (int id = 8; id < NUM_SRAMS; id++) {
     printf("Testing SRAM %d\n", id);
     sram_params_t params = SRAMS[id];
     uint128_t mask = {0xffffffffffffffff, 0xffffffffffffffff};

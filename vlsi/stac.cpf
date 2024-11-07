@@ -2,10 +2,9 @@ set_cpf_version 2.0
 set_hierarchy_separator /
 set_design ChipTop
 
-create_power_nets -nets { VDD } -voltage 1.8
-create_ground_nets -nets { VSS }
+create_power_nets -nets { VDD VDDA } -voltage 1.8
 create_power_nets -nets { VDDIO } -voltage 3.3
-create_ground_nets -nets { VSSIO }
+create_ground_nets -nets { VSS VSSA }
 
 create_power_domain -name AO -default
 update_power_domain -name AO -primary_power_net VDD -primary_ground_net VSS
@@ -14,7 +13,7 @@ create_power_domain -name HV -instances [list \
     {*}[find_design_objects iocell_*/levelShifter -hierarchical -object inst -pattern_type cell] \
     {*}[find_design_objects por -object inst -pattern_type cell] \
     ]
-update_power_domain -name HV -primary_power_net VDDIO -primary_ground_net VSSIO
+update_power_domain -name HV -primary_power_net VDDIO -primary_ground_net VSS
 
 create_power_domain -name IO -instances [list \
     {*}[find_design_objects iocell_*/iocell -hierarchical -object inst -pattern_type cell] \
@@ -31,13 +30,13 @@ create_global_connection -domain AO -net VDD -pins { VDD VPWR vdd VPB }
 create_global_connection -domain AO -net VSS -pins { VSS VGND vss VNB }
 
 create_global_connection -domain HV -net VDDIO -pins { VPWR vdd3v3 VPB }
-create_global_connection -domain HV -net VSSIO -pins { VGND vss3v3 VNB }
 create_global_connection -domain HV -net VDD -pins { LVPWR vdd1v8 }
-create_global_connection -domain HV -net VSS -pins { LVGND vss1v8 }
+create_global_connection -domain HV -net VSS -pins { LVGND vss1v8 VGND vss3v3 VNB }
 
-create_global_connection -domain IO -net VDDIO -pins { VDDIO VDDIO_Q VDDA VSWITCH }
-create_global_connection -domain IO -net VSSIO -pins { VSSIO VSSIO_Q VSSA }
+create_global_connection -domain IO -net VDDIO -pins { VDDIO VDDIO_Q VSWITCH }
+create_global_connection -domain IO -net VDDA -pins { VDDA }
 create_global_connection -domain IO -net VDD -pins { VCCD VCCHIB VCCD1 }
-create_global_connection -domain IO -net VSS -pins { VSSD VSSD1 }
+create_global_connection -domain IO -net VSSA -pins { VSSA }
+create_global_connection -domain IO -net VSS -pins { VSSIO VSSIO_Q VSSD VSSD1 }
 
 end_design

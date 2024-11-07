@@ -4,6 +4,38 @@ vlsi.core.build_system: make
 # TODO: temporary
 technology.sky130.drc_blackbox_srams: true
 technology.sky130.lvs_blackbox_srams: true
+# Hammer will auto-generate a CPF for simple power designs; see hammer/src/hammer-vlsi/defaults.yml for more info
+vlsi.inputs.power_spec_mode: "auto"
+vlsi.inputs.power_spec_type: "cpf"
+
+# Power Straps
+par.power_straps_mode: generate
+par.generate_power_straps_method: by_tracks
+par.blockage_spacing: 2.0
+par.blockage_spacing_top_layer: met3
+par.generate_power_straps_options:
+  by_tracks:
+    strap_layers:
+      - met2
+      - met3
+      - met4
+      - met5
+    pin_layers:
+      - met5
+    blockage_spacing_met2: 4.0
+    blockage_spacing_met4: 2.0
+    track_width: 2
+    track_width_met2: 2
+    track_width_met3: 2
+    track_width_met4: 2
+    track_width_met5: 2
+    track_spacing: 5
+    track_start: 10
+    track_start_met5: 1
+    power_utilization: 0.4
+    power_utilization_met4: 0.4
+    power_utilization_met5: 0.5
+
 
 vlsi.inputs:
   power_spec_type: cpf
@@ -36,8 +68,6 @@ vlsi.inputs:
     # Periphery / everything else
     - {name: "clkdiv_out_periph", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_periph_clock", period: "15ns", uncertainty: "0.1ns"}
 
-  pin_mode: none
-
   placement_constraints:
     - path: ChipTop
       type: toplevel
@@ -48,7 +78,7 @@ vlsi.inputs:
       margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
 
     # PLL
-    - {path: ChipTop/pllInst, type: hardmacro, x: 2771.96, y: 4387.92, orientation: r0}
+    - {path: ChipTop/pllInst, type: hardmacro, x: 2671.96, y: 4287.92, orientation: r0}
 
     - path: ChipTop/system_obs
       type: obstruction
@@ -58,6 +88,34 @@ vlsi.inputs:
       y: 252
       width: 34
       height: 48
+
+# Power Straps
+par.power_straps_mode: generate
+par.generate_power_straps_method: by_tracks
+par.blockage_spacing: 2.0
+par.blockage_spacing_top_layer: met3
+par.generate_power_straps_options:
+  by_tracks:
+    strap_layers:
+      - met2
+      - met3
+      - met4
+      - met5
+    pin_layers:
+      - met5
+    blockage_spacing_met2: 4.0
+    blockage_spacing_met4: 2.0
+    track_width: 2
+    track_width_met2: 2
+    track_width_met3: 2
+    track_width_met4: 2
+    track_width_met5: 2
+    track_spacing: 5
+    track_start: 10
+    track_start_met5: 1
+    power_utilization: 0.4
+    power_utilization_met4: 0.4
+    power_utilization_met5: 0.5
 
 
 design.def.hv_routing_meta: prependlocal
@@ -69,7 +127,7 @@ design.def.hv_routing: stac-hv-routing.def
   # gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/gds/sky130_fd_sc_hvl.gds
   gds_file: /tools/commercial/skywater/skywater-pdk/libraries/sky130_fd_sc_hvl/latest/cells/lsbufhv2lv/sky130_fd_sc_hvl__lsbufhv2lv_1.gds
   lef_file: cache/fd_sc_hvl__lef/sky130_fd_sc_hvl__lsbufhv2lv_1.lef
-  spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/cdl/sky130_fd_sc_hvl.cdl
+  spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_fd_sc_hvl.cdl
   # spice_file: /tools/C/nayiri/sky130/chipyard-jun23_tapeout/vlsi/sky130_fd_sc_hvl.cdl
   verilog_sim: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/verilog/sky130_fd_sc_hvl__lsbufhv2lv.functional.v
   provides:
@@ -88,115 +146,11 @@ design.def.hv_routing: stac-hv-routing.def
 vlsi.technology.extra_libraries_meta: ["append", "lazydeepsubst"]
 vlsi.technology.extra_libraries:
   - library:
-      spice_file: /tools/C/nayiri/sky130/chipyard-jun23_tapeout/vlsi/devices.spice
+      spice_file: /tools/C/rahulkumar/sky130/stac2/lvs/devices.sp
   - library:
-      nldm_liberty_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lib
-      verilog_sim: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.v
-      lef_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lef
-      spice_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.spice
-      gds_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.gds      
-      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-      supplies: {VDD: "1.80 V", GND: "0 V"}
-      provides: [ {lib_type: stdcell, vt: RVT} ]
+      spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_fd_io.spice
   - library:
-      nldm_liberty_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lib
-      verilog_sim: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.v
-      lef_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lef
-      spice_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.spice
-      gds_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.gds      
-      corner: {nmos: slow, pmos: slow, temperature: "100 C"}
-      supplies: {VDD: "1.60 V", GND: "0 V"}
-      provides: [ {lib_type: stdcell, vt: RVT} ]
-  - library:
-      nldm_liberty_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lib
-      verilog_sim: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.v
-      lef_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.lef
-      spice_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.spice
-      gds_file: /tools/C/rahulkumar/personal/tdc_sky130_macros/tdc_64/tdc_64.gds      
-      corner: {nmos: fast, pmos: fast, temperature: "-40 C"}
-      supplies: {VDD: "1.95 V", GND: "0 V"}
-      provides: [ {lib_type: stdcell, vt: RVT} ]
-  - library:
-      lef_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lef
-      nldm_liberty_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lib
-      verilog_sim: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.v
-      spice_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.spice
-      gds_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.gds
-      corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-      supplies: {VDD: "1.80 V", GND: "0 V"}
-      provides: [ {lib_type: stdcell, vt: RVT} ]
-  - library:
-      lef_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lef
-      nldm_liberty_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lib
-      verilog_sim: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.v
-      spice_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.spice
-      gds_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.gds
-      corner: {nmos: slow, pmos: slow, temperature: "100 C"}
-      supplies: {VDD: "1.60 V", GND: "0 V"}
-      provides: [ {lib_type: stdcell, vt: RVT} ]
-  - library:
-      lef_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lef
-      nldm_liberty_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.lib
-      verilog_sim: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.v
-      spice_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.spice
-      gds_file: /tools/C/rahulkumar/personal/delay_line_sky130_macros/tristate_inv_delay_line_128/tristate_inv_delay_line_128.gds
-      corner: {nmos: slow, pmos: slow, temperature: "-40 C"}
-      supplies: {VDD: "1.95 V", GND: "0 V"}
-      provides: [ {lib_type: stdcell, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_2048x32m8w8_test/sram22_2048x32m8w8_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_2048x32m8w8_test/sram22_2048x32m8w8_test_tt_025C_1v80.schematic.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_1024x32m8w8_test/sram22_1024x32m8w8_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_1024x32m8w8_test/sram22_1024x32m8w8_test_tt_025C_1v80.rc.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_1024x32m8w32_test/sram22_1024x32m8w32_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_1024x32m8w32_test/sram22_1024x32m8w32_test_tt_025C_1v80.rc.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_512x32m4w32_test/sram22_512x32m4w32_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_512x32m4w32_test/sram22_512x32m4w32_test_tt_025C_1v80.rc.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_512x32m4w8_test/sram22_512x32m4w8_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_512x32m4w8_test/sram22_512x32m4w8_test_tt_025C_1v80.rc.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_256x32m4w8_test/sram22_256x32m4w8_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_256x32m4w8_test/sram22_256x32m4w8_test_tt_025C_1v80.rc.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x32m4w8_test/sram22_64x32m4w8_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x32m4w8_test/sram22_64x32m4w8_test_tt_025C_1v80.rc.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x24m4w24_test/sram22_64x24m4w24_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x24m4w24_test/sram22_64x24m4w24_test_tt_025C_1v80.rc.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
-  # - library:
-  #     lef_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x4m4w2_test/sram22_64x4m4w2_test.lef
-  #     nldm_liberty_file: /tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros/sram22_64x4m4w2_test/sram22_64x4m4w2_test_tt_025C_1v80.rc.lib
-  #     corner: {nmos: typical, pmos: typical, temperature: "025 C"}
-  #     supplies: {VDD: "1.80 V", GND: "0 V"}
-  #     provides: [ {lib_type: sram, vt: RVT} ]
+      spice_file: /tools/C/rahulkumar/sky130/stac2/lvs/sky130_fd_sc_hd.cdl
   - library:
       <<: *lib__sky130_fd_sc_hvl__lsbufhv2lv
       nldm_liberty_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/lib/sky130_fd_sc_hvl__ss_100C_1v65_lv1v60.lib
@@ -258,24 +212,29 @@ vlsi.technology.extra_libraries:
         VDD: "1.80 V"
         GND: "0 V"
   - library:
+      gds_file: /tools/C/rohankumar/sky130/stac_tapeout/gds/sky130_ef_io_with_overlay.gds
+      lef_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
+      spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io.spice
+      provides:
+        - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
+          vt: RVT
+  - library:
       gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.gds
       lef_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
-      spice_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/spice/sky130_ef_io.spice
-      # spice_file: /tools/C/nayiri/sky130/chipyard-jun23_tapeout/vlsi/sky130_ef_io.spice
+      spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io.spice
       provides:
         - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
           vt: RVT
   - library:
       gds_file: /tools/C/sehuang/sky130/ucb_chip_io/gds/sky130_ef_io__analog_pad_esd2.gds
-      lef_file: /tools/C/sehuang/sky130/ucb_chip_io/lef/sky130_ef_io__analog_pad_esd2.lef
-      spice_file: /tools/C/sehuang/sky130/ucb_chip_io/cdl_out/sky130_ef_io__analog_pad_esd2.cdl
+      lef_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io__analog_pad_esd2.lef
+      spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io__analog_pad_esd2.cdl
       provides:
         - lib_type: iocell
   - library:
       gds_file: ${technology.sky130.caravel}/gds/simple_por.gds
       lef_file: ${technology.sky130.caravel}/lef/simple_por.lef
-      spice_file: ${technology.sky130.caravel}/spi/lvs/caravel.spice # TODO: which netlist to actually use?
-      # spice_file: ${technology.sky130.caravel}/spi/lvs/simple_por.spice # TODO: which netlist to actually use?
+      spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io.spice
       verilog_sim: ${technology.sky130.caravel}/verilog/rtl/simple_por.v
       provides:
         - lib_type: por

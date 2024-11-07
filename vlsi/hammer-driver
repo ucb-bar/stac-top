@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from hammer.vlsi import CLIDriver, HammerTool, HammerDriver, HammerToolHookAction
+from hammer.utils import get_or_else, optional_map
+import hammer.tech as hammer_tech
 
 from pathlib import Path
 from typing import Dict, Callable, Optional, List
@@ -8,6 +10,128 @@ from typing import Dict, Callable, Optional, List
 from hammer.technology.sky130 import SKY130Tech
 
 import json
+
+CHIPTOP_IO_NETS = [
+	"serial_tl_bits_in_valid",
+	"serial_tl_bits_in_bits",
+	"serial_tl_bits_out_ready",
+	"custom_boot",
+	"clock_clock",
+	"reset",
+	"clksel[0]",
+	"clksel[1]",
+	"pll_scan_in",
+	"pll_scan_clk",
+	"pll_scan_en",
+	"pll_scan_rst",
+	"pll_arstb",
+	"pll_sel",
+	"pll_ref_in",
+	"pll_clk_out",
+	"pll_div_out",
+	"jtag_TCK",
+	"jtag_TMS",
+	"jtag_TDI",
+	"sram_bist_sramExtEn",
+	"sram_bist_sramScanMode",
+	"sram_bist_sramEn",
+	"sram_bist_sramScanIn",
+	"sram_bist_sramScanEn",
+	"sram_bist_tdcClk",
+	"sram_bist_bistEn",
+	"sram_bist_bistStart",
+	"spi_0_dq_0",
+	"spi_0_dq_1",
+	"spi_0_dq_2",
+	"spi_0_dq_3",
+	"uart_0_rxd",
+	"pad_nc_0",
+	"serial_tl_clock",
+	"serial_tl_bits_in_ready",
+	"serial_tl_bits_out_valid",
+	"serial_tl_bits_out_bits",
+	"pll_scan_out",
+	"jtag_TDO",
+	"sram_bist_sramScanOut",
+	"sram_bist_bistDone",
+	"spi_0_sck",
+	"spi_0_cs_0",
+	"uart_0_txd",
+    "VDDIO",
+    "VDD",
+    "VDDA",
+    "VSS"
+    "VSSA"
+]
+
+CHIPTOP_DONT_TOUCH_NETS = ["_commonIO_AMUXBUS_A_wire", "_commonIO_AMUXBUS_B_wire"]
+
+def chiptop_dont_route(x: HammerTool) -> bool:
+    for net in CHIPTOP_DONT_TOUCH_NETS:
+      x.append(f"set_route_attributes -nets {net} -skip_routing true")
+    return True
+    
+def chiptop_dont_touch(x: HammerTool) -> bool:
+    x.append("set_dont_touch [get_nets {%s}] true" % " ".join(CHIPTOP_DONT_TOUCH_NETS))
+    return True
+
+def assign_chiptop_io_pins(x: HammerTool) -> bool:
+    x.append(f'''
+        set_promoted_macro_pin -insts *iocell -pins {{ P_PAD PAD }}
+        set_promoted_macro_pin -insts clamp* -pins {{ VDDIO VSSD VCCD VSSA VDDA}}
+        assign_io_pins -pins {{ {" ".join(CHIPTOP_IO_NETS)} }}
+    ''')
+    return True
+
+def write_chiptop_drc_lvs_layout(x: HammerTool) -> bool:
+    map_file = get_or_else(
+        optional_map(x.get_gds_map_file(), lambda f: "-map_file {}".format(f)),
+        ""
+    )
+
+    gds_files = x.technology.read_libs([
+        hammer_tech.filters.gds_filter
+    ], hammer_tech.HammerTechnologyUtils.to_plain_item)
+    if x.hierarchical_mode.is_nonleaf_hierarchical():
+        ilm_gds = list(map(lambda ilm: ilm.gds, x.get_input_ilms()))
+        gds_files.extend(ilm_gds)
+
+    # ONLY DIFFERENCE FROM HAMMER'S DEFAULT WRITE GDS:
+    gds_files = list(filter(lambda x: "simple_por" not in x, gds_files))
+    gds_files.append("/tools/C/rohankumar/sky130/stac_tapeout/gds/simple_por_drc_lvs.gds")
+
+    merge_options = "-output_macros" if not x.get_setting("par.inputs.gds_merge") else "-uniquify_cell_names -merge {{ {} }}".format(
+        " ".join(gds_files)
+    )
+
+    unit = ""
+    if (x.get_setting("par.inputs.gds_precision_mode") == "manual"):
+        gds_precision = x.get_setting("par.inputs.gds_precision") or ""
+        valid_values = [100, 200, 1000, 2000, 10000, 20000]
+        if gds_precision in valid_values:
+            unit = "-unit %s" % gds_precision
+        else:
+            x.logger.error(
+                "par.inputs.gds_precision value of \"%s\" must be one of %s" %(
+                    gds_precision, ', '.join([str(x) for x in valid_values])));
+            return False
+
+    x.verbose_append(
+        "write_stream -mode ALL -format stream {map_file} {merge_options} {unit} {gds}".format(
+        map_file=map_file,
+        merge_options=merge_options,
+        gds=x.output_gds_filename.replace(".gds", "_drc_lvs.gds"),
+        unit=unit
+    ))
+    return True
+
+def write_chiptop_netlist_with_pg_pins(x: HammerTool) -> bool:
+    x.append(f"write_netlist {x.output_netlist_filename} -top_module_first -top_module ChipTop -exclude_leaf_cells -phys -flat -exclude_insts_of_cells {{ sky130_fd_sc_hd__tap_1 sky130_fd_sc_hd__tap_2 sky130_fd_sc_hd__tapvgnd_1 sky130_fd_sc_hd__tapvpwrvgnd_1 sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8 sky130_fd_sc_hd__diode_2 sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um sky130_ef_io__com_bus_slice_20um sky130_ef_io__corner_pad}}")
+    return True
+
+def draw_areaidld(x: HammerTool) -> bool:
+    x.append("create_shape -layer AREAIDLD -rect [get_db designs .core_bbox]")
+    return True
 
 def floorplan_sram_macros(x: HammerTool) -> bool:
     srams_prefix = "system/sramBistClockDomainWrapper/sram_bist_0/sramBist/bistTop/srams_"
@@ -17,6 +141,10 @@ def floorplan_sram_macros(x: HammerTool) -> bool:
 
     x.append("""
         set core_bbox [get_db designs .core_bbox]
+        set core_l [ expr { [get_db $core_bbox .ll.x] + 20 } ]
+        set core_r [ expr { [get_db $core_bbox .ur.x] - 20 } ]
+        set core_b [ expr { [get_db $core_bbox .ll.y] + 20 } ]
+        set core_t [ expr { [get_db $core_bbox .ur.y] - 20 } ]
         set pll_bbox [get_db inst:pllInst .bbox]
         set sram_spacing 7.0
         set sram_insts [get_db insts -if {.base_cell.name == sram22*}]
@@ -27,7 +155,7 @@ def floorplan_sram_macros(x: HammerTool) -> bool:
     ll_srams = [srams_prefix + str(sram) + "/inner" for sram in [21, 17, 18]]
     for (i, sram) in enumerate(ll_srams):
         if i == 0:
-            x.append(f"place_inst {sram} [get_db designs .core_bbox.ll] r90")
+            x.append(f"place_inst {sram} $core_l $core_b r90")
         else:
             x.append(f"""
                 set prev_bbox [get_db inst:{ll_srams[i-1]} .bbox]
@@ -45,7 +173,7 @@ def floorplan_sram_macros(x: HammerTool) -> bool:
         if i == 0:
             x.append(f"""
                 set sram_bbox [get_db inst:{sram} .bbox]
-                place_inst {sram} [get_db $core_bbox .ll.x] [ expr {{ [get_db $core_bbox .ur.y]  - [get_db $sram_bbox .dy]}} ] my90
+                place_inst {sram} $core_l [ expr {{ $core_t  - [get_db $sram_bbox .dy]}} ] my90
             """)
         else:
             x.append(f"""
@@ -68,7 +196,7 @@ def floorplan_sram_macros(x: HammerTool) -> bool:
         if i == 0:
             x.append(f"""
                 set sram_bbox [get_db inst:{sram} .bbox]
-                place_inst {sram} [ expr {{ [get_db $core_bbox .ur.x] - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $pll_bbox .ll.y]  - $sram_spacing - [get_db $sram_bbox .dy]}} ] r270
+                place_inst {sram} [ expr {{ $core_r - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $pll_bbox .ll.y]  - $sram_spacing - [get_db $sram_bbox .dy]}} ] r270
             """)
         else:
             x.append(f"""
@@ -141,7 +269,7 @@ def floorplan_sram_macros(x: HammerTool) -> bool:
             x.append(f"""
                 set prev_bbox [get_db inst:{srams_prefix + "20/inner"} .bbox]
                 set sram_bbox [get_db inst:{sram} .bbox]
-                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] + 200.0 }} ] [ expr {{ [get_db $core_bbox .ur.y]  - [get_db $sram_bbox .dy]}} ] r270
+                place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] + 200.0 }} ] [ expr {{ $core_t  - [get_db $sram_bbox .dy]}} ] r270
             """)
         else:
             x.append(f"""
@@ -162,11 +290,13 @@ def floorplan_sram_macros(x: HammerTool) -> bool:
                 place_inst {sram} [ expr {{ [get_db $prev_bbox .ur.x] - [get_db $sram_bbox .dx] }} ] [ expr {{ [get_db $prev_bbox .ll.y]  - $sram_spacing - [get_db $sram_bbox .dy] }} ] r270
             """)
 
+    # Increase place halo around PLL due to blockage of m2 power straps.
     x.append("""
         foreach inst [get_db $sram_insts .name] {
             create_place_halo -insts $inst -halo_deltas {7.0 7.0 7.0 7.0} -snap_to_site
             create_route_halo -bottom_layer li1 -space 2.0 -top_layer met2 -inst $inst
         }
+        create_place_halo -insts pllInst -halo_deltas {12.0 12.0 12.0 12.0} -snap_to_site
     """)
 
     return True
@@ -246,16 +376,20 @@ def drc_blackboxes(x: HammerTool) -> bool:
             f.write('\n')
     return True
 
+def use_drc_lvs_gds(x: HammerTool) -> bool:
+    x.layout_file = x.layout_file.replace("ChipTop.gds", "ChipTop_drc_lvs.gds")
+    return True
+
 def lvs_blackboxes(x: HammerTool) -> bool:
-    modules = ['tdc_64',
-               'simple_por',
-               'sky130_ef_io__vccd_lvc_clamped3_pad',
-               'sky130_ef_io__vddio_hvc_clamped_pad',
-               'sky130_ef_io_vssd_lvc_clamped3_pad',
-               'sky130_ef_io__vdda_hvc_clamped_pad',
-               'sky130_ef_io__vssa_hvc_clamped_pad',
-               'sky130_ef_io__analog_pad_esd2',
-               'sky130_ef_io__vssio_hvc_clamped_pad']
+    modules = ["MultiPLLTop", "simple_por"]
+    # modules = ['simple_por',
+    #            'sky130_ef_io__vccd_lvc_clamped3_pad',
+    #            'sky130_ef_io__vddio_hvc_clamped_pad',
+    #            'sky130_ef_io_vssd_lvc_clamped3_pad',
+    #            'sky130_ef_io__vdda_hvc_clamped_pad',
+    #            'sky130_ef_io__vssa_hvc_clamped_pad',
+    #            'sky130_ef_io__analog_pad_esd2',
+    #            'sky130_ef_io__vssio_hvc_clamped_pad']
     # NOTE: adding unrecognized devices here didn't work (e.g. SKY130_FD_PR__PFET_G5V0D10V5)
     if x.get_setting("vlsi.core.lvs_tool")   == "hammer.lvs.calibre" :
         run_file = x.lvs_run_file
@@ -282,10 +416,10 @@ def set_die_snap_to_mfg_grid(x: HammerTool) -> bool:
 
 def force_bias_pins_nets(x: HammerTool) -> bool:
     x.append('''
-connect_global_net VSSIO -netlist_override -power_domain HV -pin_base_name VNB -type pg_pin -verbose
 connect_global_net VDDIO -netlist_override -power_domain HV -pin_base_name VPB -type pg_pin -verbose
-connect_global_net VSS -netlist_override -power_domain AO -pin_base_name VNB -type pg_pin -verbose
 connect_global_net VDD -netlist_override -power_domain AO -pin_base_name VPB -type pg_pin -verbose
+connect_global_net VSS -netlist_override -power_domain HV -pin_base_name VNB -type pg_pin -verbose
+connect_global_net VSS -netlist_override -power_domain AO -pin_base_name VNB -type pg_pin -verbose
 ''')
     return True
 
@@ -396,6 +530,7 @@ proc expand_box {box margin} {
 # Block off inside of rings for power strap routing
 set pll_route_blkgs_pre [get_db route_blockages]
 create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {10 10 10 10}]] -layers met2
+create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {10 10 10 10}]] -layers met2
 create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {10 10 10 10}]] -layers met3
 create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {10 10 10 10}]] -layers met4
 create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {20 20 20 20}]] -layers met5
@@ -411,6 +546,7 @@ class Driver(CLIDriver):
             HammerTool.make_post_insertion_hook("init_environment", donttouch_iocells),
             HammerTool.make_pre_insertion_hook("syn_generic", derate_srams),
             HammerTool.make_pre_insertion_hook("syn_generic", flatten_analog_driver),
+            HammerTool.make_pre_insertion_hook("syn_generic", chiptop_dont_touch),
 
             HammerTool.make_persistent_hook(patch_hvl_ls_lef),  # abuse persistent steps to chuck stuff in cache
         ]
@@ -418,6 +554,8 @@ class Driver(CLIDriver):
     def get_extra_par_hooks(self) -> List[HammerToolHookAction]:
         return [
             HammerTool.make_removal_hook("place_bumps"),
+            HammerTool.make_post_insertion_hook("place_pins", assign_chiptop_io_pins),
+            HammerTool.make_removal_hook("place_pins"),
 
             HammerTool.make_pre_insertion_hook("place_opt_design", derate_srams),
 
@@ -435,6 +573,8 @@ class Driver(CLIDriver):
             # HammerTool.make_post_insertion_hook("write_design", write_top_files),
 
             HammerTool.make_pre_insertion_hook("floorplan_design", set_die_snap_to_mfg_grid),
+            HammerTool.make_pre_insertion_hook("floorplan_design", chiptop_dont_route),
+            HammerTool.make_pre_insertion_hook("floorplan_design", chiptop_dont_touch),
             HammerTool.make_post_insertion_hook("floorplan_design", efabless_ring_io),
             HammerTool.make_post_insertion_hook("floorplan_design", floorplan_sram_macros),
             HammerTool.make_post_insertion_hook("efabless_ring_io", load_hv_def_routing),
@@ -442,6 +582,9 @@ class Driver(CLIDriver):
             HammerTool.make_post_insertion_hook("power_straps", connect_core_stripes),
 
             HammerTool.make_pre_insertion_hook("write_design", force_bias_pins_nets),
+            HammerTool.make_pre_insertion_hook("write_design", draw_areaidld),
+            HammerTool.make_post_insertion_hook("write_design", write_chiptop_netlist_with_pg_pins),
+            HammerTool.make_post_insertion_hook("write_design", write_chiptop_drc_lvs_layout),
 
             HammerTool.make_post_insertion_hook("sky130_innovus_settings", enable_clock_antenna_insertion),
 
@@ -454,10 +597,12 @@ class Driver(CLIDriver):
     
     def get_extra_drc_hooks(self) -> List[HammerToolHookAction]:
         return [
+            HammerTool.make_pre_insertion_hook("generate_drc_run_file", use_drc_lvs_gds),
             HammerTool.make_post_insertion_hook("generate_drc_run_file", drc_blackboxes)
         ]
     def get_extra_lvs_hooks(self) -> List[HammerToolHookAction]:
         return [
+            HammerTool.make_pre_insertion_hook("generate_lvs_run_file", use_drc_lvs_gds),
             HammerTool.make_post_insertion_hook("generate_lvs_run_file", lvs_blackboxes)
         ]
 

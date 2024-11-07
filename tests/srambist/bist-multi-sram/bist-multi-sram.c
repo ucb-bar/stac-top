@@ -63,6 +63,23 @@ int main( int argc, char* argv[] )
     return 1;
   }
 
+  result = srambist_run_bist_with_packed_elements(5, 1, bist_sig, 15, 3, DIMENSION_ROW, &packed_elem_vec, 3, &pattern_table, 0, 1);
+
+  if (result.fail != 0) {
+    printf("BIST unexpectedly failed\n");
+    return 1;
+  }
+
+  expected_signature;
+
+  expected_signature.hi = 0x0;
+  expected_signature.lo = 0x5d00058d1;
+
+  if (!eq128(result.signature, expected_signature)) {
+    printf("BIST signature 0x%llx%llx does not match expected 0x%llx%llx\n", result.signature.hi, result.signature.lo, expected_signature.hi, expected_signature.lo);
+    return 1;
+  }
+
   printf("Test passed!\n", result);
   return 0;
 }

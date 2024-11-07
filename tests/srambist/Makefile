@@ -15,6 +15,7 @@ bmarks = \
 	rw-all-addrs \
 	bist-simple \
 	bist-fail \
+	bist-multi-sram \
 
 #--------------------------------------------------------------------
 # Build rules
