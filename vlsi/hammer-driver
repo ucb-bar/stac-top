@@ -325,12 +325,9 @@ set_db route_design_bottom_routing_layer 2
 def derate_srams(x: HammerTool) -> bool:
     if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
        x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
-        # TODO: Derate necessary macros
-        macros = []
-        for macro in macros:
-            x.append(f'''
-set_timing_derate -cell_delay -delay_corner [get_db delay_corners *.setup_delay] -late 3.0 [get_db insts -if {{.base_cell.name == {macro}}}]
-set_timing_derate -cell_delay -delay_corner [get_db delay_corners *.hold_delay] -late 0.95 [get_db insts -if {{.base_cell.name == {macro}}}]
+        x.append(f'''
+set_timing_derate -cell_delay -delay_corner [get_db delay_corners *.setup_delay] -late 1.2 [get_db insts -if {{.base_cell.name == *sram22*}}]
+set_timing_derate -cell_delay -delay_corner [get_db delay_corners *.hold_delay] -late 0.9 [get_db insts -if {{.base_cell.name == *sram22*}}]
 ''')
     return True
 

@@ -9,33 +9,42 @@ vlsi.inputs.power_spec_mode: "auto"
 vlsi.inputs.power_spec_type: "cpf"
 
 # Power Straps
-par.power_straps_mode: generate
-par.generate_power_straps_method: by_tracks
-par.blockage_spacing: 2.0
-par.blockage_spacing_top_layer: met3
-par.generate_power_straps_options:
-  by_tracks:
-    strap_layers:
-      - met2
-      - met3
-      - met4
-      - met5
-    pin_layers:
-      - met5
-    blockage_spacing_met2: 4.0
-    blockage_spacing_met4: 2.0
-    track_width: 2
-    track_width_met2: 2
-    track_width_met3: 2
-    track_width_met4: 2
-    track_width_met5: 2
-    track_spacing: 5
-    track_start: 10
-    track_start_met5: 1
-    power_utilization: 0.4
-    power_utilization_met4: 0.4
-    power_utilization_met5: 0.5
+par.power_straps_mode: manual
+par.power_straps_script_contents: >
+  reset_db -category add_stripes
+  set_db add_stripes_stacked_via_bottom_layer met1
+  set_db add_stripes_stacked_via_top_layer met1
+  set_db add_stripes_spacing_from_block 2.000
+  add_stripes -pin_layer met1 -layer met1 -over_pins 1 -master "sky130_fd_sc_hd__tapvpwrvgnd_1" -block_ring_bottom_layer_limit met1 -block_ring_top_layer_limit met1 -pad_core_ring_bottom_layer_limit met1 -pad_core_ring_top_layer_limit met1 -direction horizontal -width pin_width -nets { VSS VDD }
 
+  reset_db -category add_stripes
+  set_db add_stripes_stacked_via_top_layer met2
+  set_db add_stripes_stacked_via_bottom_layer met1
+  set_db add_stripes_trim_antenna_back_to_shape {stripe}
+  set_db add_stripes_spacing_from_block 4.000
+  add_stripes -create_pins 0 -block_ring_bottom_layer_limit met2 -block_ring_top_layer_limit met1 -direction vertical -layer met2 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met1 -set_to_set_distance 82.80 -spacing 2.26 -switch_layer_over_obs 0 -width 0.96 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 0] + 5.04]
+  add_stripes -create_pins 0 -block_ring_bottom_layer_limit met2 -block_ring_top_layer_limit met1 -direction vertical -layer met2 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met1 -set_to_set_distance 82.80 -spacing 2.26 -switch_layer_over_obs 0 -width 0.96 -area [get_db designs .core_bbox] -start 3328.0
+
+  reset_db -category add_stripes
+  set_db add_stripes_stacked_via_top_layer met3
+  set_db add_stripes_stacked_via_bottom_layer met2
+  set_db add_stripes_trim_antenna_back_to_shape {stripe}
+  set_db add_stripes_spacing_from_block 2.000
+  add_stripes -create_pins 0 -block_ring_bottom_layer_limit met3 -block_ring_top_layer_limit met2 -direction horizontal -layer met3 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met2 -set_to_set_distance 14.96 -spacing 3.62 -switch_layer_over_obs 0 -width 1.14 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 1] + 7.59]
+
+  reset_db -category add_stripes
+  set_db add_stripes_stacked_via_top_layer met4
+  set_db add_stripes_stacked_via_bottom_layer met3
+  set_db add_stripes_trim_antenna_back_to_shape {stripe}
+  set_db add_stripes_spacing_from_block 2.000
+  add_stripes -create_pins 0 -block_ring_bottom_layer_limit met4 -block_ring_top_layer_limit met3 -direction vertical -layer met4 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met3 -set_to_set_distance 20.24 -spacing 4.58 -switch_layer_over_obs 0 -width 1.86 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 0] + 10.11]
+
+  reset_db -category add_stripes
+  set_db add_stripes_stacked_via_top_layer met5
+  set_db add_stripes_stacked_via_bottom_layer met4
+  set_db add_stripes_trim_antenna_back_to_shape {stripe}
+  set_db add_stripes_spacing_from_block 2.000
+  add_stripes -create_pins 1 -block_ring_bottom_layer_limit met5 -block_ring_top_layer_limit met4 -direction horizontal -layer met5 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met4 -set_to_set_distance 61.2 -spacing 18.4 -switch_layer_over_obs 0 -width 5.4 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 1] + 7.5]
 
 vlsi.inputs:
   power_spec_type: cpf
