@@ -12,38 +12,67 @@ vlsi.inputs.power_spec_type: "cpf"
 par.power_straps_mode: manual
 par.power_straps_script_contents: >
   reset_db -category add_stripes
+
   set_db add_stripes_stacked_via_bottom_layer met1
+
   set_db add_stripes_stacked_via_top_layer met1
-  set_db add_stripes_spacing_from_block 2.000
+
+  set_db add_stripes_spacing_from_block 4.000
+
   add_stripes -pin_layer met1 -layer met1 -over_pins 1 -master "sky130_fd_sc_hd__tapvpwrvgnd_1" -block_ring_bottom_layer_limit met1 -block_ring_top_layer_limit met1 -pad_core_ring_bottom_layer_limit met1 -pad_core_ring_top_layer_limit met1 -direction horizontal -width pin_width -nets { VSS VDD }
 
+
   reset_db -category add_stripes
+
   set_db add_stripes_stacked_via_top_layer met2
+
   set_db add_stripes_stacked_via_bottom_layer met1
+
   set_db add_stripes_trim_antenna_back_to_shape {stripe}
+
   set_db add_stripes_spacing_from_block 4.000
+
   add_stripes -create_pins 0 -block_ring_bottom_layer_limit met2 -block_ring_top_layer_limit met1 -direction vertical -layer met2 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met1 -set_to_set_distance 82.80 -spacing 2.26 -switch_layer_over_obs 0 -width 0.96 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 0] + 5.04]
+
   add_stripes -create_pins 0 -block_ring_bottom_layer_limit met2 -block_ring_top_layer_limit met1 -direction vertical -layer met2 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met1 -set_to_set_distance 82.80 -spacing 2.26 -switch_layer_over_obs 0 -width 0.96 -area [get_db designs .core_bbox] -start 3328.0
 
+
   reset_db -category add_stripes
+
   set_db add_stripes_stacked_via_top_layer met3
+
   set_db add_stripes_stacked_via_bottom_layer met2
+
   set_db add_stripes_trim_antenna_back_to_shape {stripe}
+
   set_db add_stripes_spacing_from_block 2.000
+
   add_stripes -create_pins 0 -block_ring_bottom_layer_limit met3 -block_ring_top_layer_limit met2 -direction horizontal -layer met3 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met2 -set_to_set_distance 14.96 -spacing 3.62 -switch_layer_over_obs 0 -width 1.14 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 1] + 7.59]
 
-  reset_db -category add_stripes
-  set_db add_stripes_stacked_via_top_layer met4
-  set_db add_stripes_stacked_via_bottom_layer met3
-  set_db add_stripes_trim_antenna_back_to_shape {stripe}
-  set_db add_stripes_spacing_from_block 2.000
-  add_stripes -create_pins 0 -block_ring_bottom_layer_limit met4 -block_ring_top_layer_limit met3 -direction vertical -layer met4 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met3 -set_to_set_distance 20.24 -spacing 4.58 -switch_layer_over_obs 0 -width 1.86 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 0] + 10.11]
 
   reset_db -category add_stripes
-  set_db add_stripes_stacked_via_top_layer met5
-  set_db add_stripes_stacked_via_bottom_layer met4
+
+  set_db add_stripes_stacked_via_top_layer met4
+
+  set_db add_stripes_stacked_via_bottom_layer met3
+
   set_db add_stripes_trim_antenna_back_to_shape {stripe}
+
   set_db add_stripes_spacing_from_block 2.000
+
+  add_stripes -create_pins 0 -block_ring_bottom_layer_limit met4 -block_ring_top_layer_limit met3 -direction vertical -layer met4 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met3 -set_to_set_distance 20.24 -spacing 4.58 -switch_layer_over_obs 0 -width 1.86 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 0] + 10.11]
+
+
+  reset_db -category add_stripes
+
+  set_db add_stripes_stacked_via_top_layer met5
+
+  set_db add_stripes_stacked_via_bottom_layer met4
+
+  set_db add_stripes_trim_antenna_back_to_shape {stripe}
+
+  set_db add_stripes_spacing_from_block 2.000
+
   add_stripes -create_pins 1 -block_ring_bottom_layer_limit met5 -block_ring_top_layer_limit met4 -direction horizontal -layer met5 -nets {VSS VDD} -pad_core_ring_bottom_layer_limit met4 -set_to_set_distance 61.2 -spacing 18.4 -switch_layer_over_obs 0 -width 5.4 -area [get_db designs .core_bbox] -start [expr [lindex [lindex [get_db designs .core_bbox] 0] 1] + 7.5]
 
 vlsi.inputs:
@@ -87,7 +116,7 @@ vlsi.inputs:
       margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
 
     # PLL
-    - {path: ChipTop/pllInst, type: hardmacro, x: 2671.96, y: 4287.92, orientation: r0}
+    - {path: ChipTop/pllInst, type: hardmacro, x: 2601.96, y: 4287.92, orientation: r0}
 
     - path: ChipTop/system_obs
       type: obstruction
@@ -114,11 +143,11 @@ design.def.hv_routing: stac-hv-routing.def
   provides:
     - lib_type: lvlshift
       vt: RVT
-.local.library.MultiPLLTop: &lib__MultiPLLTop
+.local.library.PLLTop: &lib__PLLTop
   # gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/gds/sky130_fd_sc_hvl.gds
-  gds_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/gds/MutliPLLTop_clean_6_2_0156.gds
-  lef_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/lef/MultiPLLTop.lef
-  spice_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/spice/MultiPLLTop.lvs.sp
+  gds_file: /tools/C/rahulkumar/sky130/stac2/drc/PLLTop_nofloat.gds
+  lef_file: /tools/C/sehuang/sky130/handoff_1124/drop_110924_0448/PLLTop.lef
+  spice_file: /tools/C/sehuang/sky130/handoff_1124/drop_110924_0448/PLLTop.lvs.sp
   # TODO: verilog sim
   provides:
     - lib_type: block
@@ -163,8 +192,8 @@ vlsi.technology.extra_libraries:
         VDD: "1.80 V"
         GND: "0 V"
   - library:
-      <<: *lib__MultiPLLTop
-      nldm_liberty_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/lib/MutliPLLTop_ss_100C_1v60.lib
+      <<: *lib__PLLTop
+      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/PLLTop_ss_100C_1v60.lib
       corner:
         nmos: "slow"
         pmos: "slow"
@@ -173,8 +202,8 @@ vlsi.technology.extra_libraries:
         VDD: "1.60 V"
         GND: "0 V"
   - library:
-      <<: *lib__MultiPLLTop
-      nldm_liberty_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/lib/MultiPLLTop_ff_n40C_1v95.lib
+      <<: *lib__PLLTop
+      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/PLLTop_ff_n40C_1v95.lib
       corner:
         nmos: "fast"
         pmos: "fast"
@@ -183,8 +212,8 @@ vlsi.technology.extra_libraries:
         VDD: "1.95 V"
         GND: "0 V"
   - library:
-      <<: *lib__MultiPLLTop
-      nldm_liberty_file: /tools/C/sehuang/sky130/jun23/jun23_pll_handoff/lib/MultiPLLTop_tt_025C_1v80.lib
+      <<: *lib__PLLTop
+      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/PLLTop_tt_025C_1v80.lib
       corner:
         nmos: "typical"
         pmos: "typical"
@@ -196,16 +225,10 @@ vlsi.technology.extra_libraries:
       gds_file: /tools/C/rohankumar/sky130/stac_tapeout/gds/sky130_ef_io_with_overlay.gds
       lef_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
       spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io.spice
-      provides:
-        - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
-          vt: RVT
   - library:
-      gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um.gds
-      lef_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef
+      gds_file: /tools/C/rohankumar/sky130/stac_tapeout/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_and_vssio_vssa_vssd_slice_20um.gds
+      lef_file: /tools/C/rohankumar/sky130/stac_tapeout/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_and_vssio_vssa_vssd_slice_20um.lef
       spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io.spice
-      provides:
-        - lib_type: sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
-          vt: RVT
   - library:
       gds_file: /tools/C/sehuang/sky130/ucb_chip_io/gds/sky130_ef_io__analog_pad_esd2.gds
       lef_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io__analog_pad_esd2.lef

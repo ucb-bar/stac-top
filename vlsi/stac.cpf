@@ -4,10 +4,13 @@ set_design ChipTop
 
 create_power_nets -nets { VDD VDDA } -voltage 1.8
 create_power_nets -nets { VDDIO } -voltage 3.3
-create_ground_nets -nets { VSS VSSA }
+create_ground_nets -nets { VSS }
 
 create_power_domain -name AO -default
 update_power_domain -name AO -primary_power_net VDD -primary_ground_net VSS
+
+create_power_domain -name ANA
+update_power_domain -name ANA -primary_power_net VDDA -primary_ground_net VSS
 
 create_power_domain -name HV -instances [list \
     {*}[find_design_objects iocell_*/levelShifter -hierarchical -object inst -pattern_type cell] \
@@ -26,6 +29,7 @@ create_nominal_condition -name ao_nominal -voltage 1.8
 create_nominal_condition -name hv_nom -voltage 3.3
 create_power_mode -name PM1 -default -domain_conditions {AO@ao_nominal HV@hv_nom IO@hv_nom}
 
+create_global_connection -domain AO -net VDDA -pins { VDDA }
 create_global_connection -domain AO -net VDD -pins { VDD VPWR vdd VPB }
 create_global_connection -domain AO -net VSS -pins { VSS VGND vss VNB }
 
@@ -36,7 +40,6 @@ create_global_connection -domain HV -net VSS -pins { LVGND vss1v8 VGND vss3v3 VN
 create_global_connection -domain IO -net VDDIO -pins { VDDIO VDDIO_Q VSWITCH }
 create_global_connection -domain IO -net VDDA -pins { VDDA }
 create_global_connection -domain IO -net VDD -pins { VCCD VCCHIB VCCD1 }
-create_global_connection -domain IO -net VSSA -pins { VSSA }
-create_global_connection -domain IO -net VSS -pins { VSSIO VSSIO_Q VSSD VSSD1 }
+create_global_connection -domain IO -net VSS -pins { VSSIO VSSIO_Q VSSD VSSD1 VSSA }
 
 end_design

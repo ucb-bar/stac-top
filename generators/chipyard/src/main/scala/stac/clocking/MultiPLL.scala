@@ -9,7 +9,7 @@ class MultiPLLIO extends Bundle {
   val io_scan_clk = Input(Bool())
   val io_scan_en = Input(Bool())
   val io_scan_rst = Input(Bool())
-  val io_pll_sel = Input(Bool())
+  val io_pwr_en = Input(Bool())
   val io_arstb = Input(Bool())
   val io_scan_out = Output(Bool())
   val io_pll_clk_out = Output(Bool())
@@ -24,5 +24,5 @@ class MultiPLLIO extends Bundle {
 class MultiPLL extends BlackBox {
   val io = IO(new MultiPLLIO())
 
-  override val desiredName: String = "MultiPLLTop"
+  override val desiredName: String = "PLLTop"
 }

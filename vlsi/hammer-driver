@@ -25,7 +25,7 @@ CHIPTOP_IO_NETS = [
 	"pll_scan_en",
 	"pll_scan_rst",
 	"pll_arstb",
-	"pll_sel",
+	"pll_pwr_en",
 	"pll_ref_in",
 	"pll_clk_out",
 	"pll_div_out",
@@ -61,7 +61,6 @@ CHIPTOP_IO_NETS = [
     "VDD",
     "VDDA",
     "VSS"
-    "VSSA"
 ]
 
 CHIPTOP_DONT_TOUCH_NETS = ["_commonIO_AMUXBUS_A_wire", "_commonIO_AMUXBUS_B_wire"]
@@ -126,7 +125,7 @@ def write_chiptop_drc_lvs_layout(x: HammerTool) -> bool:
     return True
 
 def write_chiptop_netlist_with_pg_pins(x: HammerTool) -> bool:
-    x.append(f"write_netlist {x.output_netlist_filename} -top_module_first -top_module ChipTop -exclude_leaf_cells -phys -flat -exclude_insts_of_cells {{ sky130_fd_sc_hd__tap_1 sky130_fd_sc_hd__tap_2 sky130_fd_sc_hd__tapvgnd_1 sky130_fd_sc_hd__tapvpwrvgnd_1 sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8 sky130_fd_sc_hd__diode_2 sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um sky130_ef_io__com_bus_slice_20um sky130_ef_io__corner_pad}}")
+    x.append(f"write_netlist {x.output_netlist_filename} -top_module_first -top_module ChipTop -exclude_leaf_cells -phys -flat -exclude_insts_of_cells {{ sky130_fd_sc_hd__tap_1 sky130_fd_sc_hd__tap_2 sky130_fd_sc_hd__tapvgnd_1 sky130_fd_sc_hd__tapvpwrvgnd_1 sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8 sky130_fd_sc_hd__diode_2 sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_and_vssio_vssa_vssd_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um sky130_ef_io__com_bus_slice_20um sky130_ef_io__corner_pad sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_and_vssio_vssa_vssd_slice_20um }}")
     return True
 
 def draw_areaidld(x: HammerTool) -> bool:
@@ -378,7 +377,7 @@ def use_drc_lvs_gds(x: HammerTool) -> bool:
     return True
 
 def lvs_blackboxes(x: HammerTool) -> bool:
-    modules = ["MultiPLLTop", "simple_por"]
+    modules = ["PLLTop", "simple_por"]
     # modules = ['simple_por',
     #            'sky130_ef_io__vccd_lvc_clamped3_pad',
     #            'sky130_ef_io__vddio_hvc_clamped_pad',
@@ -432,8 +431,8 @@ def efabless_ring_io(ht: HammerTool) -> bool:
     ht.append('''
 # IO fillers
 #set io_fillers {sky130_ef_io__com_bus_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um}
-# Use slices connecting VCCHIB<>VCCD and VSWITCH<>VDDA
-set io_fillers {sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um}
+# Use slices connecting VCCHIB<>VCCD and VSWITCH<>VDDA and VSSIO<>VSSA<>VSSD
+set io_fillers {sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_and_vssio_vssa_vssd_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um}
 add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side top -filler_orient r0
 add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side right -filler_orient r270
 add_io_fillers -prefix IO_FILLER -io_ring 1 -cells $io_fillers -side bottom -filler_orient r180
@@ -512,26 +511,8 @@ route_special -connect floating_stripe -floating_stripe_target ring -nets {VDD V
 
 def pll_power(x: HammerTool) -> bool:
     x.append('''
-# Rings for PLL
-deselect_obj -all
-select_obj inst:pllInst
-add_rings -layer met4 -nets {VSS} -offset 10 -width 7 -spacing 3 -around selected -type block_rings
-add_rings -layer met5 -nets {VDD} -offset 20 -width 7 -spacing 3 -around selected -type block_rings
-route_special -connect block_pin -block_pin_target block_ring -block_pin all -inst pllInst -nets {VDD VSS}
-deselect_obj -all
-
-proc expand_box {box margin} {                  
-  list [expr [lindex $box 0] - [lindex $margin 0]] [expr [lindex $box 1] - [lindex $margin 1]] [expr [lindex $box 2] + [lindex $margin 2]] [expr [lindex $box 3] + [lindex $margin 3]]
-}
-
-# Block off inside of rings for power strap routing
-set pll_route_blkgs_pre [get_db route_blockages]
-create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {10 10 10 10}]] -layers met2
-create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {10 10 10 10}]] -layers met2
-create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {10 10 10 10}]] -layers met3
-create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {10 10 10 10}]] -layers met4
-create_route_blockage -pg_nets -rects [list [expand_box [lindex [get_db inst:pllInst .bbox] 0] {20 20 20 20}]] -layers met5
-set pll_route_blkgs [lminus [get_db route_blockages] $pll_route_blkgs_pre]
+# Connect PLL directly to core ring
+route_special -connect block_pin -block_pin_target nearest_target -block_pin right_boundary -inst pllInst -nets {VDDA VDD VSS}
 ''')
     return True
 
