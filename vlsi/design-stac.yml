@@ -93,18 +93,18 @@ vlsi.inputs:
   top_module: ChipTop
 
   clocks:
-    - {name: "clock", path: "iocell_clock_clock/iocell/IN", period: "15ns", uncertainty: "0.1ns"}
+    - {name: "clock", path: "iocell_clock_clock/iocell/IN", period: "20ns", uncertainty: "0.1ns"}
     - {name: "jtag_TCK", path: "iocell_jtag_TCK/iocell/IN", period: "200ns", uncertainty: "1ns"}
     - {name: "pll_clock_clk", path: "pllInst/io_pll_clk_out", period: "5ns", uncertainty: "0.1ns"}
     - {name: "pll_clock_div", path: "pllInst/io_pll_div_out", period: "5ns", uncertainty: "0.1ns"}
     # SBUS - SRAM BIST
-    - {name: "clkdiv_out_sbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_sbus_clock", period: "15ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_sbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_sbus_clock", period: "20ns", uncertainty: "0.1ns"}
     # FBUS (serial-TL) - can't go faster than GPIO (50 MHz, but maybe constrain for faster speed)
-    - {name: "clkdiv_out_fbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_fbus_clock", period: "15ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_fbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_fbus_clock", period: "20ns", uncertainty: "0.1ns"}
     # Rocket
-    - {name: "clkdiv_out_rocket", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_rocket_clock", period: "15ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_rocket", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_rocket_clock", period: "20ns", uncertainty: "0.1ns"}
     # Periphery / everything else
-    - {name: "clkdiv_out_periph", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_periph_clock", period: "15ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_periph", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_periph_clock", period: "20ns", uncertainty: "0.1ns"}
 
   placement_constraints:
     - path: ChipTop
@@ -116,7 +116,7 @@ vlsi.inputs:
       margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
 
     # PLL
-    - {path: ChipTop/pllInst, type: hardmacro, x: 2601.96, y: 4287.92, orientation: r0}
+    - {path: ChipTop/pllInst, type: hardmacro, x: 2621.96, y: 4357.92, orientation: r0}
 
     - path: ChipTop/system_obs
       type: obstruction
@@ -146,8 +146,8 @@ design.def.hv_routing: stac-hv-routing.def
 .local.library.PLLTop: &lib__PLLTop
   # gds_file: ${technology.sky130.sky130A}/libs.ref/sky130_fd_sc_hvl/gds/sky130_fd_sc_hvl.gds
   gds_file: /tools/C/rahulkumar/sky130/stac2/drc/PLLTop_nofloat.gds
-  lef_file: /tools/C/sehuang/sky130/handoff_1124/drop_110924_0448/PLLTop.lef
-  spice_file: /tools/C/sehuang/sky130/handoff_1124/drop_110924_0448/PLLTop.lvs.sp
+  lef_file: /tools/C/sehuang/sky130/handoff_1124/drop_111024_1205/PLLTop.lef
+  spice_file: /tools/C/sehuang/sky130/handoff_1124/drop_111024_1205/PLLTop.lvs.sp
   # TODO: verilog sim
   provides:
     - lib_type: block
@@ -193,7 +193,7 @@ vlsi.technology.extra_libraries:
         GND: "0 V"
   - library:
       <<: *lib__PLLTop
-      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/PLLTop_ss_100C_1v60.lib
+      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/drop_110924_0448/PLLTop_ss_100C_1v60.lib
       corner:
         nmos: "slow"
         pmos: "slow"
@@ -203,7 +203,7 @@ vlsi.technology.extra_libraries:
         GND: "0 V"
   - library:
       <<: *lib__PLLTop
-      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/PLLTop_ff_n40C_1v95.lib
+      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/drop_110924_0448/PLLTop_ff_n40C_1v95.lib
       corner:
         nmos: "fast"
         pmos: "fast"
@@ -213,7 +213,7 @@ vlsi.technology.extra_libraries:
         GND: "0 V"
   - library:
       <<: *lib__PLLTop
-      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/PLLTop_tt_025C_1v80.lib
+      nldm_liberty_file: /tools/C/sehuang/sky130/handoff_1124/drop_110924_0448/PLLTop_tt_025C_1v80.lib
       corner:
         nmos: "typical"
         pmos: "typical"

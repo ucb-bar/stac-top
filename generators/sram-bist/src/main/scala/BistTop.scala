@@ -267,10 +267,10 @@ class BistTop(params: BistTopParams)(implicit p: Parameters) extends Module {
           sram.io.we := io.we
         }
         is(SramSrc.bist) {
-          sram.io.ce := i.U === io.sramId & bist.io.en & Mux(
+          sram.io.ce := i.U === io.sramId & Mux(
             io.sramExtEn,
             io.sramEn,
-            bist.io.sramEn
+            bist.io.en & bist.io.sramEn
           )
           harness.io.inRow := bist.io.row
           harness.io.inCol := bist.io.col

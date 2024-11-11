@@ -65,6 +65,20 @@ CHIPTOP_IO_NETS = [
 
 CHIPTOP_DONT_TOUCH_NETS = ["_commonIO_AMUXBUS_A_wire", "_commonIO_AMUXBUS_B_wire"]
 
+def syn_design_effort(x: HammerTool) -> bool:
+    x.append("""
+    set_db syn_global_effort high
+    """)
+    return True
+
+def par_design_effort(x: HammerTool) -> bool:
+    x.append("""
+    set_db design_cong_effort high
+    set_db place_global_cong_effort high
+    set_db design_flow_effort extreme
+    """)
+    return True
+
 def chiptop_dont_route(x: HammerTool) -> bool:
     for net in CHIPTOP_DONT_TOUCH_NETS:
       x.append(f"set_route_attributes -nets {net} -skip_routing true")
@@ -314,10 +328,8 @@ def set_routing_layers(x: HammerTool) -> bool:
     if x.get_setting("vlsi.core.technology") == "hammer.technology.sky130" and \
        x.get_setting("vlsi.core.par_tool")   == "hammer.par.innovus" :
         x.append("""
-set_db design_bottom_routing_layer 2
-set_db design_top_routing_layer 6
-# deprected syntax, but this used to always work
-set_db route_design_bottom_routing_layer 2
+set_db design_bottom_routing_layer met1
+set_db design_top_routing_layer met5
         """)
     return True      
 
@@ -352,15 +364,6 @@ time_design -sign_off
 time_design -sign_off -hold
 ''')
     return True
-
-# def write_top_files(x: HammerTool) -> bool:
-#     if x.get_setting("vlsi.core.technology") == "sky130" and \
-#        x.get_setting("vlsi.core.par_tool")   == "innovus" :
-#         handoff_dir = f"{x.run_dir}/handoff"
-#         x.append(f'''
-# mkdir -p {handoff_dir}
-# # LEF file
-# write_lef_abstract -stripe_pins -pg_pin_layers met5 {handoff_dir}/{x.top_module}.lef
 
 def drc_blackboxes(x: HammerTool) -> bool:
     modules = ['tdc_64']
@@ -525,6 +528,7 @@ class Driver(CLIDriver):
             HammerTool.make_pre_insertion_hook("syn_generic", derate_srams),
             HammerTool.make_pre_insertion_hook("syn_generic", flatten_analog_driver),
             HammerTool.make_pre_insertion_hook("syn_generic", chiptop_dont_touch),
+            HammerTool.make_pre_insertion_hook("syn_generic", syn_design_effort),
 
             HammerTool.make_persistent_hook(patch_hvl_ls_lef),  # abuse persistent steps to chuck stuff in cache
         ]
@@ -543,13 +547,7 @@ class Driver(CLIDriver):
             HammerTool.make_removal_hook("add_fillers"),
             HammerTool.make_post_insertion_hook("opt_design", add_fillers),
 
-            # add final signoff timing
-            # TODO: re-add once we care about timing (DRC/LVS sane)
-            # HammerTool.make_pre_insertion_hook("write_design", signoff_timing),
-
-            # # write final files
-            # HammerTool.make_post_insertion_hook("write_design", write_top_files),
-
+            HammerTool.make_pre_insertion_hook("floorplan_design", par_design_effort),
             HammerTool.make_pre_insertion_hook("floorplan_design", set_die_snap_to_mfg_grid),
             HammerTool.make_pre_insertion_hook("floorplan_design", chiptop_dont_route),
             HammerTool.make_pre_insertion_hook("floorplan_design", chiptop_dont_touch),
@@ -563,6 +561,7 @@ class Driver(CLIDriver):
             HammerTool.make_pre_insertion_hook("write_design", draw_areaidld),
             HammerTool.make_post_insertion_hook("write_design", write_chiptop_netlist_with_pg_pins),
             HammerTool.make_post_insertion_hook("write_design", write_chiptop_drc_lvs_layout),
+            HammerTool.make_pre_insertion_hook("write_design", signoff_timing),
 
             HammerTool.make_post_insertion_hook("sky130_innovus_settings", enable_clock_antenna_insertion),
 
