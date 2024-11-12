@@ -93,18 +93,18 @@ vlsi.inputs:
   top_module: ChipTop
 
   clocks:
-    - {name: "clock", path: "iocell_clock_clock/iocell/IN", period: "20ns", uncertainty: "0.1ns"}
+    - {name: "clock", path: "iocell_clock_clock/iocell/IN", period: "18ns", uncertainty: "0.1ns"}
     - {name: "jtag_TCK", path: "iocell_jtag_TCK/iocell/IN", period: "200ns", uncertainty: "1ns"}
     - {name: "pll_clock_clk", path: "pllInst/io_pll_clk_out", period: "5ns", uncertainty: "0.1ns"}
     - {name: "pll_clock_div", path: "pllInst/io_pll_div_out", period: "5ns", uncertainty: "0.1ns"}
     # SBUS - SRAM BIST
-    - {name: "clkdiv_out_sbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_sbus_clock", period: "20ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_sbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_sbus_clock", period: "18ns", uncertainty: "0.1ns"}
     # FBUS (serial-TL) - can't go faster than GPIO (50 MHz, but maybe constrain for faster speed)
-    - {name: "clkdiv_out_fbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_fbus_clock", period: "20ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_fbus", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_fbus_clock", period: "18ns", uncertainty: "0.1ns"}
     # Rocket
-    - {name: "clkdiv_out_rocket", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_rocket_clock", period: "20ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_rocket", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_rocket_clock", period: "18ns", uncertainty: "0.1ns"}
     # Periphery / everything else
-    - {name: "clkdiv_out_periph", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_periph_clock", period: "20ns", uncertainty: "0.1ns"}
+    - {name: "clkdiv_out_periph", path: "system/prci_ctrl_domain/clockDivider/auto_clock_out_member_allClocks_periph_clock", period: "18ns", uncertainty: "0.1ns"}
 
   placement_constraints:
     - path: ChipTop
@@ -116,7 +116,7 @@ vlsi.inputs:
       margins: {left: 249.78, right: 249.78, top: 252.08, bottom: 252.08}
 
     # PLL
-    - {path: ChipTop/pllInst, type: hardmacro, x: 2621.96, y: 4357.92, orientation: r0}
+    - {path: ChipTop/pllInst, type: hardmacro, x: 2601.96, y: 4357.92, orientation: r0}
 
     - path: ChipTop/system_obs
       type: obstruction

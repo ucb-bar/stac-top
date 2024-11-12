@@ -1,14 +1,20 @@
-# STAC: SRAM Timing Analysis Chip
+# STACv2: SRAM Timing Analysis Chip V2
 
 High-level information:
-* Submitting to Efabless ChipIgnite 2306Q
-* Tapeout deadline: June 5, 2023
+* Submitting to Efabless ChipIgnite 2411
+* Tapeout deadline: November 5, 2023
 * Chips (supposedly) delivered: October 27, 2023
 * Package: QFN, 64 pins
 * [I/O map](https://docs.google.com/spreadsheets/d/1pwuNWhKo4AzVCC_3EHxcBpiF1-V-zbCteOw8ayxvDU0/edit#gid=2022539742) (WIP)
-* [Source](https://github.com/ucb-bar/stac-top/releases/tag/tapeout-2306q)
-* Final GDS: `/tools/C/rahulkumar/sky130/stac/stac_final_2306q.gds`
-* Final SPICE: `/tools/C/rahulkumar/sky130/stac/lvs3/ChipTop.include.sp`
+* [Source](https://github.com/ucb-bar/stac-top/releases/tag/tapeout-2411)
+* Final GDS: `/tools/C/rohankumar/sky130/stac_tapeout/stacv2_final_2411.gds`
+* Final SPICE: `/tools/C/rohankumar/sky130/stac_tapeout/stacv2_final_2411.lvs.sp`
+
+Important details:
+- VSSIO, VSSD, and VSSA rails were shorted on chip
+- PLL connected to VDDA, VCCD, and VSS
+- No TDCs or delay lines for timing analysis
+- Final chip synthesized/PARed at 18ns, ended up meeting hold time and having a setup slack of -40 ps
 
 # Organization
 
@@ -16,12 +22,8 @@ A rough top-level diagram of the chip is shown below:
 
 ![STAC top level diagram](./figures/stac_top.svg)
 
-Each SRAM test block contains the following elements:
-
-![A single SRAM test block](./figures/sram22_test_block.svg)
-
-Update: Rather than having one BIST block per SRAM, there will instead
-be one BIST pattern generator shared across all SRAMs.
+The BIST is shared across SRAMs. Timing analysis circuitry (TDCS/delay lines) were removed for this tapeout.
+The final chip contained 22 test macros and 6 SRAMs for the Rocket.
 
 To the extent possible, the top level will be generated
 by Chipyard/Hammer.
