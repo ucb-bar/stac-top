@@ -2,8 +2,8 @@
 
 High-level information:
 * Submitting to Efabless ChipIgnite 2411
-* Tapeout deadline: November 5, 2023
-* Chips (supposedly) delivered: October 27, 2023
+* Tapeout deadline: November 11, 2024
+* Chips (supposedly) delivered: April 11, 2025
 * Package: QFN, 64 pins
 * [I/O map](https://docs.google.com/spreadsheets/d/1pwuNWhKo4AzVCC_3EHxcBpiF1-V-zbCteOw8ayxvDU0/edit#gid=2022539742) (WIP)
 * [Source](https://github.com/ucb-bar/stac-top/releases/tag/tapeout-2411)
