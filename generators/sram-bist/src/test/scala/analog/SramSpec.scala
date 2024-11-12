@@ -16,6 +16,7 @@ class SramSpec extends AnyFlatSpec with ChiselScalatestTester {
         new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
     ).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+      c.io.ce.poke(true.B)
       c.io.we.poke(true.B)
       c.io.wmask.poke("hf".U)
       c.io.addr.poke(0.U)

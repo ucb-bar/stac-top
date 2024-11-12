@@ -4,9 +4,9 @@ vlsi.core.max_threads: 32
 
 # Technology paths
 technology.sky130:
-  sky130A: "/tools/commercial/skywater/local/sky130A"
+  sky130A: "/tools/commercial/skywater/local/open_pdks-2022.10/share/pdk/sky130A"
   # sram22_sky130_macros: "/tools/commercial/skywater/local/chipyard-tutorial/sram22_sky130_macros"
-  sram22_sky130_macros: "/tools/C/rahulkumar/personal/stac-top/vlsi/sram22_sky130_macros"
+  sram22_sky130_macros: "/tools/C/rohankumar/stac-top/vlsi/sram22_sky130_macros"
   # https://github.com/rahulk29/sram22_sky130_macros/tree/dev
 
   # this key is OPTIONAL, no NDA files will be used if it does not point to a valid path
@@ -14,50 +14,6 @@ technology.sky130:
 
   # for caravel collateral pulled in by this design
   caravel: /tools/commercial/skywater/local/caravel/v6.0
-
-# General Hammer Inputs
-
-# Hammer will auto-generate a CPF for simple power designs; see hammer/src/hammer-vlsi/defaults.yml for more info
-vlsi.inputs.power_spec_mode: "auto"
-vlsi.inputs.power_spec_type: "cpf"
-
-
-# Power Straps
-par.power_straps_mode: generate
-par.generate_power_straps_method: by_tracks
-par.blockage_spacing: 2.0
-par.blockage_spacing_top_layer: met3
-par.generate_power_straps_options:
-  by_tracks:
-    strap_layers:
-      - met2
-      - met3
-      - met4
-      - met5
-    pin_layers:
-      - met5
-    blockage_spacing_met2: 4.0
-    blockage_spacing_met4: 2.0
-    track_width: 2
-    track_width_met2: 2
-    track_width_met3: 2
-    track_width_met4: 2
-    track_width_met5: 2
-    track_spacing: 5
-    track_start: 10
-    track_start_met5: 1
-    power_utilization: 0.2
-    power_utilization_met4: 0.4
-    power_utilization_met5: 0.5
-
-
-# Pin placement constraints
-vlsi.inputs.pin_mode: generated
-vlsi.inputs.pin.generate_mode: semi_auto
-vlsi.inputs.pin.assignments: [
-  {pins: "*", layers: ["met2", "met4"], side: "bottom"}
-]
-
 
 # SRAM Compiler compiler options
 vlsi.core.sram_generator_tool: "hammer.technology.sky130.sram_compiler"

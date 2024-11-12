@@ -14,35 +14,41 @@
 
 int main( int argc, char* argv[] )
 {
-  uint32_t result, ref1, ref2;
-  ref1 = 2147483647;
+  uint128_t result, ref;
 
-  srambist_write(0, ref1, 0xffffffff, 0);
-  result = srambist_read(0, 0);
+  for (int id = 0; id < NUM_SRAMS; id++) {
+    printf("Testing SRAM %d\n", id);
+    sram_params_t params = SRAMS[id];
+    uint128_t mask = {0xffffffffffffffff, 0xffffffffffffffff};
+    for (int i = 0; i < params.num_words; i+=params.num_words - 1) {
+        ref.lo = 0xabababababababab + NUM_SRAMS * i + id;
+        ref.hi = 0xcdcdcdcdcdcdcdcd;
 
-  if (result != ref1) {
-    printf("Hardware result %d does not match first reference value %d\n", result, ref1);
-    return 1;
+        srambist_write(i, ref, mask, id);
+    }
+    uint128_t data_mask = create_mask(id);
+    for (int i = 0; i < params.num_words; i+=params.num_words - 1) {
+        ref.lo = 0xabababababababab + NUM_SRAMS * i + id;
+        ref.hi = 0xcdcdcdcdcdcdcdcd;
+
+        result = srambist_read(i, id);
+        ref.hi = ref.hi & data_mask.hi;
+        ref.lo = ref.lo & data_mask.lo;
+        result.hi = result.hi & data_mask.hi;
+        result.lo = result.lo & data_mask.lo;
+
+        if (!eq128(result, ref)) {
+            printf("(SRAM %d, ADDR %d) Hardware result 0x%llx%llx does not match reference value 0x%llx%llx\n", id, i, result.hi, result.lo, ref.hi, ref.lo);
+            return 1;
+        }
+    }
+    printf("Finished testing SRAM %d\n", id);
   }
 
-  ref2 = 1230057832;
-
-  srambist_write(0, ref2, 0xffffffff, 1);
-  result = srambist_read(0, 1);
-
-  if (result != ref2) {
-    printf("Hardware result %d does not match second reference value %d\n", result, ref2);
-    return 1;
-  }
-
-  result = srambist_read(0, 0);
-
-  if (result != ref1) {
-    printf("Hardware result %d does not match original reference value %d after writing to second SRAM\n", result, ref1);
-    return 1;
-  }
+  printf("Test passed!\n");
+  return 0;
 
 
-  printf("Test passed!\n", result);
+  printf("Test passed!\n");
   return 0;
 }

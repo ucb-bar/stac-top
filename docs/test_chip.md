@@ -6,7 +6,9 @@ High-level information:
 * Chips (supposedly) delivered: October 27, 2023
 * Package: QFN, 64 pins
 * [I/O map](https://docs.google.com/spreadsheets/d/1pwuNWhKo4AzVCC_3EHxcBpiF1-V-zbCteOw8ayxvDU0/edit#gid=2022539742) (WIP)
-* [Top level repo](https://github.com/ucb-bar/stac-top)
+* [Source](https://github.com/ucb-bar/stac-top/releases/tag/tapeout-2306q)
+* Final GDS: `/tools/C/rahulkumar/sky130/stac/stac_final_2306q.gds`
+* Final SPICE: `/tools/C/rahulkumar/sky130/stac/lvs3/ChipTop.include.sp`
 
 # Organization
 

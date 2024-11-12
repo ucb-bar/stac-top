@@ -19,15 +19,8 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
           d.io.sramScanEn.poke(false.B)
 
           d.io.dout.poke(60.U)
-          d.io.tdc.poke(
-            "h123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".U
-          )
           d.clock.step()
-          d.io.mmio.doutMmio.q.expect(60.U)
-          d.io.mmio.tdcMmio(0).q.expect("h0123456789abcdef".U)
-          d.io.mmio.tdcMmio(1).q.expect("h0123456789abcdef".U)
-          d.io.mmio.tdcMmio(2).q.expect("h0123456789abcdef".U)
-          d.io.mmio.tdcMmio(3).q.expect("h123456789abcdef".U)
+          d.io.mmio.doutMmio(0).q.expect(60.U)
       }
   }
   it should "ignore writes to read-only MMIO registers" in {
@@ -40,11 +33,11 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
 
           d.io.dout.poke(60.U)
           d.clock.step()
-          d.io.mmio.doutMmio.d.poke(50.U)
-          d.io.mmio.doutMmio.en.poke(true.B)
+          d.io.mmio.doutMmio(0).d.poke(50.U)
+          d.io.mmio.doutMmio(0).en.poke(true.B)
           d.clock.step()
-          d.io.mmio.doutMmio.q.expect(60.U)
-          d.io.mmio.doutMmio.en.poke(false.B)
+          d.io.mmio.doutMmio(0).q.expect(60.U)
+          d.io.mmio.doutMmio(0).en.poke(false.B)
       }
   }
   it should "ignore writes via MMIO while in scan chain mode" in {
@@ -131,14 +124,14 @@ class ScanChainIntfSpec extends AnyFlatSpec with ChiselScalatestTester {
 
           d.io.sramScanEn.poke(false.B)
           d.io.mmio.addr.q.expect(25.U)
-          d.io.mmio.din.q.expect(20.U)
-          d.io.mmio.mask.q.expect(15.U)
+          d.io.mmio.din(0).q.expect(20.U)
+          d.io.mmio.mask(0).q.expect(15.U)
           d.io.mmio.we.q.expect(0.U)
 
           d.clock.step()
           d.io.mmio.addr.q.expect(25.U)
-          d.io.mmio.din.q.expect(20.U)
-          d.io.mmio.mask.q.expect(15.U)
+          d.io.mmio.din(0).q.expect(20.U)
+          d.io.mmio.mask(0).q.expect(15.U)
           d.io.mmio.we.q.expect(0.U)
       }
   }

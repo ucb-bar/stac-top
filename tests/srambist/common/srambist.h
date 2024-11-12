@@ -4,37 +4,43 @@
 
 #define SRAMBIST_ADDR 0x1000
 #define SRAMBIST_DIN 0x1008
-#define SRAMBIST_MASK 0x1010
-#define SRAMBIST_WE 0x1018
-#define SRAMBIST_SRAM_ID 0x1020
-#define SRAMBIST_SRAM_SEL 0x1028
-#define SRAMBIST_SAE_CTL 0x1030
-#define SRAMBIST_SAE_SEL 0x1038
+#define SRAMBIST_MASK 0x1018
+#define SRAMBIST_WE 0x1028
+#define SRAMBIST_SRAM_ID 0x1030
+#define SRAMBIST_SRAM_SEL 0x1038
 #define SRAMBIST_DOUT 0x1040
-#define SRAMBIST_TDC 0x1048
-#define SRAMBIST_DONE 0x1068
-#define SRAMBIST_BIST_RAND_SEED 0x1070
+#define SRAMBIST_DONE 0x1050
+#define SRAMBIST_BIST_RAND_SEED 0x1058
 #define SRAMBIST_BIST_SIG_SEED 0x1080
-#define SRAMBIST_BIST_MAX_ROW_ADDR 0x1088
-#define SRAMBIST_BIST_MAX_COL_ADDR 0x1090
-#define SRAMBIST_BIST_INNER_DIM 0x1098
-#define SRAMBIST_BIST_ELEMENT_SEQUENCE 0x10A0
-#define SRAMBIST_BIST_PATTERN_TABLE 0x1120
-#define SRAMBIST_BIST_MAX_ELEMENT_IDX 0x1140
-#define SRAMBIST_BIST_CYCLE_LIMIT 0x1148
-#define SRAMBIST_BIST_STOP_ON_FAILURE 0x1150
-#define SRAMBIST_BIST_FAIL 0x1158
-#define SRAMBIST_BIST_FAIL_CYCLE 0x1160
-#define SRAMBIST_BIST_EXPECTED 0x1168
-#define SRAMBIST_BIST_RECEIVED 0x1170
-#define SRAMBIST_BIST_SIGNATURE 0x1178
-#define SRAMBIST_EX 0x1180
+#define SRAMBIST_BIST_MAX_ROW_ADDR 0x1090
+#define SRAMBIST_BIST_MAX_COL_ADDR 0x1098
+#define SRAMBIST_BIST_INNER_DIM 0x10A0
+#define SRAMBIST_BIST_ELEMENT_SEQUENCE 0x10A8
+#define SRAMBIST_BIST_PATTERN_TABLE 0x1128
+#define SRAMBIST_BIST_MAX_ELEMENT_IDX 0x11A8
+#define SRAMBIST_BIST_CYCLE_LIMIT 0x11B0
+#define SRAMBIST_BIST_STOP_ON_FAILURE 0x11B8
+#define SRAMBIST_BIST_FAIL 0x11C0
+#define SRAMBIST_BIST_FAIL_CYCLE 0x11C8
+#define SRAMBIST_BIST_EXPECTED 0x11D0
+#define SRAMBIST_BIST_RECEIVED 0x11E0
+#define SRAMBIST_BIST_SIGNATURE 0x11F0
+#define SRAMBIST_EX 0x1200
 
 #define SRAMBIST_PATTERN_TABLE_LENGTH_LOG2 3
 #define SRAMBIST_OPERATIONS_PER_ELEMENT 8
 #define SRAMBIST_OPERATIONS_PER_ELEMENT_LOG2 3
 #define SRAMBIST_RAND_ADDR_WIDTH 14
-#define SRAMBIST_ELEMENT_TABLE_LENGTH 14
+#define SRAMBIST_ELEMENT_TABLE_LENGTH 8
+
+typedef struct {
+    int wmask_granularity;
+    int num_words;
+    int data_width;
+} sram_params_t;
+
+#define NUM_SRAMS 22
+extern const sram_params_t SRAMS[NUM_SRAMS];
 
 typedef enum {
   SRAM_SEL_MMIO = 0,
@@ -111,16 +117,18 @@ typedef struct {
 } packed_element_vec_t;
 
 typedef struct {
-  uint32_t patterns[8];
+  uint128_t patterns[8];
 } pattern_table_t;
 
 typedef struct {
   int fail;
-  uint32_t fail_cycle;
-  uint32_t expected;
-  uint32_t received;
-  uint32_t signature;
+  uint64_t fail_cycle;
+  uint128_t expected;
+  uint128_t received;
+  uint128_t signature;
 } bist_result_t;
+
+uint128_t create_mask(uint8_t sram_id);
 
 uint32_t read_at_bit_offset(void* x, int bit_offset, uint8_t num_bits);
 void write_at_bit_offset(void* x, int bit_offset, void* val, uint8_t num_bits);
@@ -154,27 +162,27 @@ void pack_operation_element(packed_operation_element_t* packed_op_elem, operatio
 void pack_element(packed_element_t* packed_elem, element_t* elem);
 void pack_element_vec(packed_element_vec_t* packed_elem_vec, element_t** elems, uint8_t max_idx);
 
-void srambist_write(uint32_t addr, uint32_t din, uint32_t mask, uint8_t sram_id);
-uint32_t srambist_read(uint32_t addr, uint8_t sram_id);
+void srambist_write(uint16_t addr, uint128_t din, uint128_t mask, uint8_t sram_id);
+uint128_t srambist_read(uint16_t addr, uint8_t sram_id);
 
 bist_result_t srambist_run_bist(
     uint8_t sram_id,
-    uint64_t rand_seed,
-    uint32_t sig_seed,
+    uint64_t rand_seed, // TODO: Support all 271 bits.
+    uint128_t sig_seed,
     uint16_t max_row_addr,
     uint8_t max_col_addr,
     dimension_t inner_dim,
     element_t** elems,
     uint8_t max_elem_idx,
     pattern_table_t* pattern_table, 
-    uint32_t cycle_limit,
+    uint64_t cycle_limit,
     int stop_on_failure
 );
 
 bist_result_t srambist_run_bist_with_packed_elements(
     uint8_t sram_id,
-    uint64_t rand_seed,
-    uint32_t sig_seed,
+    uint64_t rand_seed, // TODO: Support all 271 bits.
+    uint128_t sig_seed,
     uint16_t max_row_addr,
     uint8_t max_col_addr,
     dimension_t inner_dim,

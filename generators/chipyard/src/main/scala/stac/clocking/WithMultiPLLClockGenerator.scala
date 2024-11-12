@@ -22,7 +22,7 @@ class MultiPLLTopIO extends Bundle {
   val scan_rst = Input(Bool())
   val scan_out = Output(Bool())
   val arstb = Input(Bool())
-  val sel = Input(Bool())
+  val pwr_en = Input(Bool())
   // Chisel can't treat the wire as a pass-through when <>'ing with
   // Analog, so we need to do them separately
 //  val ref_in = Analog(1.W)
@@ -109,7 +109,7 @@ class WithMultiPLLClockGenerator extends OverrideLazyIOBinder({
       pll.io.io_scan_rst <> pllIO.scan_rst
       pll.io.io_scan_out <> pllIO.scan_out
       pll.io.io_arstb <> pllIO.arstb
-      pll.io.io_pll_sel <> pllIO.sel
+      pll.io.io_pwr_en <> pllIO.pwr_en
       generateIO(pllIO, "pll")
       // see comment in MultiPLLTopIO
       generateIO(pll.io.clock, "pll_ref_in")
@@ -150,7 +150,7 @@ class WithClockAndResetFromHarnessAndMultiPLLTiedOff extends OverrideHarnessBind
         pll.scan_in := false.B
         pll.scan_rst := false.B
         pll.arstb := !th.buildtopReset.asBool
-        pll.sel := false.B // on
+        pll.pwr_en := false.B // on
       case ana: Analog =>
     })
   }

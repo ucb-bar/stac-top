@@ -12,8 +12,11 @@ bmarks = \
 	rw-simple \
 	rw-masked \
 	rw-multi-sram \
+	rw-all-addrs \
 	bist-simple \
 	bist-fail \
+	bist-multi-sram \
+	scratchpad
 
 #--------------------------------------------------------------------
 # Build rules

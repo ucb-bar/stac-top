@@ -21,7 +21,7 @@ pins:
   E16: spi_0_dq_2
   E15: spi_0_dq_1
   E14: spi_0_dq_0
-  W1: sram_bist_sramSaeClk
+  W1: sram_bist_tdcClk
   W5: sram_bist_sramScanIn
   W6: sram_bist_sramScanOut
   W7: sram_bist_sramScanEn
@@ -40,7 +40,7 @@ pins:
   E6: pll_scan_clk
   E7: pll_scan_rst
   E8: pll_scan_en
-  E9: pll_sel
+  E9: pll_pwr_en
   S9: clksel_0
   E10: clksel_1
 extra_insts:
@@ -49,6 +49,9 @@ extra_insts:
       offset: 813
       cell: sky130_ef_io__com_bus_slice_20um
     - name: IO_FILLER_MANUAL_S_2
+      offset: 1261
+      cell: sky130_ef_io__com_bus_slice_20um
+    - name: IO_FILLER_MANUAL_S_3
       offset: 3264
       cell: sky130_ef_io__com_bus_slice_20um
   left:

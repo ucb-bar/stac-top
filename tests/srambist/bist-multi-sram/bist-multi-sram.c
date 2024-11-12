@@ -1,0 +1,98 @@
+// See LICENSE for license details.
+
+//**************************************************************************
+// MMIO read and write test
+//--------------------------------------------------------------------------
+//
+
+#include "mmio.h"
+#include "srambist.h"
+#include <stdio.h>
+
+//--------------------------------------------------------------------------
+// Main
+
+int main( int argc, char* argv[] )
+{
+  
+  pattern_table_t pattern_table = { 
+      { 
+          {0x0, 0x0},
+          {0xffffffffffffffff, 0xffffffffffffffff},
+          {0xc76148fef684be4e, 0x5f1a950d9af236fc},
+          {0x389eb701097b41b1, 0xa0e56af2650dc903},
+          {0x0, 0x0},
+          {0xffffffffffffffff, 0xffffffffffffffff},
+          {0x0, 0x0},
+          {0x0, 0x0}
+      } 
+  };
+  packed_element_vec_t packed_elem_vec = { { 
+    3604613414837551105UL,
+    295129881980453250UL,
+    632782836910260224UL,
+    4611404405944582UL,
+    1739269488736993280UL,
+    72053193842884UL,
+    1180097590368362496UL,
+    1125831153795UL,
+    883130153304640896UL,
+    17591111778UL,
+    9813631697803584310UL,
+    15564440312467295297UL,
+    441568371429892748UL,
+    3701958893702842417UL,
+    14130187937237467530UL,
+    1568UL
+  } };
+  uint128_t bist_sig = {1, 0};
+  bist_result_t result = srambist_run_bist_with_packed_elements(9, 1, bist_sig, 15, 3, DIMENSION_ROW, &packed_elem_vec, 3, &pattern_table, 0, 1);
+
+  if (result.fail != 0) {
+    printf("BIST unexpectedly failed\n");
+    return 1;
+  }
+
+  uint128_t expected_signature;
+
+  expected_signature.hi = 0x88174c7de9471b1aUL;
+  expected_signature.lo = 0x318a70328b53356bUL;
+
+  if (!eq128(result.signature, expected_signature)) {
+    printf("BIST signature 0x%llx%llx does not match expected 0x%llx%llx\n", result.signature.hi, result.signature.lo, expected_signature.hi, expected_signature.lo);
+    return 1;
+  }
+
+  result = srambist_run_bist_with_packed_elements(5, 1, bist_sig, 15, 3, DIMENSION_ROW, &packed_elem_vec, 3, &pattern_table, 0, 1);
+
+  if (result.fail != 0) {
+    printf("BIST unexpectedly failed\n");
+    return 1;
+  }
+
+  expected_signature.hi = 0x0;
+  expected_signature.lo = 0x5d00058d1;
+
+  if (!eq128(result.signature, expected_signature)) {
+    printf("BIST signature 0x%llx%llx does not match expected 0x%llx%llx\n", result.signature.hi, result.signature.lo, expected_signature.hi, expected_signature.lo);
+    return 1;
+  }
+
+  result = srambist_run_bist_with_packed_elements(21, 1, bist_sig, 1023, 0, DIMENSION_ROW, &packed_elem_vec, 3, &pattern_table, 0, 1);
+
+  if (result.fail != 0) {
+    printf("BIST unexpectedly failed\n");
+    return 1;
+  }
+
+  expected_signature.hi = 0x6a188a69e5a32UL;
+  expected_signature.lo = 0x0000001a81400b12UL;
+
+  if (!eq128(result.signature, expected_signature)) {
+    printf("BIST signature 0x%llx%llx does not match expected 0x%llx%llx\n", result.signature.hi, result.signature.lo, expected_signature.hi, expected_signature.lo);
+    return 1;
+  }
+
+  printf("Test passed!\n", result);
+  return 0;
+}
