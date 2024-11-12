@@ -8,7 +8,7 @@ High-level information:
 * [I/O map](https://docs.google.com/spreadsheets/d/1pwuNWhKo4AzVCC_3EHxcBpiF1-V-zbCteOw8ayxvDU0/edit#gid=2022539742) (WIP)
 * [Source](https://github.com/ucb-bar/stac-top/releases/tag/tapeout-2411)
 * Final GDS: `/tools/C/rohankumar/sky130/stac_tapeout/stacv2_final_2411.gds`
-* Final SPICE: `/tools/C/rohankumar/sky130/stac_tapeout/stacv2_final_2411.lvs.sp`
+* Final SPICE: `/tools/C/rohankumar/sky130/stac_tapeout/stacv2_final_2411.include.sp`
 
 Important details:
 - VSSIO, VSSD, and VSSA rails were shorted on chip
