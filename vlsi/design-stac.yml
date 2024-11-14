@@ -230,8 +230,8 @@ vlsi.technology.extra_libraries:
       lef_file: /tools/C/rohankumar/sky130/stac_tapeout/gds/sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_and_vssio_vssa_vssd_slice_20um.lef
       spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io.spice
   - library:
-      gds_file: /tools/C/sehuang/sky130/ucb_chip_io/gds/sky130_ef_io__analog_pad_esd2.gds
-      lef_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io__analog_pad_esd2.lef
+      gds_file: /tools/C/rohankumar/sky130/stac_tapeout/gds/sky130_ef_io__analog_pad_esd2.gds
+      lef_file: /tools/C/rohankumar/sky130/stac_tapeout/sky130_ef_io__analog_pad_esd2.lef
       spice_file: /tools/C/rahulkumar/sky130/io_lvs/sky130_ef_io__analog_pad_esd2.cdl
       provides:
         - lib_type: iocell
@@ -248,3 +248,5 @@ vlsi.inputs.dont_use_mode: append
 vlsi.inputs.dont_use_list_meta: append
 vlsi.inputs.dont_use_list:
   - sky130_fd_sc_hvl__*
+
+
