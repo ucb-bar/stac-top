@@ -46,10 +46,10 @@ pins:
 extra_insts:
   bottom:
     - name: IO_FILLER_MANUAL_S_1
-      offset: 813
+      offset: 738
       cell: sky130_ef_io__com_bus_slice_20um
     - name: IO_FILLER_MANUAL_S_2
-      offset: 1261
+      offset: 1181
       cell: sky130_ef_io__com_bus_slice_20um
     - name: IO_FILLER_MANUAL_S_3
       offset: 3264
@@ -66,8 +66,9 @@ extra_insts:
       cell: sky130_ef_io__com_bus_slice_20um
   right:
     - name: IO_FILLER_MANUAL_E_1 # E2 R
-      offset: 4593
+      offset: 4518
       cell: sky130_ef_io__com_bus_slice_20um
     - name: IO_FILLER_MANUAL_E_2 # E12 R
-      offset: 2354
+      offset: 2279
       cell: sky130_ef_io__com_bus_slice_20um
+
