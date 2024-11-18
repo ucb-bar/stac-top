@@ -2,7 +2,9 @@
 
 Toplevel for the STAC tapeout, based on [Chipyard](https://github.com/ucb-bar/chipyard)
 
-[Chip docs](docs/test_chip.md)
+[STACv1 chip docs](docs/test_chip.md)
+
+[STACv2 chip docs](docs/test_chip2.md)
 
 First-time setup:
 - Source Conda install / base environment
