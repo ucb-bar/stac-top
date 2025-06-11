@@ -13,8 +13,6 @@ import srambist.programmablebist.ProgrammableBistParams
 import srambist.SramBistCtrlRegs._
 
 class SramBistTestHelpers(val c: SramBist) {
-  val maxRows = 15;
-  val maxCols = 3;
   val readOp = chiselTypeOf(
     c.bistTop.bist.io.elementSequence(0).operationElement.operations(0)
   ).Lit(
@@ -55,13 +53,33 @@ class SramBistTestHelpers(val c: SramBist) {
     _.maskPatternIdx -> 1.U,
     _.flipped -> c.bistTop.bist.FlipType.flipped
   )
+  val readRandomOp = chiselTypeOf(
+    c.bistTop.bist.io.elementSequence(0).operationElement.operations(0)
+  ).Lit(
+    _.operationType -> c.bistTop.bist.OperationType.read,
+    _.randData -> true.B,
+    _.randMask -> false.B,
+    _.dataPatternIdx -> 3.U,
+    _.maskPatternIdx -> 0.U,
+    _.flipped -> c.bistTop.bist.FlipType.unflipped
+  )
+  val writeRandomOp = chiselTypeOf(
+    c.bistTop.bist.io.elementSequence(0).operationElement.operations(0)
+  ).Lit(
+    _.operationType -> c.bistTop.bist.OperationType.write,
+    _.randData -> true.B,
+    _.randMask -> true.B,
+    _.dataPatternIdx -> 0.U,
+    _.maskPatternIdx -> 0.U,
+    _.flipped -> c.bistTop.bist.FlipType.unflipped
+  )
   val opElementList = Vec(8, new c.bistTop.bist.Operation()).Lit(
     0 -> writeOp,
     1 -> readOp,
-    2 -> writeFlippedOp,
-    3 -> readFlippedOp,
-    4 -> readOp,
-    5 -> readOp,
+    2 -> writeRandomOp,
+    3 -> readRandomOp,
+    4 -> writeFlippedOp,
+    5 -> readFlippedOp,
     6 -> readOp,
     7 -> readOp
   )
@@ -347,7 +365,7 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       )(
         new WithChiseltestSrams(ChiseltestSramFailureMode.none)
       )
-    ).withAnnotations(Seq(VcsBackendAnnotation, WriteFsdbAnnotation)) { d =>
+    ).withAnnotations(Seq(VcsBackendAnnotation, WriteVcdAnnotation)) { d =>
       val scanIn = (width: Int, value: BigInt) => {
         d.io.top.sramScanEn.poke(true.B)
         var bitSeq = Seq[Int]()
@@ -364,7 +382,6 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       }
 
       val scanOutAndAssert = (width: Int, value: BigInt) => {
-        println(s"width = ${width}")
         d.io.top.sramScanEn.poke(true.B)
         
         var num = BigInt(0)
@@ -372,7 +389,6 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
           var bit = d.io.top.sramScanOut.peek().litToBoolean
           var digit = if (bit) 1 else 0
           num = num * BigInt(2) + BigInt(digit)
-          println(s"num = ${num}")
           d.clock.step()
         }
         assert(num == value)
@@ -400,172 +416,88 @@ class SramBistSpec extends AnyFlatSpec with ChiselScalatestTester {
       val eltSeq = h.elementSequence.litValue
       val patTable = h.patternTable.litValue
 
-      d.io.top.sramExtEn.poke(false.B)
-      d.io.top.sramScanMode.poke(true.B)
-      d.io.top.sramEn.poke(false.B)
-      d.io.top.bistEn.poke(false.B)
-      d.io.top.bistStart.poke(false.B)
+      val srams = (new BistTopParams).srams
+      var sigs = srams.zipWithIndex.map { case (sram, i) => 
+        d.io.top.sramExtEn.poke(false.B)
+        d.io.top.sramScanMode.poke(true.B)
+        d.io.top.sramEn.poke(false.B)
+        d.io.top.bistEn.poke(false.B)
+        d.io.top.bistStart.poke(false.B)
 
-      scanClear()
-      scanIn(REG_WIDTH(BIST_STOP_ON_FAILURE), 1)
-      scanIn(REG_WIDTH(BIST_CYCLE_LIMIT), 0)
-      scanIn(REG_WIDTH(BIST_MAX_ELEMENT_IDX), 3)
-      scanIn(REG_WIDTH(BIST_PATTERN_TABLE), patTable)
-      scanIn(REG_WIDTH(BIST_ELEMENT_SEQUENCE), eltSeq)
-      scanIn(REG_WIDTH(BIST_INNER_DIM), 0)
-      scanIn(REG_WIDTH(BIST_MAX_COL_ADDR), 3)
-      scanIn(REG_WIDTH(BIST_MAX_ROW_ADDR), 15)
-      scanIn(REG_WIDTH(BIST_SIG_SEED), 1)
-      scanIn(REG_WIDTH(BIST_RAND_SEED), 1)
-      scanIn(REG_WIDTH(DONE), 0)
-      scanIn(REG_WIDTH(DOUT), 0)
-      scanIn(REG_WIDTH(SRAM_SEL), 1)
-      scanIn(REG_WIDTH(SRAM_ID), 9)
-      scanIn(REG_WIDTH(WE), 0)
-      scanIn(REG_WIDTH(MASK), 511)
-      scanIn(REG_WIDTH(DIN), 0)
-      scanIn(REG_WIDTH(ADDR), 0)
-      d.io.top.sramScanIn.poke(false.B)
+        val rows = sram.numWords / sram.muxRatio
+        val cols = sram.muxRatio
+        scanClear()
+        scanIn(REG_WIDTH(BIST_STOP_ON_FAILURE), 1)
+        scanIn(REG_WIDTH(BIST_CYCLE_LIMIT), 0)
+        scanIn(REG_WIDTH(BIST_MAX_ELEMENT_IDX), 1)
+        scanIn(REG_WIDTH(BIST_PATTERN_TABLE), patTable)
+        scanIn(REG_WIDTH(BIST_ELEMENT_SEQUENCE), eltSeq)
+        scanIn(REG_WIDTH(BIST_INNER_DIM), 0)
+        scanIn(REG_WIDTH(BIST_MAX_COL_ADDR), cols-1)
+        scanIn(REG_WIDTH(BIST_MAX_ROW_ADDR), rows-1)
+        scanIn(REG_WIDTH(BIST_SIG_SEED), 1)
+        scanIn(REG_WIDTH(BIST_RAND_SEED), 1)
+        scanIn(REG_WIDTH(DONE), 0)
+        scanIn(REG_WIDTH(DOUT), 0)
+        scanIn(REG_WIDTH(SRAM_SEL), 1)
+        scanIn(REG_WIDTH(SRAM_ID), i)
+        scanIn(REG_WIDTH(WE), 0)
+        scanIn(REG_WIDTH(MASK), 0)
+        scanIn(REG_WIDTH(DIN), 0)
+        scanIn(REG_WIDTH(ADDR), 0)
+        d.io.top.sramScanIn.poke(false.B)
 
-      println("BIST element sequence register contents:")
-      for (i <- 0 until 16) {
-        println(d.io.mmio.bistElementSequenceMmio(i).q.peek().litValue);
-      }
+        println(s"Testing SRAM $i")
 
-      d.io.top.bistStart.poke(true.B)
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.io.top.bistStart.poke(false.B)
-      d.io.top.bistEn.poke(true.B)
+        println("BIST element sequence register contents:")
+        for (i <- 0 until 16) {
+          println(d.io.mmio.bistElementSequenceMmio(i).q.peek().litValue);
+        }
 
-      for (i <- 0 to 4 * 4 * 16 * 4 + 3) {
+        d.io.top.bistStart.poke(true.B)
         d.clock.step()
-      }
-
-      d.io.top.bistDone.expect(true.B)
-      d.io.top.bistEn.poke(false.B)
-
-      var misrModel = new MaxPeriodFibonacciXORMISRModel(128)
-      for (i <- 1 to (h.maxRows + 1) * (h.maxCols + 1) * 4) {
-        misrModel.add(BigInt("a0e56af2650dc903389eb701097b41b1", 16))
-        misrModel.add(BigInt("5f1a950d9af236fcc76148fef684be4e", 16))
-      }
-
-      println(s"Expected signature = ${misrModel.state.toString(16)}")
-      scanOutAndAssert(REG_WIDTH(BIST_SIGNATURE), misrModel.state)
-      scanOut(REG_WIDTH(BIST_RECEIVED))
-      scanOut(REG_WIDTH(BIST_EXPECTED))
-      scanOut(REG_WIDTH(BIST_FAIL_CYCLE))
-      scanOutAndAssert(REG_WIDTH(BIST_FAIL), 0)
-
-      d.io.top.sramExtEn.poke(false.B)
-      d.io.top.sramScanMode.poke(true.B)
-      d.io.top.sramEn.poke(false.B)
-      d.io.top.bistEn.poke(false.B)
-      d.io.top.bistStart.poke(false.B)
-
-      scanClear()
-      scanIn(REG_WIDTH(BIST_STOP_ON_FAILURE), 1)
-      scanIn(REG_WIDTH(BIST_CYCLE_LIMIT), 0)
-      scanIn(REG_WIDTH(BIST_MAX_ELEMENT_IDX), 3)
-      scanIn(REG_WIDTH(BIST_PATTERN_TABLE), patTable)
-      scanIn(REG_WIDTH(BIST_ELEMENT_SEQUENCE), eltSeq)
-      scanIn(REG_WIDTH(BIST_INNER_DIM), 0)
-      scanIn(REG_WIDTH(BIST_MAX_COL_ADDR), 3)
-      scanIn(REG_WIDTH(BIST_MAX_ROW_ADDR), 15)
-      scanIn(REG_WIDTH(BIST_SIG_SEED), 1)
-      scanIn(REG_WIDTH(BIST_RAND_SEED), 1)
-      scanIn(REG_WIDTH(DONE), 0)
-      scanIn(REG_WIDTH(DOUT), 0)
-      scanIn(REG_WIDTH(SRAM_SEL), 1)
-      scanIn(REG_WIDTH(SRAM_ID), 5)
-      scanIn(REG_WIDTH(WE), 0)
-      scanIn(REG_WIDTH(MASK), 511)
-      scanIn(REG_WIDTH(DIN), 0)
-      scanIn(REG_WIDTH(ADDR), 0)
-      d.io.top.sramScanIn.poke(false.B)
-
-      d.io.top.bistStart.poke(true.B)
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.io.top.bistStart.poke(false.B)
-      d.io.top.bistEn.poke(true.B)
-
-      for (i <- 0 to 4 * 4 * 16 * 4 + 3) {
         d.clock.step()
-      }
-
-      d.io.top.bistDone.expect(true.B)
-      d.io.top.bistEn.poke(false.B)
-
-      misrModel = new MaxPeriodFibonacciXORMISRModel(128)
-      for (i <- 1 to (h.maxRows + 1) * (h.maxCols + 1) * 4) {
-        misrModel.add(BigInt("b1", 16))
-        misrModel.add(BigInt("4e", 16))
-      }
-
-      println(s"Expected signature = ${misrModel.state.toString(16)}")
-      scanOutAndAssert(REG_WIDTH(BIST_SIGNATURE), misrModel.state)
-      scanOut(REG_WIDTH(BIST_RECEIVED))
-      scanOut(REG_WIDTH(BIST_EXPECTED))
-      scanOut(REG_WIDTH(BIST_FAIL_CYCLE))
-      scanOutAndAssert(REG_WIDTH(BIST_FAIL), 0)
-
-      d.io.top.sramExtEn.poke(false.B)
-      d.io.top.sramScanMode.poke(true.B)
-      d.io.top.sramEn.poke(false.B)
-      d.io.top.bistEn.poke(false.B)
-      d.io.top.bistStart.poke(false.B)
-
-      scanClear()
-      scanIn(REG_WIDTH(BIST_STOP_ON_FAILURE), 1)
-      scanIn(REG_WIDTH(BIST_CYCLE_LIMIT), 0)
-      scanIn(REG_WIDTH(BIST_MAX_ELEMENT_IDX), 3)
-      scanIn(REG_WIDTH(BIST_PATTERN_TABLE), patTable)
-      scanIn(REG_WIDTH(BIST_ELEMENT_SEQUENCE), eltSeq)
-      scanIn(REG_WIDTH(BIST_INNER_DIM), 0)
-      scanIn(REG_WIDTH(BIST_MAX_COL_ADDR), 0)
-      scanIn(REG_WIDTH(BIST_MAX_ROW_ADDR), 1023)
-      scanIn(REG_WIDTH(BIST_SIG_SEED), 1)
-      scanIn(REG_WIDTH(BIST_RAND_SEED), 1)
-      scanIn(REG_WIDTH(DONE), 0)
-      scanIn(REG_WIDTH(DOUT), 0)
-      scanIn(REG_WIDTH(SRAM_SEL), 1)
-      scanIn(REG_WIDTH(SRAM_ID), 21)
-      scanIn(REG_WIDTH(WE), 0)
-      scanIn(REG_WIDTH(MASK), 511)
-      scanIn(REG_WIDTH(DIN), 0)
-      scanIn(REG_WIDTH(ADDR), 0)
-      d.io.top.sramScanIn.poke(false.B)
-
-      d.io.top.bistStart.poke(true.B)
-      d.clock.step()
-      d.clock.step()
-      d.clock.step()
-      d.io.top.bistStart.poke(false.B)
-      d.io.top.bistEn.poke(true.B)
-
-      for (i <- 0 to 4 * 4 * 1024 + 3) {
         d.clock.step()
+        d.io.top.bistStart.poke(false.B)
+        d.io.top.bistEn.poke(true.B)
+
+        for (i <- 0 to 2 * cols * rows * 4 + 3) {
+          d.clock.step()
+        }
+
+        d.io.top.bistDone.expect(true.B)
+        d.io.top.bistEn.poke(false.B)
+
+        var misrModelRand = new MaxPeriodFibonacciXORMISRModel(d.bistTop.bist.io.seed.getWidth)
+        var misrModelSig = new MaxPeriodFibonacciXORMISRModel(128)
+        val dataMask = (BigInt(1) << sram.dataWidth) - 1
+        for (i <- 1 to rows * cols * 2) {
+          misrModelRand.add(0)
+          misrModelRand.add(0)
+          val origData = BigInt("a0e56af2650dc903389eb701097b41b1", 16) & dataMask
+          misrModelSig.add(origData)
+          var randData = misrModelRand.state
+          val randMask = (misrModelRand.state >> 128)
+          var randMaskFinal = BigInt(0)
+          for (i <- 0 until 128) {
+            randMaskFinal = randMaskFinal + (BigInt(if (randMask.testBit(i / sram.maskGranularity)) { 1 } else { 0 }) << i)
+          }
+          randData = ((randData & randMaskFinal) | (origData & ~randMaskFinal)) & dataMask
+          misrModelSig.add(randData)
+          misrModelRand.add(0)
+          misrModelRand.add(0)
+        }
+
+        scanOutAndAssert(REG_WIDTH(BIST_SIGNATURE), misrModelSig.state)
+        scanOut(REG_WIDTH(BIST_RECEIVED))
+        scanOut(REG_WIDTH(BIST_EXPECTED))
+        scanOut(REG_WIDTH(BIST_FAIL_CYCLE))
+        scanOutAndAssert(REG_WIDTH(BIST_FAIL), 0)
+        misrModelSig.state
       }
-
-      d.io.top.bistDone.expect(true.B)
-      d.io.top.bistEn.poke(false.B)
-
-      misrModel = new MaxPeriodFibonacciXORMISRModel(128)
-      for (i <- 1 to 1024 * 4) {
-        misrModel.add(BigInt("097b41b1", 16))
-        misrModel.add(BigInt("f684be4e", 16))
+      for (sig <- sigs) {
+        println(s"${sig.toString(16)}")
       }
-
-      println(s"Expected signature = ${misrModel.state.toString(16)}")
-      scanOutAndAssert(REG_WIDTH(BIST_SIGNATURE), misrModel.state)
-      scanOut(REG_WIDTH(BIST_RECEIVED))
-      scanOut(REG_WIDTH(BIST_EXPECTED))
-      scanOut(REG_WIDTH(BIST_FAIL_CYCLE))
-      scanOutAndAssert(REG_WIDTH(BIST_FAIL), 0)
     }
   }
   it should "work with a failed march BIST on chiseltest SRAMs" in {

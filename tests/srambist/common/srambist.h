@@ -35,9 +35,15 @@
 
 typedef struct {
     int wmask_granularity;
+    int mux_ratio;
     int num_words;
     int data_width;
 } sram_params_t;
+
+typedef struct {
+    uint128_t* data;
+    uint128_t* wmask;
+} sram_test_t;
 
 #define NUM_SRAMS 22
 extern const sram_params_t SRAMS[NUM_SRAMS];
@@ -129,6 +135,7 @@ typedef struct {
 } bist_result_t;
 
 uint128_t create_mask(uint8_t sram_id);
+uint128_t create_wmask_mask(uint8_t sram_id, uint128_t wmask);
 
 uint32_t read_at_bit_offset(void* x, int bit_offset, uint8_t num_bits);
 void write_at_bit_offset(void* x, int bit_offset, void* val, uint8_t num_bits);
@@ -189,6 +196,23 @@ bist_result_t srambist_run_bist_with_packed_elements(
     packed_element_vec_t* elems,
     uint8_t max_elem_idx,
     pattern_table_t* pattern_table, 
+    uint32_t cycle_limit,
+    int stop_on_failure
+);
+
+void srambist_write_packed_elements(
+    packed_element_vec_t* packed_elem_vec,
+    pattern_table_t* pattern_table
+);
+
+bist_result_t srambist_run_bist_with_existing_patterns(
+    uint8_t sram_id,
+    uint64_t rand_seed,
+    uint128_t sig_seed,
+    uint16_t max_row_addr,
+    uint8_t max_col_addr,
+    dimension_t inner_dim,
+    uint8_t max_elem_idx,
     uint32_t cycle_limit,
     int stop_on_failure
 );

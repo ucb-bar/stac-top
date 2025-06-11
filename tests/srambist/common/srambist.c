@@ -9,31 +9,30 @@
 #include <stdio.h>
 
 const sram_params_t SRAMS[NUM_SRAMS] = {
-    {8, 64, 24},
-    {8, 64, 32},
-    {8, 128, 16},
-    {8, 128, 24},
-    {8, 128, 32},
-    {1, 256, 8},
-    {8, 256, 16},
-    {8, 256, 32},
-    {8, 256, 64},
-    {8, 256, 128},
-    {1, 512, 8},
-    {8, 512, 32},
-    {8, 512, 64},
-    {8, 512, 128},
-    {1, 1024, 8},
-    {8, 1024, 32},
-    {8, 1024, 64},
-    {1, 2048, 8},
-    {8, 2048, 32},
-    {1, 4096, 8},
-    {8, 4096, 32},
-    {8, 8192, 32},
+    {8, 4, 64, 24},
+    {8, 4, 64, 32},
+    {8, 4, 128, 16},
+    {8, 4, 128, 24},
+    {8, 4, 128, 32},
+    {1, 8, 256, 8},
+    {8, 8, 256, 16},
+    {8, 4, 256, 32},
+    {8, 4, 256, 64},
+    {8, 4, 256, 128},
+    {1, 8, 512, 8},
+    {8, 4, 512, 32},
+    {8, 4, 512, 64},
+    {8, 4, 512, 128},
+    {1, 8, 1024, 8},
+    {8, 8, 1024, 32},
+    {8, 4, 1024, 64},
+    {1, 8, 2048, 8},
+    {8, 8, 2048, 32},
+    {1, 8, 4096, 8},
+    {8, 8, 4096, 32},
+    {8, 8, 8192, 32},
 };
 
-// TODO: support masks wider than 63 bits
 uint128_t create_mask(uint8_t sram_id) {
     sram_params_t params = SRAMS[sram_id];
     uint128_t ret;
@@ -45,6 +44,21 @@ uint128_t create_mask(uint8_t sram_id) {
         ret.lo = (1UL << params.data_width) - 1;
     }
     return ret;
+}
+
+uint128_t create_wmask_mask(uint8_t sram_id, uint128_t wmask) {
+    sram_params_t params = SRAMS[sram_id];
+    uint128_t mask = {0, 0};
+    for (int i = 0; i < params.data_width; i++) {
+        int wmask_idx = i / params.wmask_granularity;
+        int wmask_bit = (wmask_idx < 64 ? (wmask.lo >> wmask_idx) : (wmask.hi >> (wmask_idx - 64))) & 1;
+        if (i < 64) {
+            mask.lo |= (wmask_bit << i);
+        } else {
+            mask.hi |= (wmask_bit << (i - 64));
+        }
+    }
+    return mask;
 }
 
 // `num_bits` must be less than 32.
@@ -255,6 +269,57 @@ bist_result_t srambist_run_bist_with_packed_elements(
   for (int i = 0; i < 16; i++) {
     reg_write64(SRAMBIST_BIST_PATTERN_TABLE + 8 * i, *(((uint64_t*) pattern_table) + i));
   }
+  reg_write8(SRAMBIST_BIST_MAX_ELEMENT_IDX, max_elem_idx);
+
+  reg_write32(SRAMBIST_BIST_CYCLE_LIMIT, cycle_limit);
+  reg_write32(SRAMBIST_BIST_STOP_ON_FAILURE, stop_on_failure);
+
+  srambist_execute();
+
+  bist_result_t result;
+  result.fail = reg_read8(SRAMBIST_BIST_FAIL) & 0x1;
+  result.fail_cycle = reg_read64(SRAMBIST_BIST_FAIL_CYCLE);
+  result.expected = reg_read128(SRAMBIST_BIST_EXPECTED);
+  result.received = reg_read128(SRAMBIST_BIST_RECEIVED);
+  result.signature = reg_read128(SRAMBIST_BIST_SIGNATURE);
+
+  return result;
+}
+
+void srambist_write_packed_elements(
+    packed_element_vec_t* packed_elem_vec,
+    pattern_table_t* pattern_table
+) {
+  for (int i = 0; i < 16; i++) {
+    reg_write64(SRAMBIST_BIST_ELEMENT_SEQUENCE + 8 * i, *(((uint64_t*) packed_elem_vec) + i));
+  }
+  for (int i = 0; i < 16; i++) {
+    reg_write64(SRAMBIST_BIST_PATTERN_TABLE + 8 * i, *(((uint64_t*) pattern_table) + i));
+  }
+}
+
+bist_result_t srambist_run_bist_with_existing_patterns(
+    uint8_t sram_id,
+    uint64_t rand_seed,
+    uint128_t sig_seed,
+    uint16_t max_row_addr,
+    uint8_t max_col_addr,
+    dimension_t inner_dim,
+    uint8_t max_elem_idx,
+    uint32_t cycle_limit,
+    int stop_on_failure
+) {
+  reg_write8(SRAMBIST_SRAM_ID, sram_id);
+  reg_write8(SRAMBIST_SRAM_SEL, SRAM_SEL_BIST);
+  reg_write64(SRAMBIST_BIST_RAND_SEED, rand_seed);
+  for (int i = 1; i < 5; i++) {
+    reg_write64(SRAMBIST_BIST_RAND_SEED + 8 * i, 0);
+  }
+  reg_write128(SRAMBIST_BIST_SIG_SEED, sig_seed);
+  reg_write16(SRAMBIST_BIST_MAX_ROW_ADDR, max_row_addr);
+  reg_write8(SRAMBIST_BIST_MAX_COL_ADDR, max_col_addr);
+  reg_write8(SRAMBIST_BIST_INNER_DIM, inner_dim);
+
   reg_write8(SRAMBIST_BIST_MAX_ELEMENT_IDX, max_elem_idx);
 
   reg_write32(SRAMBIST_BIST_CYCLE_LIMIT, cycle_limit);

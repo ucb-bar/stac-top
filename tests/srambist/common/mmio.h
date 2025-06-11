@@ -9,6 +9,24 @@ typedef struct {
     uint64_t hi;
 } uint128_t;
 
+static inline uint128_t not128(uint128_t a) {
+    a.hi = ~a.hi;
+    a.lo = ~a.lo;
+    return a;
+}
+
+static inline uint128_t and128(uint128_t a, uint128_t b) {
+    a.hi = a.hi & b.hi;
+    a.lo = a.lo & b.lo;
+    return a;
+}
+
+static inline uint128_t or128(uint128_t a, uint128_t b) {
+    a.hi = a.hi | b.hi;
+    a.lo = a.lo | b.lo;
+    return a;
+}
+
 static inline bool eq128(uint128_t a, uint128_t b) {
     return (a.hi == b.hi) && (a.lo == b.lo);
 }

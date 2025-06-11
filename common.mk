@@ -211,9 +211,7 @@ $(SFC_MFC_TARGETS) &: $(FIRRTL_FILE) $(FINAL_ANNO_FILE) $(SFC_LEVEL) $(EXTRA_FIR
 	@if [ $(SFC_LEVEL) = low ]; then cat $(TMP_DIR)/unnec-anno-deleted2.sfc.anno.json > $(SFC_ANNO_FILE) && rm $(TMP_DIR)/unnec-anno-deleted.sfc.anno.json && rm $(TMP_DIR)/unnec-anno-deleted2.sfc.anno.json; fi
 	firtool \
 		--format=fir \
-		--dedup \
 		--export-module-hierarchy \
-		--emit-metadata \
 		--verify-each=true \
 		--warn-on-unprocessed-annotations \
 		--disable-annotation-classless \
@@ -222,7 +220,6 @@ $(SFC_MFC_TARGETS) &: $(FIRRTL_FILE) $(FINAL_ANNO_FILE) $(SFC_LEVEL) $(EXTRA_FIR
 		--lowering-options=$(MFC_LOWERING_OPTIONS) \
 		--repl-seq-mem \
 		--repl-seq-mem-file=$(MFC_SMEMS_CONF) \
-		--repl-seq-mem-circuit=$(MODEL) \
 		--annotation-file=$(SFC_ANNO_FILE) \
 		--split-verilog \
 		-o $(GEN_COLLATERAL_DIR) \

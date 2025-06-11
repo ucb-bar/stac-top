@@ -16,6 +16,7 @@ bmarks = \
 	bist-simple \
 	bist-fail \
 	bist-multi-sram \
+	bist-all \
 	scratchpad
 
 #--------------------------------------------------------------------
