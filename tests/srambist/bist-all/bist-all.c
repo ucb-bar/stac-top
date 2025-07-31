@@ -7,7 +7,6 @@
 
 #include "mmio.h"
 #include "srambist.h"
-#include "testvectors.h"
 #include <stdio.h>
 
 int main(int argc, char* argv[] )
@@ -74,7 +73,6 @@ int main(int argc, char* argv[] )
   for (int id = 0; id < NUM_SRAMS; id++) {
     printf("Testing bist for SRAM %d\n", id);
     sram_params_t params = SRAMS[id];
-    sram_test_t test = SRAM_TESTS[id];
 
     int rows = params.num_words / params.mux_ratio;
     int cols = params.mux_ratio;
