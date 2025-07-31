@@ -51,7 +51,7 @@ uint128_t create_wmask_mask(uint8_t sram_id, uint128_t wmask) {
     uint128_t mask = {0, 0};
     for (int i = 0; i < params.data_width; i++) {
         int wmask_idx = i / params.wmask_granularity;
-        int wmask_bit = (wmask_idx < 64 ? (wmask.lo >> wmask_idx) : (wmask.hi >> (wmask_idx - 64))) & 1;
+        long long wmask_bit = (wmask_idx < 64 ? (wmask.lo >> wmask_idx) : (wmask.hi >> (wmask_idx - 64))) & 1;
         if (i < 64) {
             mask.lo |= (wmask_bit << i);
         } else {

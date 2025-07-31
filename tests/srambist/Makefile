@@ -55,14 +55,16 @@ $(bmarks_riscv_out): %.riscv.out: %.riscv
 	$(RISCV_SIM) $< > $@
 
 riscv: $(bmarks_riscv_dump)
+softcheck: $(src_dir)/softcheck.c $(src_dir)/common/srambist.c
+	gcc $(src_dir)/softcheck.c $(src_dir)/common/srambist.c -Icommon -o softcheck
 run: $(bmarks_riscv_out)
 
-junk += $(bmarks_riscv_bin) $(bmarks_riscv_dump) $(bmarks_riscv_hex) $(bmarks_riscv_out)
+junk += $(bmarks_riscv_bin) $(bmarks_riscv_dump) $(bmarks_riscv_hex) $(bmarks_riscv_out) softcheck
 
 #------------------------------------------------------------
 # Default
 
-all: riscv
+all: riscv softcheck
 
 #------------------------------------------------------------
 # Clean up
